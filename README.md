@@ -1,11 +1,10 @@
 # Hashtag-DnD
+PLEASE SUPPORT the Original Creator: [Raeleus Hashtag-DnD](https://github.com/raeleus/Hashtag-DnD)
 
-# PLEASE SUPPORT the Original Creator: [Raeleus Hashtag-DnD](https://github.com/raeleus/Hashtag-DnD)
-
-A Scenario script for AI Dungeon
+## A Scenario script for AI Dungeon<br>
 Hashtag DnD is a scripted AI Dungeon scenario that gives you a variety of tools to enhance your adventure!
 
-Features:
+### Features:
 Fully working inventory system, loot drops, and item/spell shops<br>
 Hit points, turn-based battles, and a focus on strategic combat<br>
 Skill/Ability based gameplay guarantees a challenge at every turn<br>
