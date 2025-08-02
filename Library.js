@@ -497,8 +497,8 @@ function createEncounter(listName) {
   encounter.text = randomEncounter.entry
 
   // Convert description into createEnemy()
-  // [ {ally: false, name: 'Turkey Prime', health: '5d10+10', ac: 14, hitMod: 0, damage: '2d6+3', initiative: 'd20+2', spells: []} ]
-  // Eample: createEnemy("Turkey Prime", calculateRoll("5d10+10"), 14, 0, "2d6+3", "d20+2")
+  // "description": "[\n    {\n        \"ally\": false,\n        \"name\": \"Turkey Prime\",\n        \"health\": \"5d10+10\",\n        \"ac\": 14,\n        \"hitMod\": 0,\n        \"damage\": \"2d6+3\",\n        \"initiative\": \"d20+2\",\n        \"spells\": []\n    },\n    {\n        \"ally\": false,\n        \"name\": \"Turkey Mage\",\n        \"health\": \"2d10+10\",\n        \"ac\": 14,\n        \"hitMod\": 0,\n        \"damage\": \"2d6+3\",\n        \"initiative\": \"d20+2\",\n        \"spells\": [\"Web\", \"Ray of Frost\"]\n    }\n]",
+  // Eample: createEnemy("Turkey Prime", calculateRoll("5d10+10"), 14, 0, "2d6+3", "d20+2", false, [])
   const entities = JSON.parse(randomEncounter.description)
   entities.forEach(element => {
     encounter.enemies.push( createEntity(element.name, calculateRoll(element.health), element.ac, element.hitMod, element.damage, element.initiative, element.ally, element.spells) )
@@ -686,6 +686,14 @@ function findItemCard(name, storyCardName) {
 
 function listEncounterCards(listName) {
   return storyCards.filter((element) => (element.type == "encounter - "+listName));
+}
+
+function listEnemyCards(enemyType) {
+  return storyCards.filter((element) => (element.type.includes("enemy - "+enemyType)));
+}
+
+function listAllyCards(enemyType) {
+  return storyCards.filter((element) => (element.type.includes("ally - "+enemyType)));
 }
 
 const simpleMeleeWeapons = ["Club", "Dagger", "Greatclub", "Handaxe", "Javelin", "Light Hammer", "Mace", "Quarterstaff", "Sickle", "Spear", "Dart"]

@@ -86,12 +86,14 @@ function DNDHash_output(text) {
           text += "Enter the name of another spell that the enemy knows. If it can target this spell at a player character, add a dice roll for the damage calculation after it (ie. Ray of Frost3d6+2). Type s to stop entering spells or type q to quit.\n"
           break
         case 100:
-          text += `What enemy preset will you choose?\nLevel 1 or lesser\n1. Animated Armor\n2. Awakened Shrub\n3. Brigand\n4. Black Bear\n5. Boar\n6. Cockatrice\n7. Constrictor Snake\n8. Dire Wolf\n9. Ghoul\n10. Giant Centipede\n11. Giant Rat\n12. Giant Wolf Spider\n13. Gnoll\n14. Goblin\n15. Harpy\n16. Hobgoblin\n17. Kobold\n18. Orc\n19. Satyr\n20. Skeleton\n21. Strige\n22. Warhorse\n23. Wolf\n24. Worg`
-          text += `\n\nLevels 2-5\n25. Zombie\n26. Air Elemental\n27. Basilisk\n28. Berserker\n29. Chuul\n30. Doppelganger\n31. Druid\n32. Earth Elemental\n33. Fire Elemental\n34. Gorgon\n35. Green Hag\n36. Griffon\n37. Hell Hound\n38. Hill Giant\n39.  Manticore\n40. Minotaur\n41. Mimic\n42. Ogre\n43. Owlbear\n44. Red Dragon Wyrmling\n45. Spectator\n46. Troll\n47. Wererat\n48. Werewolf\n49. Vampire Spawn\n50. Wight`
-          text += `\n\nLevels 6-10\n51. Aboleth\n52. Assassin\n53. Chimera\n54. Cloud Giant\n55. Cyclops\n56. Deva\n57. Drider\n58. Frost Giant\n59. Hydra\n60. Insane Mage\n61. Medusa\n62. Shield Guardian\n63. Spirit Naga\n64. Stone Golem\n65. Treant\n66. Young Black Dragon\n67. Young Blue Dragon\n68. Young Brass Dragon\n69. Young Bronze Dragon\n70. Young Copper Dragon\n71. Young Gold Dragon\n72. Young Green Dragon\n73. Young Red Dragon\n74. Young Silver Dragon\n75. Young White Dragon`
-          text += `\n\nLevels 11-15\n76. Adult Black Dragon\n77. Adult Bronze Dragon\n78. Adult Copper Dragon\n79. Adult Green Dragon\n80. Animated Statue\n81. Arch Mage\n82. Behir\n83. Boneclaw\n84. Deathwolf\n85. Djinni\n86. Drow Inquisitor\n87. Efreeti\n88. Elder Brain\n89. Erinyes\n90. Ice Devil\n91. Jabberwock\n92. Megapede\n93. Mummy Lord\n94. Purple Worm\n95. Remorhaz\n96. Skull Lord\n97. Spider Dragon\n98. Storm Giant\n99. Vampire\n100. Zikran`
-          text += `\n\nLevels 16 and up\n101. Ancient Black Dragon\n102. Adult Blue Dragon\n103. Adult Gold Dragon\n104. Adult Silver Dragon\n105. Ancient Gold Dragon\n106. Ancient Red Dragon\n107. Androsphinx\n108. Bael\n109. Balor\n110. Baphomet\n111. Cosmic Horror\n112. Death Knight\n113. Demogorgon\n114. Dragon\n115. Drow Matron Mother\n116. Flesh Colossus\n117. Kraken\n118. Iron Golem\n119. Leviathan\n120. Lich\n121. Planetar\n122. Raeleus\n123. Solar\n124. Tarrasque\n125. Zariel`
-          text += `\n\nHumanoid\n126. Commoner\n127. Bandit\n128. Guard\n129. Cultist\n130. Acolyte\n131. Apprentice\n132. Witch\n133. Buccaneer\n134. Spy\n135. Captain\n136. Bard\n137. Berserker\n138. Priest\n139. Knight\n140. Archer\n141. Warrior\n142. Conjurer\n143. Mage\n144. Assassin\n145. Evoker\n146. Necromancer\n147. Champion\n148. Warlord\n149. Archmage\n150. Archdruid`
+          // The rework here is to have all the enemies inside story cards, from which we can pull.
+          // This means players can curate the enemies prefabs, and we're not limited to X amount.
+          // We pass the enemy subtype as "" to find all enemy cards regardless of subtype
+          const enemyIndexes = listEnemyCards("")
+          text += `What enemy preset will you choose?\n`
+          for (let index = 0; index < enemyIndexes.length; index++) {
+            text += `${index}. ${enemyIndexes[index].title}\n`
+          }
           text += `\n\nEnter the number or q to quit. If you want to rename the enemy, add a space and type the name\n(ie. 25 Thuggish Zombie B)\n`
           break
         case 500:
@@ -137,10 +139,15 @@ function DNDHash_output(text) {
           text += `Enter the name of another spell that the ally knows. If it can target this spell at an enemy character, add a dice roll for the damage calculation after it (ie. Ray of Frost3d6+2). Type s to stop entering spells or type q to quit.\n`
           break
         case 100:
-          text += `What ally preset will you choose?\nHeroes\n1. Fighter\n2. Cleric\n3. Rogue\n4. Ranger\n5. Barbarian\n6. Bard\n7. Druid\n8. Monk\n9. Paladin\n10. Wizard\n11. Sorcerer\n12. Warlock\n13. Artificer`
-          text += `\n\nHumanoid\n14. Commoner\n15. Bandit\n16. Guard\n17. Cultist\n18. Acolyte\n19. Apprentice\n20. Witch\n21. Buccaneer\n22. Spy\n123. Captain\n24. Bard\n25. Berserker\n26 Priest\n27. Knight\n28. Archer\n29. Warrior\n30. Conjurer\n31. Mage\n32. Assassin\n33. Evoker\n34. Necromancer\n35. Champion\n36. Warlord\n37. Archmage\n38. Archdruid`
-          text += `\n\nFamiliars\n39. Ape\n40. Badger\n41. Bat\n42. Black Bear\n43. Boar\n44. Brown Bear\n45. Camel\n46. Cat\n47. Constrictor Snake\n48. Crab\n49. Crocodile\n50. Dire Wolf\n51. Draft Horse\n52. Elephant\n53. Elk\n54. Frog\n55. Giant Badger\n56. Giant Crab\n57. Giant Goat\n58. Giant Seahorse\n59. Giant Spider\n60. Giant Weasel\n61. Goat\n62. Hawk\n63. Imp\n64. Lion\n65. Lizard\n66. Mastiff\n67. Mule\n68. Octopus\n69. Owl\n70. Panther\n71. Pony\n72. Pseudodragon\n73. Quasit\n74. Rat\n75. Raven\n76. Reef Shark\n77. Riding Horse\n78. Scorpion\n79. Skeleton\n80. Slaad Tadpole\n81. Sphinx of Wonder\n82. Spider\n83. Sprite\n84. Tiger\n85. Venomous Snake\n86. Warhorse\n87. Weasel\n88. Wolf\n89. Zombie`
-          text += `\n\nEnter the number or q to quit. If you want to rename the ally, add a space and type the name\n(ie. 25 Thuggish Zombie B)\n`
+          // The rework here is to have all the allies inside story cards, from which we can pull.
+          // This means players can curate the ally prefabs, and we're not limited to X amount.
+          // We pass the ally subtype as "" to find all ally cards regardless of subtype
+          const allyIndexes = listAllyCards("")
+          text += `What ally preset will you choose?\n`
+          for (let index = 0; index < allyIndexes.length; index++) {
+            text += `${index}. ${allyIndexes[index].title}\n`
+          }
+          text += `\n\nEnter the number or q to quit. If you want to rename the ally, add a space and type the name\n(ie. 25 Thuggish Friend B)\n`
           break
         case 500:
           var hashtag = `#addally "${state.tempAlly.name}" ${state.tempAlly.health} ${state.tempAlly.ac} ${state.tempAlly.hitModifier} ${state.tempAlly.damage} ${state.tempAlly.initiative}`

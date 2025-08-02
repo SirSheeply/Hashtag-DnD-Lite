@@ -1,0 +1,18 @@
+[
+    {
+        "keys": "",
+        "value": "It looks angry! ",
+        "type": "enemy - funny",
+        "title": "Turkey Prime",
+        "description": "{\n    \"ally\": false,\n    \"name\": \"Turkey Prime\",\n    \"health\": \"5d10+10\",\n    \"ac\": 14,\n    \"hitMod\": 0,\n    \"damage\": \"2d6+3\",\n    \"initiative\": \"d20+2\",\n    \"spells\": []\n}",
+        "useForCharacterCreation": false
+    },
+    {
+        "keys": "",
+        "value": "It looks friendly! ",
+        "type": "enemy - funny",
+        "title": "Turkey Friend",
+        "description": "{\n    \"ally\": true,\n    \"name\": \"Turkey Friend\",\n    \"health\": \"5d10+10\",\n    \"ac\": 14,\n    \"hitMod\": 0,\n    \"damage\": \"2d6+3\",\n    \"initiative\": \"d20+2\",\n    \"spells\": []\n}",
+        "useForCharacterCreation": false
+    }
+]
