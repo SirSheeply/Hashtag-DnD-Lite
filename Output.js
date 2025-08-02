@@ -19,7 +19,7 @@ const modifier = (text) => {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 function DNDHash_output(text) {
-  if (state.show == null) return { text }
+  if (state.show == null) return text
 
   var character = getCharacter()
   var possessiveName = character == null ? null : getPossessiveName(character.name)

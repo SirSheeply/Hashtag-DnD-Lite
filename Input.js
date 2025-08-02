@@ -133,61 +133,61 @@ function DNDHash_input (text) {
 
   if (state.createStep != null) {
     text = handleCreateStep(text)
-    if (state.createStep != null) return { text }
+    if (state.createStep != null) return text
     else text = rawText
   }
 
   if (state.setupEnemyStep != null) {
     text = handleSetupEnemyStep(text)
-    if (state.setupEnemyStep != null) return { text }
+    if (state.setupEnemyStep != null) return text
     else text = rawText
   }
 
   if (state.setupAllyStep != null) {
     text = handleSetupAllyStep(text)
-    if (state.setupAllyStep != null) return { text }
+    if (state.setupAllyStep != null) return text
     else text = rawText
   }
 
   if (state.stragedyShopStep != null) {
     text = handleStragedyShopStep(text)
-    if (state.stragedyShopStep != null) return { text }
+    if (state.stragedyShopStep != null) return text
     else text = rawText
   }
 
   if (state.stragedyTurn != null) {
     text = handleStragedyTurn(text)
-    if (state.stragedyTurn != null) return { text }
+    if (state.stragedyTurn != null) return text
     else text = rawText
   }
 
   if (state.spellShopStep != null) {
     text = handleSpellShopStep(text)
-    if (state.spellShopStep != null) return { text }
+    if (state.spellShopStep != null) return text
     else text = rawText
   }
 
   if (state.itemShopStep != null) {
     text = handleItemShopStep(text)
-    if (state.itemShopStep != null) return { text }
+    if (state.itemShopStep != null) return text
     else text = rawText
   }
 
   if (state.lockpickingTurn != null) {
     text = handleLockpickingTurn(text)
-    if (state.lockpickingTurn != null) return { text }
+    if (state.lockpickingTurn != null) return text
     else text = rawText
   }
 
   if (state.memoryTurn != null) {
     text = handleMemoryTurn(text)
-    if (state.memoryTurn != null) return { text }
+    if (state.memoryTurn != null) return text
     else text = rawText
   }
 
   if (state.initialized == null || !text.includes("#")) {
     state.initialized = true;
-    return { text }
+    return text
   }
 
   state.characterName = getCharacterName(rawText)
@@ -211,7 +211,7 @@ function DNDHash_input (text) {
     if (state.characterName == null && found) {
       state.show = "none"
       text = `\n[Error: Character name not specified. Use the "do" or "say" modes. Alternatively, use "story" mode in the following format without quotes: "charactername #hashtag"]\n`
-      return { text }
+      return text
     }
 
     if (!found) found = processCommandSynonyms(command, commandName, helpSynonyms.concat(rollSynonyms, noteSynonyms, eraseNoteSynonyms, showNotesSynonyms, clearNotesSynonyms, showCharactersSynonyms, removeCharacterSynonyms, generateNameSynonyms, setDefaultDifficultySynonyms, showDefaultDifficultySynonyms, renameCharacterSynonyms, cloneCharacterSynonyms, createLocationSynonyms, showLocationsSynonyms, goToLocationSynonyms, removeLocationSynonyms, getLocationSynonyms, clearLocationsSynonyms, goNorthSynonyms, goSouthSynonyms, goEastSynonyms, goWestSynonyms, encounterSynonyms, showEnemiesSynonyms, showAlliesSynonyms, addEnemySynonyms, addAllySynonyms, removeEnemySynonyms, removeAllySynonyms, clearEnemiesSynonyms, clearAlliesSynonyms, initiativeSynonyms, turnSynonyms, fleeSynonyms, versionSynonyms, setupEnemySynonyms, setupAllySynonyms, healSynonyms, damageSynonyms, restSynonyms, addExperienceSynonyms, healPartySynonyms, blockSynonyms, repeatTurnSynonyms, lockpickSynonyms, memorySynonyms, resetSynonyms), function () {return true})
@@ -220,11 +220,11 @@ function DNDHash_input (text) {
       if (state.characterName == null) {
         state.show = "none"
         text = `\n[Error: Character name not specified. Use the "do" or "say" modes. Alternatively, use "story" mode in the following format without quotes: "charactername #hashtag"]\n`
-        return { text }
+        return text
       } else {
         state.show = "none"
         text = `\n[Error: Character ${state.characterName} does not exist. Type #setup to create this character]\n`
-        return { text }
+        return text
       }
     }
   }
