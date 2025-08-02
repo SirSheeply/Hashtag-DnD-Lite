@@ -13,16 +13,13 @@ const modifier = (text) => {
   return {text}
 }
 
-// Don't modify this part
-modifier(text)
-
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 function DNDHash_output(text) {
-  if (state.show == null) return { text }
+  if (state.show == null) return text
 
   var character = getCharacter()
   var possessiveName = character == null ? null : getPossessiveName(character.name)
@@ -638,7 +635,7 @@ function DNDHash_output(text) {
   }
 
   state.show = null
-  return { text }
+  return text
 }
 
 const mapLineBreak = "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n"
@@ -1158,3 +1155,6 @@ Enter the number or q to quit:
 
   return text
 }
+
+// Don't modify this part
+modifier(text)
