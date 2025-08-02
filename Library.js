@@ -2877,9 +2877,9 @@ function createInitiativeOrder() {
     return b.calculatedInitiative - a.calculatedInitiative;
   });
 }
-
 function getExpForLevel(level) {
-  return Math.round((level ** 3) * 100); // This gives: Level 2: 800, Level 3: 2700, Level 5: 12500, Level 10: 100000, Level 20: 800000
+  // Gives the level progression of: 1=300, 2=1000, 3=2200, 5=7700, 10=53000, 20=406000
+  return Math.floor(Math.round((level ** 3) * 50 + (level*300)) / 100)*100;
 }
 
 function getLevel(experience) {
