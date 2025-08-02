@@ -158,12 +158,12 @@ function DNDHash_output(text) {
           break
       }
       break
-    case "stragedy":
-      text += handleStragedy()
-      break
-    case "stragedyShop":
-      text += handleStragedyShop()
-      break
+    // case "stragedy":
+    //   text += handleStragedy()
+    //   break
+    // case "stragedyShop":
+    //   text += handleStragedyShop()
+    //   break
     case "spellShop":
       text += handleSpellShop()
       break
@@ -636,15 +636,15 @@ function DNDHash_output(text) {
       text += "\n#map"
       text += "\n    Generates an 11x11 ASCII map of the surrounding locations centered at the party location. The @ symbol is the party location."
 
-      text += "\n\n--Stragedy Card Game--"
-      text += "\n#basicdeck"
-      text += "\n    The basic cards necessary to enjoy the Stragedy card game are added to the character's inventory."
-      text += "\n#cardshop"
-      text += "\n    This opens the stragedy card shop where characters can spend gold to purchase cards. The inventory is randomized based on the day."
-      text += "\n#addcard (card_name or card_rarity)"
-      text += "\n    Adds the specified card or randomly generates a card and adds it to the character's inventory. Specifying a rarity (common, rare, epic, legendary) will choose a random card from those lists. Valid card names are a, ace, j, jack, q, queen, k, king, ?, joker, w, witch, p, priest, b, brigand, and any number 2-10"
-      text += "\n#stragedy (automatic|effortless|easy|medium|hard|impossible)"
-      text += "\n    Initiates a game of Stragedy, a card game played against an AI opponent. Specifying a difficulty (default is easy) grants the opponent a corresponding deck. Please see the game manual on github for rules, tactics, and a complete tutorial: github.com/raeleus/Hashtag-DnD/"
+      // text += "\n\n--Stragedy Card Game--"
+      // text += "\n#basicdeck"
+      // text += "\n    The basic cards necessary to enjoy the Stragedy card game are added to the character's inventory."
+      // text += "\n#cardshop"
+      // text += "\n    This opens the stragedy card shop where characters can spend gold to purchase cards. The inventory is randomized based on the day."
+      // text += "\n#addcard (card_name or card_rarity)"
+      // text += "\n    Adds the specified card or randomly generates a card and adds it to the character's inventory. Specifying a rarity (common, rare, epic, legendary) will choose a random card from those lists. Valid card names are a, ace, j, jack, q, queen, k, king, ?, joker, w, witch, p, priest, b, brigand, and any number 2-10"
+      // text += "\n#stragedy (automatic|effortless|easy|medium|hard|impossible)"
+      // text += "\n    Initiates a game of Stragedy, a card game played against an AI opponent. Specifying a difficulty (default is easy) grants the opponent a corresponding deck. Please see the game manual on github for rules, tactics, and a complete tutorial: github.com/raeleus/Hashtag-DnD/"
 
       text += "\n\n--Lockpicking Minigame--"
       text += "\n#lockpick (automatic|effortless|easy|medium|hard|impossible)"
@@ -803,132 +803,132 @@ The combination was ${state.lockpickingCombination}`
   return text
 }
 
-function handleStragedy() {
-  var character = getCharacter()
-  var haveWord = character.name == "You" ? "have" : "has"
-  var possessiveName = getPossessiveName(character.name)
+// function handleStragedy() {
+//   var character = getCharacter()
+//   var haveWord = character.name == "You" ? "have" : "has"
+//   var possessiveName = getPossessiveName(character.name)
 
-  var text = " "
-  switch (state.stragedyTurn) {
-    case "intro":
-      text = `**Stragedy**
-Welcome to Stragedy! A trading card game of wits, strategy, and tragic outcomes!
-Please see the game manual on github for rules, tactics, and a complete tutorial:
-github.com/raeleus/Hashtag-DnD/
-Type d to deal the cards or press f to forfeit.
-`
-      break
-    case "game":
-      var hasJokerOnBattlefield = false
-      for (var card of state.stragedyPlayerBattlefield) {
-        if (card.includes("?")) {
-          hasJokerOnBattlefield = true
-          break
-        }
-      }
+//   var text = " "
+//   switch (state.stragedyTurn) {
+//     case "intro":
+//       text = `**Stragedy**
+// Welcome to Stragedy! A trading card game of wits, strategy, and tragic outcomes!
+// Please see the game manual on github for rules, tactics, and a complete tutorial:
+// github.com/raeleus/Hashtag-DnD/
+// Type d to deal the cards or press f to forfeit.
+// `
+//       break
+//     case "game":
+//       var hasJokerOnBattlefield = false
+//       for (var card of state.stragedyPlayerBattlefield) {
+//         if (card.includes("?")) {
+//           hasJokerOnBattlefield = true
+//           break
+//         }
+//       }
 
-      var kingCards = new Set()
-      for(var card of state.stragedyPlayerBattlefield) {
-        if (card.includes("k")) {
-          kingCards.add(card.match(/(?<=.*)\d+/gi)[0])
-        }
-      }
+//       var kingCards = new Set()
+//       for(var card of state.stragedyPlayerBattlefield) {
+//         if (card.includes("k")) {
+//           kingCards.add(card.match(/(?<=.*)\d+/gi)[0])
+//         }
+//       }
 
-      for(var card of state.stragedyEnemyBattlefield) {
-        if (card.includes("k")) {
-          kingCards.add(card.match(/(?<=.*)\d+/gi)[0])
-        }
-      }
+//       for(var card of state.stragedyEnemyBattlefield) {
+//         if (card.includes("k")) {
+//           kingCards.add(card.match(/(?<=.*)\d+/gi)[0])
+//         }
+//       }
 
-      var priestPoints = 0
-      for (var card of state.stragedyPlayerBattlefield) {
-        if (card.includes("p")) {
-          var number = card.replaceAll(/\D/gi, "")
-          var value = parseInt(number)
-          if (kingCards.has(number)) value *= 2
+//       var priestPoints = 0
+//       for (var card of state.stragedyPlayerBattlefield) {
+//         if (card.includes("p")) {
+//           var number = card.replaceAll(/\D/gi, "")
+//           var value = parseInt(number)
+//           if (kingCards.has(number)) value *= 2
 
-          priestPoints += value
-        }
-      }
+//           priestPoints += value
+//         }
+//       }
 
-      var enemyPriestPoints = 0
-      for (var card of state.stragedyEnemyBattlefield) {
-        if (card.includes("p")) {
-          var number = card.replaceAll(/\D/gi, "")
-          var value = parseInt(number)
-          if (kingCards.has(number)) value *= 2
+//       var enemyPriestPoints = 0
+//       for (var card of state.stragedyEnemyBattlefield) {
+//         if (card.includes("p")) {
+//           var number = card.replaceAll(/\D/gi, "")
+//           var value = parseInt(number)
+//           if (kingCards.has(number)) value *= 2
 
-          enemyPriestPoints += value
-        }
-      }
+//           enemyPriestPoints += value
+//         }
+//       }
 
-      var enemyBattlefield = state.stragedyEnemyBattlefield.length > 0 ? "" : "No cards!"
-      state.stragedyEnemyBattlefield.sort()
-      for (card of state.stragedyEnemyBattlefield) {
-        enemyBattlefield += `${card}, `
-      }
-      if (state.stragedyEnemyBattlefield.length > 0) enemyBattlefield = enemyBattlefield.substring(0, enemyBattlefield.length - 2)
+//       var enemyBattlefield = state.stragedyEnemyBattlefield.length > 0 ? "" : "No cards!"
+//       state.stragedyEnemyBattlefield.sort()
+//       for (card of state.stragedyEnemyBattlefield) {
+//         enemyBattlefield += `${card}, `
+//       }
+//       if (state.stragedyEnemyBattlefield.length > 0) enemyBattlefield = enemyBattlefield.substring(0, enemyBattlefield.length - 2)
 
-      var enemyDeckCount = state.stragedyEnemyDeck.length
-      var enemyDiscardCount = state.stragedyEnemyDiscard.length
-      var enemyHandCount = state.stragedyEnemyHand.length
+//       var enemyDeckCount = state.stragedyEnemyDeck.length
+//       var enemyDiscardCount = state.stragedyEnemyDiscard.length
+//       var enemyHandCount = state.stragedyEnemyHand.length
 
-      var playerBattlefield = state.stragedyPlayerBattlefield.length > 0 ? "" : "No cards!"
-      state.stragedyPlayerBattlefield.sort()
-      for (card of state.stragedyPlayerBattlefield) {
-        playerBattlefield += `${card}, `
-      }
-      if (state.stragedyPlayerBattlefield.length > 0) playerBattlefield = playerBattlefield.substring(0, playerBattlefield.length - 2)
+//       var playerBattlefield = state.stragedyPlayerBattlefield.length > 0 ? "" : "No cards!"
+//       state.stragedyPlayerBattlefield.sort()
+//       for (card of state.stragedyPlayerBattlefield) {
+//         playerBattlefield += `${card}, `
+//       }
+//       if (state.stragedyPlayerBattlefield.length > 0) playerBattlefield = playerBattlefield.substring(0, playerBattlefield.length - 2)
 
-      var playerHand = state.stragedyPlayerHand.length > 0 ? "" : "No cards!"
-      state.stragedyPlayerHand.sort()
-      for (card of state.stragedyPlayerHand) {
-        playerHand += `${card}, `
-      }
-      if (state.stragedyPlayerHand.length > 0) playerHand = playerHand.substring(0, playerHand.length - 2)
+//       var playerHand = state.stragedyPlayerHand.length > 0 ? "" : "No cards!"
+//       state.stragedyPlayerHand.sort()
+//       for (card of state.stragedyPlayerHand) {
+//         playerHand += `${card}, `
+//       }
+//       if (state.stragedyPlayerHand.length > 0) playerHand = playerHand.substring(0, playerHand.length - 2)
 
-      var playerDeckCount = state.stragedyPlayerDeck.length
-      var playerDiscardCount = state.stragedyPlayerDiscard.length
+//       var playerDeckCount = state.stragedyPlayerDeck.length
+//       var playerDiscardCount = state.stragedyPlayerDiscard.length
 
-      if (!state.stragedyEnemySkipTurn) text = `-----The Opponent's Turn-----${state.stragedyEnemyTurnText}`
-      else text = "-----The Opponent's Cards-----\n"
+//       if (!state.stragedyEnemySkipTurn) text = `-----The Opponent's Turn-----${state.stragedyEnemyTurnText}`
+//       else text = "-----The Opponent's Cards-----\n"
 
-      text += `The opponent has ${enemyDeckCount} cards in the deck, ${enemyDiscardCount} in the discard pile, and ${enemyHandCount} in their hand.
+//       text += `The opponent has ${enemyDeckCount} cards in the deck, ${enemyDiscardCount} in the discard pile, and ${enemyHandCount} in their hand.
 
------The Battlefield-----
-Opponent's cards on the battlefield: ${enemyBattlefield} = ${state.stragedyEnemyScore} points${enemyPriestPoints > 0 ? `. Blessed points: ${enemyPriestPoints}` : ""}
-${possessiveName} cards on the battlefield: ${playerBattlefield} = ${state.stragedyPlayerScore} points${priestPoints > 0 ? `. Blessed points: ${priestPoints}` : ""}
+// -----The Battlefield-----
+// Opponent's cards on the battlefield: ${enemyBattlefield} = ${state.stragedyEnemyScore} points${enemyPriestPoints > 0 ? `. Blessed points: ${enemyPriestPoints}` : ""}
+// ${possessiveName} cards on the battlefield: ${playerBattlefield} = ${state.stragedyPlayerScore} points${priestPoints > 0 ? `. Blessed points: ${priestPoints}` : ""}
 
------${possessiveName} Cards-----
-${possessiveName} hand: ${playerHand}
-${toTitleCase(character.name)} ${haveWord} ${playerDeckCount} cards in the deck and ${playerDiscardCount} in the discard pile.
+// -----${possessiveName} Cards-----
+// ${possessiveName} hand: ${playerHand}
+// ${toTitleCase(character.name)} ${haveWord} ${playerDeckCount} cards in the deck and ${playerDiscardCount} in the discard pile.
 
------${possessiveName} Turn-----`
+// -----${possessiveName} Turn-----`
 
-      if (state.stragedyPlayerHand.length > 0) text += `
-Play a number card by typing its number. Play a letter card by typing the letter and target card.
-Type d and a number/letter to discard. ${!hasJokerOnBattlefield ? "Type r to retire. " : ""}Type f to forfeit.
-`
-      else text += `
-Type d to draw a card. ${!hasJokerOnBattlefield ? "Type r to retire. " : ""}Type f to forfeit.
-`
-      if (state.stragedyPlayerScore > 30) text += `WARNING: You must lower your score below 30 or you will bust!\n`
-      break
-    case "gameOver":
-      text = ""
+//       if (state.stragedyPlayerHand.length > 0) text += `
+// Play a number card by typing its number. Play a letter card by typing the letter and target card.
+// Type d and a number/letter to discard. ${!hasJokerOnBattlefield ? "Type r to retire. " : ""}Type f to forfeit.
+// `
+//       else text += `
+// Type d to draw a card. ${!hasJokerOnBattlefield ? "Type r to retire. " : ""}Type f to forfeit.
+// `
+//       if (state.stragedyPlayerScore > 30) text += `WARNING: You must lower your score below 30 or you will bust!\n`
+//       break
+//     case "gameOver":
+//       text = ""
 
-      if (state.stragedyWinner != "forfeit" && state.stragedyEnemyTurnText != null) text += state.stragedyEnemyTurnText
+//       if (state.stragedyWinner != "forfeit" && state.stragedyEnemyTurnText != null) text += state.stragedyEnemyTurnText
 
-      text += `The battle has concluded.${state.stragedyWinner != "forfeit" ? `\nFinal scores:\n${character.name}: ${state.stragedyPlayerScore}\nOpponent: ${state.stragedyEnemyScore}`: ""}
-`
-      if (state.stragedyWinner == "player") text += `${toTitleCase(character.name)} ${haveWord} won! Congratulations.`
-      else if (state.stragedyWinner == "enemy" || state.stragedyWinner == "forfeit") text += `${toTitleCase(character.name)} ${haveWord} lost! Better luck next time.`
-      else text += `${toTitleCase(character.name)} and the opponent have tied! Try again.`
-      break
-  }
+//       text += `The battle has concluded.${state.stragedyWinner != "forfeit" ? `\nFinal scores:\n${character.name}: ${state.stragedyPlayerScore}\nOpponent: ${state.stragedyEnemyScore}`: ""}
+// `
+//       if (state.stragedyWinner == "player") text += `${toTitleCase(character.name)} ${haveWord} won! Congratulations.`
+//       else if (state.stragedyWinner == "enemy" || state.stragedyWinner == "forfeit") text += `${toTitleCase(character.name)} ${haveWord} lost! Better luck next time.`
+//       else text += `${toTitleCase(character.name)} and the opponent have tied! Try again.`
+//       break
+//   }
 
-  return text
-}
+//   return text
+// }
 
 function itemShopPushDeal(items, name) {
   let quantity = 1
@@ -1425,68 +1425,68 @@ Enter the number or q to quit:
   return text
 }
 
-function handleStragedyShop() {
-  var character = getCharacter()
-  var goldIndex = character.inventory.findIndex(x => x.name.toLowerCase() == "gold")
-  var gold = goldIndex == -1 ? 0 : character.inventory[goldIndex].quantity
-  var text = " "
-  var seed = state.day
-  if (state.cardDeals == null) {
-    state.cardDeals = ["2", "3", "4", "5", "6", "7", "8", "9"]
-    state.cardPrices = [400, 400, 400, 400, 400, 400, 400, 400, 2000]
-    var items = ["10", "Ace", "Jack"]
-    state.cardDeals.push(items[Math.floor(getRandom(seed) * 3)])
-    seed += 100
-    if (getRandom(seed) > .6) {
-      items = ["Queen", "King", "Joker"]
-      state.cardDeals.push(getRandomFromList(items[Math.floor(getRandom(seed) * 3)]))
-      seed += 100
-      state.cardPrices.push(5000)
-    }
-    if (getRandom(seed) > .9) {
-      items = ["Witch", "Priest", "Brigand"]
-      state.cardDeals.push(getRandomFromList(items[Math.floor(getRandom(seed) * 3)]))
-      seed += 100
-      state.cardPrices.push(12000)
-    }
-  }
+// function handleStragedyShop() {
+//   var character = getCharacter()
+//   var goldIndex = character.inventory.findIndex(x => x.name.toLowerCase() == "gold")
+//   var gold = goldIndex == -1 ? 0 : character.inventory[goldIndex].quantity
+//   var text = " "
+//   var seed = state.day
+//   if (state.cardDeals == null) {
+//     state.cardDeals = ["2", "3", "4", "5", "6", "7", "8", "9"]
+//     state.cardPrices = [400, 400, 400, 400, 400, 400, 400, 400, 2000]
+//     var items = ["10", "Ace", "Jack"]
+//     state.cardDeals.push(items[Math.floor(getRandom(seed) * 3)])
+//     seed += 100
+//     if (getRandom(seed) > .6) {
+//       items = ["Queen", "King", "Joker"]
+//       state.cardDeals.push(getRandomFromList(items[Math.floor(getRandom(seed) * 3)]))
+//       seed += 100
+//       state.cardPrices.push(5000)
+//     }
+//     if (getRandom(seed) > .9) {
+//       items = ["Witch", "Priest", "Brigand"]
+//       state.cardDeals.push(getRandomFromList(items[Math.floor(getRandom(seed) * 3)]))
+//       seed += 100
+//       state.cardPrices.push(12000)
+//     }
+//   }
 
-  switch (state.stragedyShopStep) {
-    case 0:
-      text = `**Welcome to the Stragedy Shop**
-Deals change every day!`
-      break
-    case 1:
-      text = "Card purchased!"
-      break
-    case 2:
-      text = "You do not have enough gold!"
-  }
+//   switch (state.stragedyShopStep) {
+//     case 0:
+//       text = `**Welcome to the Stragedy Shop**
+// Deals change every day!`
+//       break
+//     case 1:
+//       text = "Card purchased!"
+//       break
+//     case 2:
+//       text = "You do not have enough gold!"
+//   }
 
-  switch (state.stragedyShopStep) {
-    case 0:
-    case 1:
-    case 2:
-      text += `
-Select a number from the list below to purchase a card:
+//   switch (state.stragedyShopStep) {
+//     case 0:
+//     case 1:
+//     case 2:
+//       text += `
+// Select a number from the list below to purchase a card:
 
-`
-      if (state.cardDeals.length == 0) text += "There are no cards left for sale!\n"
-      for (var i = 0; i < state.cardDeals.length; i++) {
-        text += `${i + 1}. Stragedy ${state.cardDeals[i]} Card for ${numberWithCommas(state.cardPrices[i])} gold\n`
-      }
+// `
+//       if (state.cardDeals.length == 0) text += "There are no cards left for sale!\n"
+//       for (var i = 0; i < state.cardDeals.length; i++) {
+//         text += `${i + 1}. Stragedy ${state.cardDeals[i]} Card for ${numberWithCommas(state.cardPrices[i])} gold\n`
+//       }
 
-      text += `
-You have ${numberWithCommas(gold)} gold
-Enter the number or q to quit:
-`
-      break
-    case 500:
-      text = "Thank you for shopping at the Stragedy Shop!"
-      break
-  }
+//       text += `
+// You have ${numberWithCommas(gold)} gold
+// Enter the number or q to quit:
+// `
+//       break
+//     case 500:
+//       text = "Thank you for shopping at the Stragedy Shop!"
+//       break
+//   }
 
-  return text
-}
+//   return text
+// }
 
 modifier(text)

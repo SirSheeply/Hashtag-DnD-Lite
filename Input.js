@@ -113,11 +113,11 @@ const setProficiencySynonyms = ["setproficiency", "setweaponproficiency"]
 const healPartySynonyms = ["healparty", "healcharacters"]
 const blockSynonyms = ["block", "parry", "nullify", "invalidate"]
 const repeatTurnSynonyms = ["repeatturn", "repeat"]
-const basicDeckSynonyms = ["basicdeck", "stragedybasicdeck"]
-const cardShopSynonyms = ["cardshop", "stragedyshop", "cardstore", "stragedystore"]
+//const basicDeckSynonyms = ["basicdeck", "stragedybasicdeck"]
+//const cardShopSynonyms = ["cardshop", "stragedyshop", "cardstore", "stragedystore"]
 const spellShopSynonyms = ["spellshop", "spellstore"]
 const itemShopSynonyms = ["itemshop", "itemstore"]
-const stragedySynonyms = ["stragedy", "playgame", "game", "startgame", "begingame", "playcards", "playstragedy", "startstragedy", "beginstragedy"]
+//const stragedySynonyms = ["stragedy", "playgame", "game", "startgame", "begingame", "playcards", "playstragedy", "startstragedy", "beginstragedy"]
 const lockpickSynonyms = ["lockpick", "lockpicking", "codebreaker", "pick", "hack", "hacking", "mastermind"]
 const memorySynonyms = ["memory", "matchmaking", "matching", "matchmaker", "match2"]
 const addCardSynonyms = ["addcard"]
@@ -152,17 +152,17 @@ function DNDHash_input (text) {
     else text = rawText
   }
 
-  if (state.stragedyShopStep != null) {
-    text = handleStragedyShopStep(text)
-    if (state.stragedyShopStep != null) return { text }
-    else text = rawText
-  }
+  // if (state.stragedyShopStep != null) {
+  //   text = handleStragedyShopStep(text)
+  //   if (state.stragedyShopStep != null) return { text }
+  //   else text = rawText
+  // }
 
-  if (state.stragedyTurn != null) {
-    text = handleStragedyTurn(text)
-    if (state.stragedyTurn != null) return { text }
-    else text = rawText
-  }
+  // if (state.stragedyTurn != null) {
+  //   text = handleStragedyTurn(text)
+  //   if (state.stragedyTurn != null) return { text }
+  //   else text = rawText
+  // }
 
   if (state.spellShopStep != null) {
     text = handleSpellShopStep(text)
@@ -306,7 +306,7 @@ function DNDHash_input (text) {
   if (text == null) text = processCommandSynonyms(command, commandName, removeEnemySynonyms, doRemoveEnemy)
   if (text == null) text = processCommandSynonyms(command, commandName, removeAllySynonyms, doRemoveAlly)
   if (text == null) text = processCommandSynonyms(command, commandName, clearEnemiesSynonyms, doClearEnemies)
-    if (text == null) text = processCommandSynonyms(command, commandName, clearAlliesSynonyms, doClearAllies)
+  if (text == null) text = processCommandSynonyms(command, commandName, clearAlliesSynonyms, doClearAllies)
   if (text == null) text = processCommandSynonyms(command, commandName, addEnemySynonyms, doAddEnemy)
   if (text == null) text = processCommandSynonyms(command, commandName, addAllySynonyms, doAddAlly)
   if (text == null) text = processCommandSynonyms(command, commandName, initiativeSynonyms, doInitiative)
@@ -323,7 +323,7 @@ function DNDHash_input (text) {
   if (text == null) text = processCommandSynonyms(command, commandName, cardShopSynonyms, doCardShop)
   if (text == null) text = processCommandSynonyms(command, commandName, spellShopSynonyms, doSpellShop)
   if (text == null) text = processCommandSynonyms(command, commandName, itemShopSynonyms, doItemShop)
-  if (text == null) text = processCommandSynonyms(command, commandName, stragedySynonyms, doStragedy)
+  // if (text == null) text = processCommandSynonyms(command, commandName, stragedySynonyms, doStragedy)
   if (text == null) text = processCommandSynonyms(command, commandName, lockpickSynonyms, doLockpick)
   if (text == null) text = processCommandSynonyms(command, commandName, memorySynonyms, doMemory)
   if (text == null) text = processCommandSynonyms(command, commandName, addCardSynonyms, doAddCard)
@@ -2035,31 +2035,31 @@ function handleLockpickingTurn(text) {
   return `\nUnexpected Mastermind state. Input text: ${text}`
 }
 
-function doBasicDeck(command) {
-  var character = getCharacter()
-  var takeWord = character.name == "You" ? "take" : "takes"
-  doTake("take Stragedy Ace Card")
-  doTake("take Stragedy Queen Card")
-  doTake("take Stragedy 2 Card")
-  doTake("take Stragedy 2 Card")
-  doTake("take Stragedy 3 Card")
-  doTake("take Stragedy 3 Card")
-  doTake("take Stragedy 4 Card")
-  doTake("take Stragedy 4 Card")
-  doTake("take Stragedy 5 Card")
-  doTake("take Stragedy 5 Card")
-  doTake("take Stragedy 6 Card")
-  doTake("take Stragedy 6 Card")
-  doTake("take Stragedy 7 Card")
-  doTake("take Stragedy 7 Card")
-  doTake("take Stragedy 8 Card")
-  doTake("take Stragedy 8 Card")
-  doTake("take Stragedy 9 Card")
-  doTake("take Stragedy 9 Card")
-  doTake("take Stragedy King Card")
-  doTake("take Stragedy Jack Card")
-  return `${toTitleCase(character.name)} ${takeWord} the Stragedy Basic Deck`
-}
+// function doBasicDeck(command) {
+//   var character = getCharacter()
+//   var takeWord = character.name == "You" ? "take" : "takes"
+//   doTake("take Stragedy Ace Card")
+//   doTake("take Stragedy Queen Card")
+//   doTake("take Stragedy 2 Card")
+//   doTake("take Stragedy 2 Card")
+//   doTake("take Stragedy 3 Card")
+//   doTake("take Stragedy 3 Card")
+//   doTake("take Stragedy 4 Card")
+//   doTake("take Stragedy 4 Card")
+//   doTake("take Stragedy 5 Card")
+//   doTake("take Stragedy 5 Card")
+//   doTake("take Stragedy 6 Card")
+//   doTake("take Stragedy 6 Card")
+//   doTake("take Stragedy 7 Card")
+//   doTake("take Stragedy 7 Card")
+//   doTake("take Stragedy 8 Card")
+//   doTake("take Stragedy 8 Card")
+//   doTake("take Stragedy 9 Card")
+//   doTake("take Stragedy 9 Card")
+//   doTake("take Stragedy King Card")
+//   doTake("take Stragedy Jack Card")
+//   return `${toTitleCase(character.name)} ${takeWord} the Stragedy Basic Deck`
+// }
 
 function doItemShop(command) {
   command = command.replace(/very rare/gi, "phenomenal")
@@ -2320,254 +2320,254 @@ function handleSpellShopStep(text) {
   return text
 }
 
-function doCardShop(command) {
-  state.stragedyShopStep = 0
-  state.show = "stragedyShop"
-  return " "
-}
+// function doCardShop(command) {
+//   state.stragedyShopStep = 0
+//   state.show = "stragedyShop"
+//   return " "
+// }
 
-function handleStragedyShopStep(text) {
-  state.show = "stragedyShop"
+// function handleStragedyShopStep(text) {
+//   state.show = "stragedyShop"
 
-  if (/^\s*>.*says? ".*/.test(text)) {
-    text = text.replace(/^\s*>.*says? "/, "")
-    text = text.replace(/"\s*$/, "")
-  } else if (/^\s*>\s.*/.test(text)) {
-    text = text.replace(/\s*> /, "")
-    for (var i = 0; i < info.characters.length; i++) {
-      var matchString = info.characters[i] == "" ? "You " : `${info.characters[i]} `
-      if (text.startsWith(matchString)) {
-        text = text.replace(matchString, "")
-        break
-      }
-    }
-    text = text.replace(/\.?\s*$/, "")
-  } else {
-    text = text.replace(/^\s+/, "")
-  }
+//   if (/^\s*>.*says? ".*/.test(text)) {
+//     text = text.replace(/^\s*>.*says? "/, "")
+//     text = text.replace(/"\s*$/, "")
+//   } else if (/^\s*>\s.*/.test(text)) {
+//     text = text.replace(/\s*> /, "")
+//     for (var i = 0; i < info.characters.length; i++) {
+//       var matchString = info.characters[i] == "" ? "You " : `${info.characters[i]} `
+//       if (text.startsWith(matchString)) {
+//         text = text.replace(matchString, "")
+//         break
+//       }
+//     }
+//     text = text.replace(/\.?\s*$/, "")
+//   } else {
+//     text = text.replace(/^\s+/, "")
+//   }
 
-  if (text.toLowerCase() == "q") {
-    state.stragedyShopStep = 500
-    return text
-  }
+//   if (text.toLowerCase() == "q") {
+//     state.stragedyShopStep = 500
+//     return text
+//   }
 
-  switch (state.stragedyShopStep) {
-    case 0:
-    case 1:
-    case 2:
-      if (isNaN(text)) return text
-      var index = parseInt(text) - 1
-      if (index < 0 || index >= state.cardDeals.length) return text
+//   switch (state.stragedyShopStep) {
+//     case 0:
+//     case 1:
+//     case 2:
+//       if (isNaN(text)) return text
+//       var index = parseInt(text) - 1
+//       if (index < 0 || index >= state.cardDeals.length) return text
 
-      var item = state.cardDeals[index]
-      var price = state.cardPrices[index]
+//       var item = state.cardDeals[index]
+//       var price = state.cardPrices[index]
 
-      var character = getCharacter()
-      var goldIndex = character.inventory.findIndex(x => x.name.toLowerCase() == "gold")
-      var gold = goldIndex == -1 ? 0 : character.inventory[goldIndex].quantity
+//       var character = getCharacter()
+//       var goldIndex = character.inventory.findIndex(x => x.name.toLowerCase() == "gold")
+//       var gold = goldIndex == -1 ? 0 : character.inventory[goldIndex].quantity
 
-      if (price > gold) {
-        state.stragedyShopStep = 2
-        return text
-      }
+//       if (price > gold) {
+//         state.stragedyShopStep = 2
+//         return text
+//       }
 
-      doTake(`take Stragedy ${item} Card`)
-      character.inventory[goldIndex].quantity -= price
+//       doTake(`take Stragedy ${item} Card`)
+//       character.inventory[goldIndex].quantity -= price
 
-      state.cardDeals.splice(index, 1)
-      state.cardPrices.splice(index, 1)
+//       state.cardDeals.splice(index, 1)
+//       state.cardPrices.splice(index, 1)
 
-      state.stragedyShopStep = 1
-      break
-    case 500:
-      state.show = null
-      state.stragedyShopStep = null
-      break
-  }
-  return text
-}
+//       state.stragedyShopStep = 1
+//       break
+//     case 500:
+//       state.show = null
+//       state.stragedyShopStep = null
+//       break
+//   }
+//   return text
+// }
 
-function doStragedy(command) {
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    arg0 = "easy"
-  }
+// function doStragedy(command) {
+//   var arg0 = getArgument(command, 0)
+//   if (arg0 == null) {
+//     arg0 = "easy"
+//   }
 
-  var character = getCharacter()
-  state.stragedyTurn = "intro"
-  state.show = "stragedy"
+//   var character = getCharacter()
+//   state.stragedyTurn = "intro"
+//   state.show = "stragedy"
 
-  state.stragedyPlayerScore = 0
-  state.stragedyPlayerHand = []
-  state.stragedyPlayerBattlefield = []
+//   state.stragedyPlayerScore = 0
+//   state.stragedyPlayerHand = []
+//   state.stragedyPlayerBattlefield = []
   
-  state.stragedyPlayerDeck = []
-  for (item of character.inventory) {
-    if (/stragedy ace card/gi.test(item.name)) for (var i = 0; i < item.quantity; i++) state.stragedyPlayerDeck.push("a")
-    else if (/stragedy jack card/gi.test(item.name)) for (var i = 0; i < item.quantity; i++) state.stragedyPlayerDeck.push("j")
-    else if (/stragedy queen card/gi.test(item.name)) for (var i = 0; i < item.quantity; i++) state.stragedyPlayerDeck.push("q")
-    else if (/stragedy king card/gi.test(item.name)) for (var i = 0; i < item.quantity; i++) state.stragedyPlayerDeck.push("k")
-    else if (/stragedy joker card/gi.test(item.name)) for (var i = 0; i < item.quantity; i++) state.stragedyPlayerDeck.push("?")
-    else if (/stragedy witch card/gi.test(item.name)) for (var i = 0; i < item.quantity; i++) state.stragedyPlayerDeck.push("w")
-    else if (/stragedy priest card/gi.test(item.name)) for (var i = 0; i < item.quantity; i++) state.stragedyPlayerDeck.push("p")
-    else if (/stragedy brigand card/gi.test(item.name)) for (var i = 0; i < item.quantity; i++) state.stragedyPlayerDeck.push("b")
-    else if (/stragedy \d+ card/gi.test(item.name)) for (var i = 0; i < item.quantity; i++) state.stragedyPlayerDeck.push(item.name.match(/(?<=stragedy )\d+(?= card)/gi)[0])
-  }
+//   state.stragedyPlayerDeck = []
+//   for (item of character.inventory) {
+//     if (/stragedy ace card/gi.test(item.name)) for (var i = 0; i < item.quantity; i++) state.stragedyPlayerDeck.push("a")
+//     else if (/stragedy jack card/gi.test(item.name)) for (var i = 0; i < item.quantity; i++) state.stragedyPlayerDeck.push("j")
+//     else if (/stragedy queen card/gi.test(item.name)) for (var i = 0; i < item.quantity; i++) state.stragedyPlayerDeck.push("q")
+//     else if (/stragedy king card/gi.test(item.name)) for (var i = 0; i < item.quantity; i++) state.stragedyPlayerDeck.push("k")
+//     else if (/stragedy joker card/gi.test(item.name)) for (var i = 0; i < item.quantity; i++) state.stragedyPlayerDeck.push("?")
+//     else if (/stragedy witch card/gi.test(item.name)) for (var i = 0; i < item.quantity; i++) state.stragedyPlayerDeck.push("w")
+//     else if (/stragedy priest card/gi.test(item.name)) for (var i = 0; i < item.quantity; i++) state.stragedyPlayerDeck.push("p")
+//     else if (/stragedy brigand card/gi.test(item.name)) for (var i = 0; i < item.quantity; i++) state.stragedyPlayerDeck.push("b")
+//     else if (/stragedy \d+ card/gi.test(item.name)) for (var i = 0; i < item.quantity; i++) state.stragedyPlayerDeck.push(item.name.match(/(?<=stragedy )\d+(?= card)/gi)[0])
+//   }
 
-  shuffle(state.stragedyPlayerDeck)
-  state.stragedyPlayerDeck.splice(20)
-  state.stragedyPlayerDiscard = []
-  state.stragedyPlayerRetired = false
+//   shuffle(state.stragedyPlayerDeck)
+//   state.stragedyPlayerDeck.splice(20)
+//   state.stragedyPlayerDiscard = []
+//   state.stragedyPlayerRetired = false
 
-  state.stragedyEnemyScore = 0
-  state.stragedyEnemyHand = []
-  state.stragedyEnemyBattlefield = []
+//   state.stragedyEnemyScore = 0
+//   state.stragedyEnemyHand = []
+//   state.stragedyEnemyBattlefield = []
   
-  switch(arg0) {
-    case "impossible":
-      state.stragedyEnemyDeck = ["?", "?", "a", "q", "q", "k", "k", "w", "p", "2", "3", "4", "5", "6", "7", "7", "8", "10", "10", "10"]
-    case "hard":
-      state.stragedyEnemyDeck = ["j", "?", "a", "q", "q", "k", "k", "2", "3", "4", "5", "5", "6", "6", "7", "7", "8", "8", "10", "10"]
-    case "medium":
-      state.stragedyEnemyDeck = ["j", "j", "a", "q", "q", "k", "k", "2", "3", "4", "5", "5", "6", "6", "7", "7", "8", "8", "9", "10"]
-      break
-    case "effortless":
-      state.stragedyEnemyDeck = ["j", "j", "a", "a", "2", "2", "3", "3", "4", "4", "5", "5", "6", "6", "6", "7", "7", "8", "8", "9"]
-    case "automatic":
-      state.stragedyEnemyDeck = ["2", "2", "2", "3", "3", "3", "4", "4", "4", "5", "5", "5", "6", "6", "6", "6", "7", "7", "7", "7"]
-    case "easy":
-    default:
-      state.stragedyEnemyDeck = ["j", "q", "k", "a", "2", "2", "3", "3", "4", "4", "5", "5", "6", "6", "7", "7", "8", "8", "9", "9"]
-      break
-  }
+//   switch(arg0) {
+//     case "impossible":
+//       state.stragedyEnemyDeck = ["?", "?", "a", "q", "q", "k", "k", "w", "p", "2", "3", "4", "5", "6", "7", "7", "8", "10", "10", "10"]
+//     case "hard":
+//       state.stragedyEnemyDeck = ["j", "?", "a", "q", "q", "k", "k", "2", "3", "4", "5", "5", "6", "6", "7", "7", "8", "8", "10", "10"]
+//     case "medium":
+//       state.stragedyEnemyDeck = ["j", "j", "a", "q", "q", "k", "k", "2", "3", "4", "5", "5", "6", "6", "7", "7", "8", "8", "9", "10"]
+//       break
+//     case "effortless":
+//       state.stragedyEnemyDeck = ["j", "j", "a", "a", "2", "2", "3", "3", "4", "4", "5", "5", "6", "6", "6", "7", "7", "8", "8", "9"]
+//     case "automatic":
+//       state.stragedyEnemyDeck = ["2", "2", "2", "3", "3", "3", "4", "4", "4", "5", "5", "5", "6", "6", "6", "6", "7", "7", "7", "7"]
+//     case "easy":
+//     default:
+//       state.stragedyEnemyDeck = ["j", "q", "k", "a", "2", "2", "3", "3", "4", "4", "5", "5", "6", "6", "7", "7", "8", "8", "9", "9"]
+//       break
+//   }
 
-  shuffle(state.stragedyEnemyDeck)
-  state.stragedyEnemyDiscard = []
-  state.stragedyEnemySkipTurn = getRandomBoolean(.5)
-  state.stragedyEnemyRetired = false
-  state.stragedyEnemyTurnText = null
+//   shuffle(state.stragedyEnemyDeck)
+//   state.stragedyEnemyDiscard = []
+//   state.stragedyEnemySkipTurn = getRandomBoolean(.5)
+//   state.stragedyEnemyRetired = false
+//   state.stragedyEnemyTurnText = null
 
-  return " "
-}
+//   return " "
+// }
 
-function handleStragedyTurn(text) {
-  state.show = "stragedy"
+// function handleStragedyTurn(text) {
+//   state.show = "stragedy"
 
-  if (/^\s*>.*says? ".*/.test(text)) {
-    text = text.replace(/^\s*>.*says? "/, "")
-    text = text.replace(/"\s*$/, "")
-  } else if (/^\s*>\s.*/.test(text)) {
-    text = text.replace(/\s*> /, "")
-    for (var i = 0; i < info.characters.length; i++) {
-      var matchString = info.characters[i] == "" ? "You " : `${info.characters[i]} `
-      if (text.startsWith(matchString)) {
-        text = text.replace(matchString, "")
-        break
-      }
-    }
-    text = text.replace(/\.?\s*$/, "")
-  } else {
-    text = text.replace(/^\s+/, "")
-  }
+//   if (/^\s*>.*says? ".*/.test(text)) {
+//     text = text.replace(/^\s*>.*says? "/, "")
+//     text = text.replace(/"\s*$/, "")
+//   } else if (/^\s*>\s.*/.test(text)) {
+//     text = text.replace(/\s*> /, "")
+//     for (var i = 0; i < info.characters.length; i++) {
+//       var matchString = info.characters[i] == "" ? "You " : `${info.characters[i]} `
+//       if (text.startsWith(matchString)) {
+//         text = text.replace(matchString, "")
+//         break
+//       }
+//     }
+//     text = text.replace(/\.?\s*$/, "")
+//   } else {
+//     text = text.replace(/^\s+/, "")
+//   }
 
-  text = text.toLowerCase()
-  if (text == "f") {
-    state.stragedyTurn = "gameOver"
-    state.stragedyWinner = "forfeit"
-    return "You forfeit the game."
-  }
+//   text = text.toLowerCase()
+//   if (text == "f") {
+//     state.stragedyTurn = "gameOver"
+//     state.stragedyWinner = "forfeit"
+//     return "You forfeit the game."
+//   }
 
-  switch (state.stragedyTurn) {
-    case "intro":
-      if (text == "d") {
-        if (state.stragedyPlayerDeck.length < 20) return "\nYou cannot play if you don't have at least 20 Stragedy cards.\n"
+//   switch (state.stragedyTurn) {
+//     case "intro":
+//       if (text == "d") {
+//         if (state.stragedyPlayerDeck.length < 20) return "\nYou cannot play if you don't have at least 20 Stragedy cards.\n"
 
-        state.stragedyTurn = "game"
-        var drawCards = state.stragedyPlayerDeck.splice(state.stragedyPlayerDeck.length - 4)
-        state.stragedyPlayerHand.push(...drawCards)
+//         state.stragedyTurn = "game"
+//         var drawCards = state.stragedyPlayerDeck.splice(state.stragedyPlayerDeck.length - 4)
+//         state.stragedyPlayerHand.push(...drawCards)
 
-        drawCards = state.stragedyEnemyDeck.splice(state.stragedyEnemyDeck.length - 4)
-        state.stragedyEnemyHand.push(...drawCards)
+//         drawCards = state.stragedyEnemyDeck.splice(state.stragedyEnemyDeck.length - 4)
+//         state.stragedyEnemyHand.push(...drawCards)
 
-        stragedyCalculateScores()
-        if (!state.stragedyEnemySkipTurn) stragedyEnemyTurn()
-      }
-      return `You deal the cards. ${state.stragedyEnemySkipTurn ? "You go first." : "The opponent goes first."}`
-    case "game":
-      return stragedyPlayerTurn(text)
-    case "gameOver":
-      state.show = null
-      state.stragedyTurn = null
-      return text
-  }
+//         stragedyCalculateScores()
+//         if (!state.stragedyEnemySkipTurn) stragedyEnemyTurn()
+//       }
+//       return `You deal the cards. ${state.stragedyEnemySkipTurn ? "You go first." : "The opponent goes first."}`
+//     case "game":
+//       return stragedyPlayerTurn(text)
+//     case "gameOver":
+//       state.show = null
+//       state.stragedyTurn = null
+//       return text
+//   }
 
-  return `\nUnexpected stragedy state. Input text: ${text}`
-}
+//   return `\nUnexpected stragedy state. Input text: ${text}`
+// }
 
-function doAddCard(command) {
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    arg0 = ""
-  }
+// function doAddCard(command) {
+//   var arg0 = getArgument(command, 0)
+//   if (arg0 == null) {
+//     arg0 = ""
+//   }
 
-  arg0 = arg0.toLowerCase()
-  if (arg0.startsWith("w")) arg0 = "w"
-  if (arg0.startsWith("b")) arg0 = "b"
-  switch(arg0) {
-    case "a":
-    case "ace":
-      return doTake("take Stragedy Ace Card")
-    case "j":
-    case "jack":
-      return doTake("take Stragedy Jack Card")
-    case "q":
-    case "queen":
-      return doTake("take Stragedy Queen Card")
-    case "k":
-    case "king":
-      return doTake("take Stragedy King Card")
-    case "?":
-    case "joker":
-      return doTake("take Stragedy Joker Card")
-    case "w":
-    case "witch":
-      return doTake("take Stragedy Witch Card")
-    case "p":
-    case "priest":
-      return doTake("take Stragedy Priest Card")
-    case "b":
-    case "brigand":
-      return doTake("take Stragedy Brigand Card")
-    case "2":
-      return doTake("take Stragedy 2 Card")
-    case "3":
-      return doTake("take Stragedy 3 Card")
-    case "4":
-      return doTake("take Stragedy 4 Card")
-    case "5":
-      return doTake("take Stragedy 5 Card")
-    case "6":
-      return doTake("take Stragedy 6 Card")
-    case "7":
-      return doTake("take Stragedy 7 Card")
-    case "8":
-      return doTake("take Stragedy 8 Card")
-    case "9":
-      return doTake("take Stragedy 9 Card")
-    case "10":
-      return doTake("take Stragedy 10 Card")
-    case "common":
-      return doTake(`take Stragedy ${getRandomFromList("2", "3", "4", "5", "6", "7", "8", "9")} Card`)
-    case "rare":
-      return doTake(`take Stragedy ${getRandomFromList("10", "Ace", "Jack")} Card`)
-    case "epic":
-      return doTake(`take Stragedy ${getRandomFromList("Queen", "King", "Joker")} Card`)
-    case "legendary":
-      return doTake(`take Stragedy ${getRandomFromList("Witch", "Priest", "Brigand")} Card`)
-    default:
-      return doTake(`take Stragedy ${getRandomFromList("2", "3", "4", "5", "6", "7", "8", "9", "10", "Ace", "Jack", "Queen", "King", "Joker", "Witch", "Priest", "Brigand")} Card`)
-  }
-}
+//   arg0 = arg0.toLowerCase()
+//   if (arg0.startsWith("w")) arg0 = "w"
+//   if (arg0.startsWith("b")) arg0 = "b"
+//   switch(arg0) {
+//     case "a":
+//     case "ace":
+//       return doTake("take Stragedy Ace Card")
+//     case "j":
+//     case "jack":
+//       return doTake("take Stragedy Jack Card")
+//     case "q":
+//     case "queen":
+//       return doTake("take Stragedy Queen Card")
+//     case "k":
+//     case "king":
+//       return doTake("take Stragedy King Card")
+//     case "?":
+//     case "joker":
+//       return doTake("take Stragedy Joker Card")
+//     case "w":
+//     case "witch":
+//       return doTake("take Stragedy Witch Card")
+//     case "p":
+//     case "priest":
+//       return doTake("take Stragedy Priest Card")
+//     case "b":
+//     case "brigand":
+//       return doTake("take Stragedy Brigand Card")
+//     case "2":
+//       return doTake("take Stragedy 2 Card")
+//     case "3":
+//       return doTake("take Stragedy 3 Card")
+//     case "4":
+//       return doTake("take Stragedy 4 Card")
+//     case "5":
+//       return doTake("take Stragedy 5 Card")
+//     case "6":
+//       return doTake("take Stragedy 6 Card")
+//     case "7":
+//       return doTake("take Stragedy 7 Card")
+//     case "8":
+//       return doTake("take Stragedy 8 Card")
+//     case "9":
+//       return doTake("take Stragedy 9 Card")
+//     case "10":
+//       return doTake("take Stragedy 10 Card")
+//     case "common":
+//       return doTake(`take Stragedy ${getRandomFromList("2", "3", "4", "5", "6", "7", "8", "9")} Card`)
+//     case "rare":
+//       return doTake(`take Stragedy ${getRandomFromList("10", "Ace", "Jack")} Card`)
+//     case "epic":
+//       return doTake(`take Stragedy ${getRandomFromList("Queen", "King", "Joker")} Card`)
+//     case "legendary":
+//       return doTake(`take Stragedy ${getRandomFromList("Witch", "Priest", "Brigand")} Card`)
+//     default:
+//       return doTake(`take Stragedy ${getRandomFromList("2", "3", "4", "5", "6", "7", "8", "9", "10", "Ace", "Jack", "Queen", "King", "Joker", "Witch", "Priest", "Brigand")} Card`)
+//   }
+// }
 
 function doBio(command) {
   state.show = "bio"
