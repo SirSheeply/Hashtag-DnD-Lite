@@ -2891,7 +2891,7 @@ function getLevel(experience) {
 }
 
 function getNextLevelXp(experience) {
-  var level = getLevel(experience
+  var level = getLevel(experience)
   return getExpForLevel(level)
 }
 
