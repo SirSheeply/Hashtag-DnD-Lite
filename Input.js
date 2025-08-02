@@ -15,9 +15,6 @@ const modifier = (text) => {
   return {text}
 }
 
-// Don't modify this part
-modifier(text)
-
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -5250,3 +5247,6 @@ function doHelp(command) {
   state.show = "help"
   return " "
 }
+
+// Don't modify this part (Must be at EOF)
+modifier(text)
