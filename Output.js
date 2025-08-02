@@ -1488,5 +1488,3 @@ Enter the number or q to quit:
 
   return text
 }
-
-modifier(text)
