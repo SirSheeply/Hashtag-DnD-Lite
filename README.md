@@ -9,7 +9,7 @@ This Lite Edition has several goals:
 ## A Scenario script for AI Dungeon<br>
 Hashtag DnD is a scripted AI Dungeon scenario that gives you a variety of tools to enhance your adventure!
 
-### Features:
+### Original Features:
 Fully working inventory system, loot drops, and item/spell shops<br>
 Hit points, turn-based battles, and a focus on strategic combat<br>
 Skill/Ability based gameplay guarantees a challenge at every turn<br>
@@ -24,3 +24,17 @@ See the [user guide here](https://github.com/raeleus/Hashtag-DnD/wiki).
 Watch the [tutorial video](https://youtu.be/E5TYU7rDaBQ).
 
 Hashtag-DnD has another new scenario! Check out the [VTOL-Knights Repository](https://github.com/raeleus/Hashtag-DnD/tree/VTOL-Knights)
+
+### Lite Edition Changes
+- None yet ;)
+
+### Planned Changes
+- Removed Stragedy minigame
+- Removed Lockpicking minigame
+- Removed Memory minigame
+- Removed Character presets
+- Reduced Story Cards (removed general items)
+- Uncap leveling
+- Add leveling rewards
+- Add increase skill / ability command for easy use
+- Add inventory management without AI output
