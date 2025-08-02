@@ -119,8 +119,8 @@ const spellShopSynonyms = ["spellshop", "spellstore"]
 const itemShopSynonyms = ["itemshop", "itemstore"]
 //const stragedySynonyms = ["stragedy", "playgame", "game", "startgame", "begingame", "playcards", "playstragedy", "startstragedy", "beginstragedy"]
 //const lockpickSynonyms = ["lockpick", "lockpicking", "codebreaker", "pick", "hack", "hacking", "mastermind"]
-const memorySynonyms = ["memory", "matchmaking", "matching", "matchmaker", "match2"]
-const addCardSynonyms = ["addcard"]
+//const memorySynonyms = ["memory", "matchmaking", "matching", "matchmaker", "match2"]
+//const addCardSynonyms = ["addcard"]
 const equipSynonyms = ["equip", "arm", "wear"]
 const rewardSynonyms = ["reward"]
 const helpSynonyms = ["help"]
@@ -182,11 +182,11 @@ function DNDHash_input (text) {
   //   else text = rawText
   // }
 
-  if (state.memoryTurn != null) {
-    text = handleMemoryTurn(text)
-    if (state.memoryTurn != null) return { text }
-    else text = rawText
-  }
+  // if (state.memoryTurn != null) {
+  //   text = handleMemoryTurn(text)
+  //   if (state.memoryTurn != null) return { text }
+  //   else text = rawText
+  // }
 
   if (state.initialized == null || !text.includes("#")) {
     state.initialized = true;
@@ -217,7 +217,7 @@ function DNDHash_input (text) {
       return { text }
     }
 
-    if (!found) found = processCommandSynonyms(command, commandName, helpSynonyms.concat(rollSynonyms, noteSynonyms, eraseNoteSynonyms, showNotesSynonyms, clearNotesSynonyms, showCharactersSynonyms, removeCharacterSynonyms, generateNameSynonyms, setDefaultDifficultySynonyms, showDefaultDifficultySynonyms, renameCharacterSynonyms, cloneCharacterSynonyms, createLocationSynonyms, showLocationsSynonyms, goToLocationSynonyms, removeLocationSynonyms, getLocationSynonyms, clearLocationsSynonyms, goNorthSynonyms, goSouthSynonyms, goEastSynonyms, goWestSynonyms, encounterSynonyms, showEnemiesSynonyms, showAlliesSynonyms, addEnemySynonyms, addAllySynonyms, removeEnemySynonyms, removeAllySynonyms, clearEnemiesSynonyms, clearAlliesSynonyms, initiativeSynonyms, turnSynonyms, fleeSynonyms, versionSynonyms, setupEnemySynonyms, setupAllySynonyms, healSynonyms, damageSynonyms, restSynonyms, addExperienceSynonyms, healPartySynonyms, blockSynonyms, repeatTurnSynonyms, lockpickSynonyms, memorySynonyms, resetSynonyms), function () {return true})
+    if (!found) found = processCommandSynonyms(command, commandName, helpSynonyms.concat(rollSynonyms, noteSynonyms, eraseNoteSynonyms, showNotesSynonyms, clearNotesSynonyms, showCharactersSynonyms, removeCharacterSynonyms, generateNameSynonyms, setDefaultDifficultySynonyms, showDefaultDifficultySynonyms, renameCharacterSynonyms, cloneCharacterSynonyms, createLocationSynonyms, showLocationsSynonyms, goToLocationSynonyms, removeLocationSynonyms, getLocationSynonyms, clearLocationsSynonyms, goNorthSynonyms, goSouthSynonyms, goEastSynonyms, goWestSynonyms, encounterSynonyms, showEnemiesSynonyms, showAlliesSynonyms, addEnemySynonyms, addAllySynonyms, removeEnemySynonyms, removeAllySynonyms, clearEnemiesSynonyms, clearAlliesSynonyms, initiativeSynonyms, turnSynonyms, fleeSynonyms, versionSynonyms, setupEnemySynonyms, setupAllySynonyms, healSynonyms, damageSynonyms, restSynonyms, addExperienceSynonyms, healPartySynonyms, blockSynonyms, repeatTurnSynonyms, /*lockpickSynonyms, memorySynonyms,*/ resetSynonyms), function () {return true})
 
     if (found == null) {
       if (state.characterName == null) {
@@ -319,14 +319,14 @@ function DNDHash_input (text) {
   if (text == null) text = processCommandSynonyms(command, commandName, healPartySynonyms, doHealParty)
   if (text == null) text = processCommandSynonyms(command, commandName, blockSynonyms, doBlock)
   if (text == null) text = processCommandSynonyms(command, commandName, repeatTurnSynonyms, doRepeatTurn)
-  if (text == null) text = processCommandSynonyms(command, commandName, basicDeckSynonyms, doBasicDeck)
-  if (text == null) text = processCommandSynonyms(command, commandName, cardShopSynonyms, doCardShop)
+  // if (text == null) text = processCommandSynonyms(command, commandName, basicDeckSynonyms, doBasicDeck)
+  // if (text == null) text = processCommandSynonyms(command, commandName, cardShopSynonyms, doCardShop)
   if (text == null) text = processCommandSynonyms(command, commandName, spellShopSynonyms, doSpellShop)
   if (text == null) text = processCommandSynonyms(command, commandName, itemShopSynonyms, doItemShop)
   // if (text == null) text = processCommandSynonyms(command, commandName, stragedySynonyms, doStragedy)
-  if (text == null) text = processCommandSynonyms(command, commandName, lockpickSynonyms, doLockpick)
-  if (text == null) text = processCommandSynonyms(command, commandName, memorySynonyms, doMemory)
-  if (text == null) text = processCommandSynonyms(command, commandName, addCardSynonyms, doAddCard)
+  // if (text == null) text = processCommandSynonyms(command, commandName, lockpickSynonyms, doLockpick)
+  // if (text == null) text = processCommandSynonyms(command, commandName, memorySynonyms, doMemory)
+  // if (text == null) text = processCommandSynonyms(command, commandName, addCardSynonyms, doAddCard)
   if (text == null) text = processCommandSynonyms(command, commandName, equipSynonyms, doEquip)
   if (text == null) text = processCommandSynonyms(command, commandName, rewardSynonyms, doReward)
   if (text == null) text = processCommandSynonyms(command, commandName, takeWeaponSynonyms, doTakeWeapon)
@@ -1800,136 +1800,136 @@ function doSetupAlly(command) {
   return " "
 }
 
-function doMemory(command) {
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    arg0 = "easy"
-  }
+// function doMemory(command) {
+//   var arg0 = getArgument(command, 0)
+//   if (arg0 == null) {
+//     arg0 = "easy"
+//   }
 
-  switch(arg0) {
-    case "impossible":
-      state.memoryWidth = 6
-      state.memoryHeight = 6
-      state.memoryMaxTurns = 46
-      break
-    case "hard":
-      state.memoryWidth = 5
-      state.memoryHeight = 6
-      state.memoryMaxTurns = 40
-      break
-    case "medium":
-      state.memoryWidth = 4
-      state.memoryHeight = 5
-      state.memoryMaxTurns = 30
-      break
-    case "effortless":
-      state.memoryWidth = 3
-      state.memoryHeight = 2
-      state.memoryMaxTurns = 25
-      break
-    case "automatic":
-      state.memoryWidth = 2
-      state.memoryHeight = 2
-      state.memoryMaxTurns = 25
-      break
-    case "easy":
-    default:
-      state.memoryWidth = 4
-      state.memoryHeight = 3
-      state.memoryMaxTurns = 25
-      break
-  }
+//   switch(arg0) {
+//     case "impossible":
+//       state.memoryWidth = 6
+//       state.memoryHeight = 6
+//       state.memoryMaxTurns = 46
+//       break
+//     case "hard":
+//       state.memoryWidth = 5
+//       state.memoryHeight = 6
+//       state.memoryMaxTurns = 40
+//       break
+//     case "medium":
+//       state.memoryWidth = 4
+//       state.memoryHeight = 5
+//       state.memoryMaxTurns = 30
+//       break
+//     case "effortless":
+//       state.memoryWidth = 3
+//       state.memoryHeight = 2
+//       state.memoryMaxTurns = 25
+//       break
+//     case "automatic":
+//       state.memoryWidth = 2
+//       state.memoryHeight = 2
+//       state.memoryMaxTurns = 25
+//       break
+//     case "easy":
+//     default:
+//       state.memoryWidth = 4
+//       state.memoryHeight = 3
+//       state.memoryMaxTurns = 25
+//       break
+//   }
 
-  state.memoryTurns = 1
+//   state.memoryTurns = 1
 
-  let possibleSymbols = ["❤️", "💙", "🐉", "🐸", "⚔️", "🛡️", "🐻", "👻", "🦁", "😺", "😈", "🧙", "💀", "🐵", "🐓", "🦉", "🕷️", "🏹", "🎁", "🎲", "❄️", "🔥", "⚡", "🌳", "💦", "🍎", "🥒", "🍖"]
-  shuffle(possibleSymbols)
-  possibleSymbols = possibleSymbols.splice(0, state.memoryWidth * state.memoryHeight / 2)
+//   let possibleSymbols = ["❤️", "💙", "🐉", "🐸", "⚔️", "🛡️", "🐻", "👻", "🦁", "😺", "😈", "🧙", "💀", "🐵", "🐓", "🦉", "🕷️", "🏹", "🎁", "🎲", "❄️", "🔥", "⚡", "🌳", "💦", "🍎", "🥒", "🍖"]
+//   shuffle(possibleSymbols)
+//   possibleSymbols = possibleSymbols.splice(0, state.memoryWidth * state.memoryHeight / 2)
 
-  state.memoryCards = possibleSymbols.concat(possibleSymbols)
-  shuffle(state.memoryCards)
-  state.memorySolved = new Array(state.memoryCards.length)
-  state.memoryRevealed = null
+//   state.memoryCards = possibleSymbols.concat(possibleSymbols)
+//   shuffle(state.memoryCards)
+//   state.memorySolved = new Array(state.memoryCards.length)
+//   state.memoryRevealed = null
 
-  state.memoryTurn = "game"
-  state.show = "memory"
-  return " "
-}
+//   state.memoryTurn = "game"
+//   state.show = "memory"
+//   return " "
+// }
 
-function handleMemoryTurn(text) {
-  state.show = "memory"
+// function handleMemoryTurn(text) {
+//   state.show = "memory"
 
-  if (/^\s*>.*says? ".*/.test(text)) {
-    text = text.replace(/^\s*>.*says? "/, "")
-    text = text.replace(/"\s*$/, "")
-  } else if (/^\s*>\s.*/.test(text)) {
-    text = text.replace(/\s*> /, "")
-    for (var i = 0; i < info.characters.length; i++) {
-      var matchString = info.characters[i] == "" ? "You " : `${info.characters[i]} `
-      if (text.startsWith(matchString)) {
-        text = text.replace(matchString, "")
-        break
-      }
-    }
-    text = text.replace(/\.?\s*$/, "")
-  } else {
-    text = text.replace(/^\s+/, "")
-  }
+//   if (/^\s*>.*says? ".*/.test(text)) {
+//     text = text.replace(/^\s*>.*says? "/, "")
+//     text = text.replace(/"\s*$/, "")
+//   } else if (/^\s*>\s.*/.test(text)) {
+//     text = text.replace(/\s*> /, "")
+//     for (var i = 0; i < info.characters.length; i++) {
+//       var matchString = info.characters[i] == "" ? "You " : `${info.characters[i]} `
+//       if (text.startsWith(matchString)) {
+//         text = text.replace(matchString, "")
+//         break
+//       }
+//     }
+//     text = text.replace(/\.?\s*$/, "")
+//   } else {
+//     text = text.replace(/^\s+/, "")
+//   }
 
-  text = text.toLowerCase()
-  if (text == "q") {
-    state.memoryTurn = "forfeit"
-    return text
-  }
+//   text = text.toLowerCase()
+//   if (text == "q") {
+//     state.memoryTurn = "forfeit"
+//     return text
+//   }
 
-  switch (state.memoryTurn) {
-    case "game":
-      if (isNaN(text)) return text
-      let guess = parseInt(text)
-      state.memoryTurns++
+//   switch (state.memoryTurn) {
+//     case "game":
+//       if (isNaN(text)) return text
+//       let guess = parseInt(text)
+//       state.memoryTurns++
 
-      if (guess < 1 || guess > state.memoryCards.length) return text
+//       if (guess < 1 || guess > state.memoryCards.length) return text
 
-      if (state.memoryRevealed == null) {
-        state.message = `Card ${guess} is revealed to be:\n${state.memoryCards[guess -1]}`
-        state.memoryRevealed = guess
-      } else {
-        if (state.memoryRevealed == guess) {
-          state.message = `Card ${guess} is the same card you already picked, silly:\n${state.memoryCards[guess - 1]}`
-          state.memoryTurns--
-        } else if (state.memoryCards[state.memoryRevealed - 1] == state.memoryCards[guess - 1]) {
-          state.message = `Cards ${state.memoryRevealed} and ${guess} are a match!\n${state.memoryCards[state.memoryRevealed - 1]} ${state.memoryCards[guess - 1]}`
-          state.memorySolved[state.memoryRevealed - 1] = true
-          state.memorySolved[guess - 1] = true
-          state.memoryRevealed = null
-        } else {
-          state.message = `Card ${guess} is revealed to be: ${state.memoryCards[guess - 1]}\nCards ${state.memoryRevealed} and ${guess} are NOT a match:${state.memoryCards[state.memoryRevealed - 1]} ${state.memoryCards[guess - 1]}`
-          state.memoryRevealed = null
-        }
-      }
+//       if (state.memoryRevealed == null) {
+//         state.message = `Card ${guess} is revealed to be:\n${state.memoryCards[guess -1]}`
+//         state.memoryRevealed = guess
+//       } else {
+//         if (state.memoryRevealed == guess) {
+//           state.message = `Card ${guess} is the same card you already picked, silly:\n${state.memoryCards[guess - 1]}`
+//           state.memoryTurns--
+//         } else if (state.memoryCards[state.memoryRevealed - 1] == state.memoryCards[guess - 1]) {
+//           state.message = `Cards ${state.memoryRevealed} and ${guess} are a match!\n${state.memoryCards[state.memoryRevealed - 1]} ${state.memoryCards[guess - 1]}`
+//           state.memorySolved[state.memoryRevealed - 1] = true
+//           state.memorySolved[guess - 1] = true
+//           state.memoryRevealed = null
+//         } else {
+//           state.message = `Card ${guess} is revealed to be: ${state.memoryCards[guess - 1]}\nCards ${state.memoryRevealed} and ${guess} are NOT a match:${state.memoryCards[state.memoryRevealed - 1]} ${state.memoryCards[guess - 1]}`
+//           state.memoryRevealed = null
+//         }
+//       }
 
-      let win = true
-      for (let i = 0; i < state.memorySolved.length; i++) {
-        if (state.memorySolved[i] != true) {
-          win = false
-          break
-        }
-      }
-      if (win) state.memoryTurn = "win"
-      if (state.memoryTurns > state.memoryMaxTurns) state.memoryTurn = "lose"
+//       let win = true
+//       for (let i = 0; i < state.memorySolved.length; i++) {
+//         if (state.memorySolved[i] != true) {
+//           win = false
+//           break
+//         }
+//       }
+//       if (win) state.memoryTurn = "win"
+//       if (state.memoryTurns > state.memoryMaxTurns) state.memoryTurn = "lose"
 
-      log(state.memorySolved)
-      return text
-    case "win":
-    case "lose":
-    case "forfeit":
-      state.show = null
-      state.memoryTurn = null
-      return text
-  }
+//       log(state.memorySolved)
+//       return text
+//     case "win":
+//     case "lose":
+//     case "forfeit":
+//       state.show = null
+//       state.memoryTurn = null
+//       return text
+//   }
 
-  return `\nUnexpected Mastermind state. Input text: ${text}`
-}
+//   return `\nUnexpected Mastermind state. Input text: ${text}`
+// }
 
 // function doLockpick(command) {
 //   var arg0 = getArgument(command, 0)
@@ -3084,8 +3084,8 @@ function doRest(command) {
   var commandName = getCommandName(command)
   state.day++
   state.enemies = []
-  state.cardDeals = null
-  state.cardPrices = null
+  // state.cardDeals = null
+  // state.cardPrices = null
   state.spellShopDeals = null
   state.itemShopDeals = null
 
