@@ -665,7 +665,7 @@ function DNDHash_output(text) {
   }
 
   state.show = null
-  return { text }
+  return text
 }
 
 const mapLineBreak = "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n"
