@@ -1,4 +1,28 @@
-const version = "Hashtag DnD v0.7.0"
+// Based on version "Hashtag DnD v0.7.0" by Raeleus
+
+// Your "Input" tab should look like this
+
+// Checkout the Guidebook examples to get an idea of other ways you can use scripting
+// https://help.aidungeon.com/scripting
+
+/* NOTE: This is the Main AI Dungeon Call
+ * Keeping this space clean will allow for greater compatibility with other script systems.
+ */
+const modifier = (text) => {
+  // Your other input modifier scripts go here (preferred)
+  text = DNDHash_input(text)
+  // Your other input modifier scripts go here (alternative)
+  return {text}
+}
+
+// Don't modify this part
+modifier(text)
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
 const rollSynonyms = ["roll"]
 const createSynonyms = ["create", "generate", "start", "begin", "setup", "party", "member", "new"]
 const renameCharacterSynonyms = ["renamecharacter", "renameperson"]
@@ -101,7 +125,12 @@ const equipSynonyms = ["equip", "arm", "wear"]
 const rewardSynonyms = ["reward"]
 const helpSynonyms = ["help"]
 
-const modifier = (text) => {
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+function DNDHash_input (text) {
   init()
   const rawText = text
 
