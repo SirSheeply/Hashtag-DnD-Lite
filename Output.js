@@ -13,9 +13,6 @@ const modifier = (text) => {
   return {text}
 }
 
-// Don't modify this part
-modifier(text)
-
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -1488,3 +1485,6 @@ Enter the number or q to quit:
 
   return text
 }
+
+// Don't modify this part (Must be at EOF)
+modifier(text)
