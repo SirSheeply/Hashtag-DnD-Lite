@@ -1,5 +1,10 @@
-# Hashtag-DnD
+# Hashtag-DnD Lite Edition
 PLEASE SUPPORT the Original Creator: [Raeleus Hashtag-DnD](https://github.com/raeleus/Hashtag-DnD)
+
+This Lite Edition has several goals:
+1) Compatibility for other scripts (see the master branch for a raw compatibility version).
+2) Create a lighter version of scripts (may have less features and content in exchange for smaller files, compatibility, and simplicity).
+3) Add a few quality of life commands where needed, as well as uncapping leveling or removing some restrictions.
 
 ## A Scenario script for AI Dungeon<br>
 Hashtag DnD is a scripted AI Dungeon scenario that gives you a variety of tools to enhance your adventure!
