@@ -11,9 +11,9 @@ Hashtag DnD is a scripted AI Dungeon scenario that gives you a variety of tools 
 
 ### Lite Edition Changes
 - Removed Stragedy minigame
+- Removed Lockpicking minigame
 
 ### Planned Changes
-- Removed Lockpicking minigame
 - Removed Memory minigame
 - Removed Character presets
 - Reduced Story Cards (removed general items)
