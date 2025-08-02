@@ -2878,26 +2878,21 @@ function createInitiativeOrder() {
   });
 }
 
-const levelSplits = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000]
+function getExpForLevel(level) {
+  return Math.round((level ** 3) * 100); // This gives: Level 2: 800, Level 3: 2700, Level 5: 12500, Level 10: 100000, Level 20: 800000
+}
 
 function getLevel(experience) {
-  if (experience < 0) experience = 0
-  
-  var level
-  for (level = 0; level < levelSplits.length; level++) {
-    if (experience < levelSplits[level]) break
+  var level = 1
+  while (getExpForLevel(level) <= experience) {
+    level++
   }
   return level
 }
 
 function getNextLevelXp(experience) {
-  if (experience < 0) experience = 0
-  
-  var level
-  for (level = 0; level < levelSplits.length; level++) {
-    if (experience < levelSplits[level]) return levelSplits[level]
-  }
-  return -1
+  var level = getLevel(experience
+  return getExpForLevel(level)
 }
 
 function addXpToAll(experience) {
