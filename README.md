@@ -4,7 +4,7 @@ PLEASE SUPPORT the Original Creator: [Raeleus Hashtag-DnD](https://github.com/ra
 This Lite Edition has several goals:
 1) Compatibility for other scripts (see the master branch for a raw compatibility version).
 2) Create a lighter version of scripts (may have less features and content in exchange for smaller files, compatibility, and simplicity).
-3) Add a few quality of life commands where needed, as well as uncapping leveling or removing some restrictions.
+3) Add a few quality of life commands where needed, as well as uncapping or removing some restrictions.
 
 ## A Scenario script for AI Dungeon<br>
 Hashtag DnD is a scripted AI Dungeon scenario that gives you a variety of tools to enhance your adventure!
@@ -13,6 +13,9 @@ Hashtag DnD is a scripted AI Dungeon scenario that gives you a variety of tools 
 - Removed Stragedy minigame     (Reduce script size)
 - Removed Lockpicking minigame  (Reduce script size)
 - Removed Memory minigame       (Reduce script size)
+- Story Card Encounters         (Encounters are now sourced from Story cards, and can be player generated!)
+- Story Card Enemies            (Enemy presets are now sourced from story cards, and can be user generated!)
+- Story Card Allies             (Ally presets are now sourced from story cards, and can be user generated!)
 
 ### Planned Changes
 - Removed Character presets
