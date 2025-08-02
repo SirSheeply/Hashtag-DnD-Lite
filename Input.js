@@ -344,7 +344,7 @@ function DNDHash_input (text) {
 
   if (state.flavorText != null) text += state.flavorText
 
-  return { text }
+  return text
 }
 
 function handleCreateStep(text) {
