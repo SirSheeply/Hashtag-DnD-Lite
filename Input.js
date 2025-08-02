@@ -5250,5 +5250,3 @@ function doHelp(command) {
   state.show = "help"
   return " "
 }
-
-modifier(text)
