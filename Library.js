@@ -76,31 +76,6 @@ function rotate(cx, cy, x, y, angle) {
   return [nx, ny];
 }
 
-function createLocation(x, y, name) {
-  x = Math.round(x)
-  y = Math.round(y)
-
-  var existingLocationIndex = state.locations.findIndex(element => element.name.toLowerCase() == name.toLowerCase())
-  var location
-  if (existingLocationIndex == -1) {
-    location = {
-      x: x,
-      y: y,
-      name: name
-    }
-    state.locations.push(location)
-  } else {
-    location = state.locations[existingLocationIndex]
-    location.x = x
-    location.y = y
-    location.name = name
-  }
-
-  addStoryCard(location.name, "", "location")
-
-  return location
-}
-
 function sanitizeText(text) {
   if (/^\s*>.*says? ".*/.test(text)) {
     text = text.replace(/^\s*>\s/, "")
