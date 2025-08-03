@@ -1,0 +1,321 @@
+// Fighter
+// A skilled melee warrior specializing in weapons and armor.
+{
+    "abilities": [
+        {"name": "Strength", "value": 16},
+        {"name": "Dexterity", "value": 16},
+        {"name": "Constitution", "value": 16},
+        {"name": "Wisdom", "value": 16},
+        {"name": "Intelligence", "value": 16},
+        {"name": "Charisma", "value": 16}
+    ],
+    "skills": [
+        {"name": "Athletics", "modifier": 2},
+        {"name": "History", "modifier": 2},
+        {"name": "Perception", "modifier": 2},
+        {"name": "Persuasion", "modifier": 2}
+    ],
+    "inventory": [
+        {"name": "Greatsword", "quantity": 1},
+        {"name": "Javelin", "quantity": 2}
+    ],
+    "spellStat": "None",
+    "spells": []
+}
+// Cleric
+// A follower of a deity that can call on divine power.
+{
+    "abilities": [
+        {"name": "Strength", "value": 14},
+        {"name": "Dexterity", "value": 12},
+        {"name": "Constitution", "value": 14},
+        {"name": "Wisdom", "value": 18},
+        {"name": "Intelligence", "value": 11},
+        {"name": "Charisma", "value": 14}
+    ],
+    "skills": [
+        {"name": "Insight", "modifier": 2},
+        {"name": "Medicine", "modifier": 2},
+        {"name": "Perception", "modifier": 2},
+        {"name": "Religion", "modifier": 2}
+    ],
+    "inventory": [
+        {"name": "Mace", "quantity": 1},
+        {"name": "Light Crossbow", "quantity": 1},
+        {"name": "Bolts", "quantity": 10}
+    ],
+    "spellStat": "Wisdom",
+    "spells": ["Spiritual Weapon", "Mass Healing Word"]
+}
+// Rogue
+// An expert in stealth, subterfuge, and exploitation.
+{
+    "abilities": [
+        {"name": "Strength", "value": 8},
+        {"name": "Dexterity", "value": 16},
+        {"name": "Constitution", "value": 12},
+        {"name": "Wisdom", "value": 10},
+        {"name": "Intelligence", "value": 13},
+        {"name": "Charisma", "value": 16}
+    ],
+    "skills": [
+        {"name": "Acrobatics", "modifier": 2},
+        {"name": "Deception", "modifier": 2},
+        {"name": "Investigation", "modifier": 2},
+        {"name": "Performance", "modifier": 2},
+        {"name": "Sleight of Hand", "modifier": 2},
+        {"name": "Stealth", "modifier": 2}
+    ],
+    "inventory": [
+        {"name": "Dagger", "quantity": 1},
+        {"name": "Hand Crossbow", "quantity": 1},
+        {"name": "Bolts", "quantity": 10}
+    ],
+    "spellStat": "None",
+    "spells": []
+}
+// Ranger
+// A talented hunter adept in tracking, survival, and animal handling.
+{
+    "abilities": [
+        {"name": "Strength", "value": 12},
+        {"name": "Dexterity", "value": 17},
+        {"name": "Constitution", "value": 13},
+        {"name": "Wisdom", "value": 15},
+        {"name": "Intelligence", "value": 10},
+        {"name": "Charisma", "value": 8}
+    ],
+    "skills": [
+        {"name": "Athletics", "modifier": 2},
+        {"name": "Animal Handling", "modifier": 2},
+        {"name": "Nature", "modifier": 2},
+        {"name": "Perception", "modifier": 2},
+        {"name": "Stealth", "modifier": 2},
+        {"name": "Survival", "modifier": 2}
+    ],
+    "inventory": [
+        {"name": "Shortsword", "quantity": 1},
+        {"name": "Longbow", "quantity": 1},
+        {"name": "Arrows", "quantity": 20}
+    ],
+    "spellStat": "None",
+    "spells": []
+}
+// Barbarian
+// Combat expert focused on brute Strength and raw fury.
+{
+    "abilities": [
+        {"name": "Strength", "value": 17},
+        {"name": "Dexterity", "value": 13},
+        {"name": "Constitution", "value": 15},
+        {"name": "Wisdom", "value": 12},
+        {"name": "Intelligence", "value": 8},
+        {"name": "Charisma", "value": 10}
+    ],
+    "skills": [
+        {"name": "Athletics", "modifier": 2},
+        {"name": "Animal Handling", "modifier": 2},
+        {"name": "Perception", "modifier": 2},
+        {"name": "Intimidation", "modifier": 2}
+    ],
+    "inventory": [
+        {"name": "Greataxe", "quantity": 1},
+        {"name": "Javelin", "quantity": 1}
+    ],
+    "spellStat": "None",
+    "spells": []
+}
+// Bard
+// A musician that can transform song and word into magic.
+{
+    "abilities": [
+        {"name": "Strength", "value": 8},
+        {"name": "Dexterity", "value": 15},
+        {"name": "Constitution", "value": 14},
+        {"name": "Wisdom", "value": 10},
+        {"name": "Intelligence", "value": 15},
+        {"name": "Charisma", "value": 15}
+    ],
+    "skills": [
+        {"name": "Athletics", "modifier": 2},
+        {"name": "Acrobatics", "modifier": 2},
+        {"name": "Perception", "modifier": 2},
+        {"name": "Deception", "modifier": 2},
+        {"name": "Performance", "modifier": 2},
+        {"name": "Sleight of Hand", "modifier": 2}
+    ],
+    "inventory": [
+        {"name": "Rapier", "quantity": 1},
+        {"name": "Lute", "quantity": 1}
+    ],
+    "spellStat": "Charisma",
+    "spells": ["Vicious Mockery", "Charm Person", "Healing Word"]
+}
+// Druid
+// Commands the natural world to cast spells and harness its power.
+{
+    "abilities": [
+        {"name": "Strength", "value": 11},
+        {"name": "Dexterity", "value": 13},
+        {"name": "Constitution", "value": 16},
+        {"name": "Wisdom", "value": 16},
+        {"name": "Intelligence", "value": 14},
+        {"name": "Charisma", "value": 9}
+    ],
+    "skills": [
+        {"name": "Arcana", "modifier": 2},
+        {"name": "History", "modifier": 2},
+        {"name": "Medicine", "modifier": 2}
+    ],
+    "inventory": [
+        {"name": "Quarterstaff", "quantity": 1},
+        {"name": "Small Knife", "quantity": 1}
+    ],
+    "spellStat": "Wisdom",
+    "spells": ["Druidcraft", "Animal Friendship", "Healing Word"]
+}
+// Monk
+// A martial artist who has mastered melee and unarmed combat.
+{
+    "abilities": [
+        {"name": "Strength", "value": 16},
+        {"name": "Dexterity", "value": 14},
+        {"name": "Constitution", "value": 14},
+        {"name": "Wisdom", "value": 17},
+        {"name": "Intelligence", "value": 8},
+        {"name": "Charisma", "value": 10}
+    ],
+    "skills": [
+        {"name": "Athletics", "modifier": 2},
+        {"name": "Deception", "modifier": 2},
+        {"name": "Sleight of Hand", "modifier": 2},
+        {"name": "Stealth", "modifier": 2}
+    ],
+    "inventory": [
+        {"name": "Shortsword", "quantity": 1},
+        {"name": "Dart", "quantity": 5}
+    ],
+    "spellStat": "None",
+    "spells": []
+}
+// Paladin
+// A virtuous holy warrior with expertise in armor and mysticism.
+{
+    "abilities": [
+        {"name": "Strength", "value": 16},
+        {"name": "Dexterity", "value": 9},
+        {"name": "Constitution", "value": 15},
+        {"name": "Wisdom", "value": 13},
+        {"name": "Intelligence", "value": 11},
+        {"name": "Charisma", "value": 14}
+    ],
+    "skills": [
+        {"name": "Athletics", "modifier": 2},
+        {"name": "History", "modifier": 2},
+        {"name": "Insight", "modifier": 2},
+        {"name": "Persuasion", "modifier": 2}
+    ],
+    "inventory": [
+        {"name": "Longsword", "quantity": 1},
+        {"name": "Javelin", "quantity": 2}
+    ],
+    "spellStat": "Charisma",
+    "spells": ["Thunderous Smite", "Divine Favor", "Cure Wounds"]
+}
+// Wizard
+// An expert in magic ability who found their power through arcane knowledge.
+{
+    "abilities": [
+        {"name": "Strength", "value": 10},
+        {"name": "Dexterity", "value": 15},
+        {"name": "Constitution", "value": 14},
+        {"name": "Wisdom", "value": 12},
+        {"name": "Intelligence", "value": 16},
+        {"name": "Charisma", "value": 8}
+    ],
+    "skills": [
+        {"name": "Arcana", "modifier": 2},
+        {"name": "Insight", "modifier": 2},
+        {"name": "Investigation", "modifier": 2},
+        {"name": "Investigation", "modifier": 2},
+        {"name": "Religion", "modifier": 2}
+    ],
+    "inventory": [
+        {"name": "Greatsword", "quantity": 1},
+        {"name": "Javelin", "quantity": 2}
+    ],
+    "spellStat": "Intelligence",
+    "spells": ["Fire Bolt", "Mage Hand", "Magic Missile"]
+}
+// Sorcerer
+// A masterful spellcaster deriving their power from an innate source.
+{
+    "abilities": [
+        {"name": "Strength", "value": 8},
+        {"name": "Dexterity", "value": 16},
+        {"name": "Constitution", "value": 13},
+        {"name": "Wisdom", "value": 12},
+        {"name": "Intelligence", "value": 11},
+        {"name": "Charisma", "value": 15}
+    ],
+    "skills": [
+        {"name": "Arcana", "modifier": 2},
+        {"name": "Intimidation", "modifier": 2},
+        {"name": "Perception", "modifier": 2},
+        {"name": "Persuasion", "modifier": 2}
+    ],
+    "inventory": [
+        {"name": "Dagger", "quantity": 1},
+        {"name": "Bag of Holding", "quantity": 1}
+    ],
+    "spellStat": "Charisma",
+    "spells": ["Ray of Frost", "Minor Illusion", "Shield"]
+}
+// Warlock
+// A magic user granted ability by a pact with a powerful patron.
+{
+    "abilities": [
+        {"name": "Strength", "value": 9},
+        {"name": "Dexterity", "value": 13},
+        {"name": "Constitution", "value": 15},
+        {"name": "Wisdom", "value": 11},
+        {"name": "Intelligence", "value": 14},
+        {"name": "Charisma", "value": 16}
+    ],
+    "skills": [
+        {"name": "Arcana", "modifier": 2},
+        {"name": "History", "modifier": 2},
+        {"name": "Deception", "modifier": 2},
+        {"name": "Religion", "modifier": 2}
+    ],
+    "inventory": [
+        {"name": "Dagger", "quantity": 1},
+        {"name": "Orb", "quantity": 1}
+    ],
+    "spellStat": "Charisma",
+    "spells": ["Eldritch Blast", "Witch Bolt", "Thunderwave"]
+}
+// Artificer
+// An inventor and alchemist capable of imbuing objects with magic.
+{
+    "abilities": [
+        {"name": "Strength", "value": 10},
+        {"name": "Dexterity", "value": 14},
+        {"name": "Constitution", "value": 14},
+        {"name": "Wisdom", "value": 14},
+        {"name": "Intelligence", "value": 17},
+        {"name": "Charisma", "value": 8}
+    ],
+    "skills": [
+        {"name": "Acrobatics", "modifier": 2},
+        {"name": "Performance", "modifier": 2},
+        {"name": "Persuasion", "modifier": 2},
+        {"name": "Arcana", "modifier": 2}
+    ],
+    "inventory": [
+        {"name": "Greatsword", "quantity": 1},
+        {"name": "Javelin", "quantity": 2}
+    ],
+    "spellStat": "Intelligence",
+    "spells": []
+}

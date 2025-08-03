@@ -696,6 +696,10 @@ function listAllyCards(enemyType) {
   return storyCards.filter((element) => (element.type.includes("ally - "+enemyType)));
 }
 
+function listCharPresetCards() {
+  return storyCards.filter((element) => (element.type == ("preset")));
+}
+
 const simpleMeleeWeapons = ["Club", "Dagger", "Greatclub", "Handaxe", "Javelin", "Light Hammer", "Mace", "Quarterstaff", "Sickle", "Spear", "Dart"]
 const simpleRangedWeapons = ["Light Crossbow", "Shortbow", "Sling"]
 const martialMeleeWeapons = ["Battleaxe", "Flail", "Glaive", "Greataxe", "Greatsword", "Halberd", "Lance", "Longsword", "Maul", "Morningstar", "Pike", "Rapier", "Scimitar", "Shortsword", "Trident", "Warhammer", "War Pick", "Whip"]
