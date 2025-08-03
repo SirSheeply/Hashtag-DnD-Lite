@@ -13,12 +13,13 @@ Hashtag DnD is a scripted AI Dungeon scenario that gives you a variety of tools 
 - Removed Stragedy minigame     (Reduce script size)
 - Removed Lockpicking minigame  (Reduce script size)
 - Removed Memory minigame       (Reduce script size)
-- Story Card Encounters         (Encounters are now sourced from Story cards, and can be player generated!)
+- Removed Name generation       (Reduce script size)
+- Story Card Encounters         (Encounters are now sourced from story cards, and can be player generated!)
 - Story Card Enemies            (Enemy presets are now sourced from story cards, and can be user generated!)
 - Story Card Allies             (Ally presets are now sourced from story cards, and can be user generated!)
+- Story Card Presets            (Character presets are now sourced from story cards, and can be user generated!)
 
 ### Planned Changes
-- Removed Character presets
 - Reduced Story Cards (removed general items)
 - Uncap leveling
 - Add leveling rewards
