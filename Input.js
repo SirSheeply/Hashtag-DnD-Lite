@@ -442,11 +442,11 @@ function handleCreateStep(text) {
         entity.abilities.forEach(ability => {
           state.tempCharacter.stats.push({name: ability.name, value: ability.value})
         });
-        entity.skills.forEach(skill => {
-          const findSkill = state.tempCharacter.skills.find((element) => element.name == skill.name)
+        entity.skills.forEach(skill => { //HERE
+          const findSkill = state.tempCharacter.skills.find((element) => element.name.toLowerCase() == skill.name.toLowerCase())
           if (findSkill) {
-            // NOTE: For character saving and loading we may want to consider fully deifining skills with stat base
-            state.tempCharacter.skills.find((element) => element.name == skill.name).modifier = skill.modifier;
+            // NOTE: If we implement character saving and loading we may want to consider fully deifining skills with stat base
+            state.tempCharacter.skills.find((element) => element.name.toLowerCase() == skill.name.toLowerCase()).modifier = skill.modifier;
           } else { // We need to create the skill from scratch in this case, with it's stat base
             state.tempCharacter.skills.push({name: skill.name, stat:skill.stat, modifier: skill.modifier})
           }
@@ -1032,6 +1032,10 @@ function handleItemShopStep(text) {
 
 function doSpellShop(command) {
   var character = getCharacter()
+
+  // I get the idea. This is meant to simulate the spell restrictions and progression of the base classes.
+  // But what if the player is a custom class, or wants to buy spells in general. They are assumed to be a wizard?
+  // What if we have custom spells tho?
 
   let arg0 = searchArgument(command, /bard|cleric|druid|paladin|ranger|sorcerer|warlock|wizard/gi)
   if (arg0 == null) {
