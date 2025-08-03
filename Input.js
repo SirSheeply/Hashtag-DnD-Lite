@@ -76,17 +76,6 @@ const setAutoXpSynonyms = ["setautoxp", "autoxp"]
 const showAutoXpSynonyms = ["showautoxp"]
 const setDefaultDifficultySynonyms = ["setdefaultdifficulty", "defaultdifficulty", "setdefaultdc", "defaultdc", "setdefaultac", "defaultac", "setdifficulty", "difficulty", "dc"]
 const showDefaultDifficultySynonyms = ["showdefaultdifficulty", "showdefaultdc", "showdefaultac"]
-const createLocationSynonyms = ["createlocation", "makelocation", "generatelocation", "addlocation", "setlocation", "createplace", "makeplace", "generateplace", "addplace", "setplace", "createtown", "maketown", "generatetown", "addtown", "settown", "createvillage", "makevillage", "generatevillage", "addvillage", "setvillage", "createcity", "makecity", "generatecity", "addcity", "setcity", "updatelocation", "updateplace", "updatetown", "updatevillage", "updatecity"]
-const goToLocationSynonyms = ["gotolocation", "golocation", "movetolocation", "traveltolocation", "travellocation", "gotoplace", "goplace", "movetoplace", "traveltoplace", "travelplace", "gototown", "gotown", "movetotown", "traveltotown", "traveltown", "gotovillage", "govillage", "movetovillage", "traveltovillage", "travelvillage", "gotocity", "gocity", "movetocity", "traveltocity", "travelcity", "goto", "go", "moveto", "move", "travelto", "travel"]
-const removeLocationSynonyms = ["removelocation", "deletelocation", "eraselocation", "removeplace", "deleteplace", "eraseplace", "removetown", "deletetown", "erasetown", "removevillage", "deletevillage", "erasevillage", "removecity", "deletecity", "erasecity"]
-const showLocationsSynonyms = ["showlocations", "showplaces", "showtowns", "showvillages", "showcities", "locations", "places", "towns", "villages", "cities"]
-const getLocationSynonyms = ["getlocation", "location", "getcoordinates", "coordinates", "getcoords", "coords", "showlocation"]
-const clearLocationsSynonyms = ["clearlocations", "eraselocations", "deletelocations", "resetlocations"]
-const mapSynonyms = ["map", "showmap"]
-const goNorthSynonyms = ["gonorth", "north", "goup", "up", "n"]
-const goSouthSynonyms = ["gosouth", "south", "godown", "down", "s"]
-const goEastSynonyms = ["goeast", "east", "goright", "right", "e"]
-const goWestSynonyms = ["gowest", "west", "goleft", "left", "w"]
 const showDaySynonyms = ["showday", "showdate", "day", "date"]
 const setDaySynonyms = ["setday", "setdate"]
 const encounterSynonyms = ["encounter", "startencounter"]
@@ -184,7 +173,7 @@ function DNDHash_input (text) {
       return text
     }
 
-    if (!found) found = processCommandSynonyms(command, commandName, helpSynonyms.concat(rollSynonyms, noteSynonyms, eraseNoteSynonyms, showNotesSynonyms, clearNotesSynonyms, showCharactersSynonyms, removeCharacterSynonyms, setDefaultDifficultySynonyms, showDefaultDifficultySynonyms, renameCharacterSynonyms, cloneCharacterSynonyms, createLocationSynonyms, showLocationsSynonyms, goToLocationSynonyms, removeLocationSynonyms, getLocationSynonyms, clearLocationsSynonyms, goNorthSynonyms, goSouthSynonyms, goEastSynonyms, goWestSynonyms, encounterSynonyms, showEnemiesSynonyms, showAlliesSynonyms, addEnemySynonyms, addAllySynonyms, removeEnemySynonyms, removeAllySynonyms, clearEnemiesSynonyms, clearAlliesSynonyms, initiativeSynonyms, turnSynonyms, fleeSynonyms, versionSynonyms, setupEnemySynonyms, setupAllySynonyms, healSynonyms, damageSynonyms, restSynonyms, addExperienceSynonyms, healPartySynonyms, blockSynonyms, repeatTurnSynonyms, resetSynonyms), function () {return true})
+    if (!found) found = processCommandSynonyms(command, commandName, helpSynonyms.concat(rollSynonyms, noteSynonyms, eraseNoteSynonyms, showNotesSynonyms, clearNotesSynonyms, showCharactersSynonyms, removeCharacterSynonyms, setDefaultDifficultySynonyms, showDefaultDifficultySynonyms, renameCharacterSynonyms, cloneCharacterSynonyms, encounterSynonyms, showEnemiesSynonyms, showAlliesSynonyms, addEnemySynonyms, addAllySynonyms, removeEnemySynonyms, removeAllySynonyms, clearEnemiesSynonyms, clearAlliesSynonyms, initiativeSynonyms, turnSynonyms, fleeSynonyms, versionSynonyms, setupEnemySynonyms, setupAllySynonyms, healSynonyms, damageSynonyms, restSynonyms, addExperienceSynonyms, healPartySynonyms, blockSynonyms, repeatTurnSynonyms, resetSynonyms), function () {return true})
 
     if (found == null) {
       if (state.characterName == null) {
@@ -249,17 +238,6 @@ function DNDHash_input (text) {
   if (text == null) text = processCommandSynonyms(command, commandName, showAutoXpSynonyms, doShowAutoXp)
   if (text == null) text = processCommandSynonyms(command, commandName, setDefaultDifficultySynonyms, doSetDefaultDifficulty)
   if (text == null) text = processCommandSynonyms(command, commandName, showDefaultDifficultySynonyms, doShowDefaultDifficulty)
-  if (text == null) text = processCommandSynonyms(command, commandName, createLocationSynonyms, doCreateLocation)
-  if (text == null) text = processCommandSynonyms(command, commandName, goToLocationSynonyms, doGoToLocation)
-  if (text == null) text = processCommandSynonyms(command, commandName, clearLocationsSynonyms, doClearLocations)
-  if (text == null) text = processCommandSynonyms(command, commandName, removeLocationSynonyms, doRemoveLocation)
-  if (text == null) text = processCommandSynonyms(command, commandName, showLocationsSynonyms, doShowLocations)
-  if (text == null) text = processCommandSynonyms(command, commandName, getLocationSynonyms, doGetLocation)
-  if (text == null) text = processCommandSynonyms(command, commandName, mapSynonyms, doMap)
-  if (text == null) text = processCommandSynonyms(command, commandName, goNorthSynonyms, doGoNorth)
-  if (text == null) text = processCommandSynonyms(command, commandName, goSouthSynonyms, doGoSouth)
-  if (text == null) text = processCommandSynonyms(command, commandName, goEastSynonyms, doGoEast)
-  if (text == null) text = processCommandSynonyms(command, commandName, goWestSynonyms, doGoWest)
   if (text == null) text = processCommandSynonyms(command, commandName, renameCharacterSynonyms, doRenameCharacter)
   if (text == null) text = processCommandSynonyms(command, commandName, cloneCharacterSynonyms, doCloneCharacter)
   if (text == null) text = processCommandSynonyms(command, commandName, showDaySynonyms, doShowDay)
@@ -878,9 +856,6 @@ function init() {
   if (state.tempAlly == null) state.tempAlly = createAlly("ally", 10, 10, "2d6", 10)
   if (state.characters == null) state.characters = []
   if (state.notes == null) state.notes = []
-  if (state.locations == null) state.locations = []
-  if (state.x == null) state.x = 0
-  if (state.y == null) state.y = 0
   if (state.autoXp == null) state.autoXp = 0
   if (state.defaultDifficulty == null) state.defaultDifficulty = 10
   if (state.day == null) state.day = 0
@@ -2139,273 +2114,6 @@ function doShowNotes(command) {
   return " "
 }
 
-function doCreateLocation(command) {
-  command = command.replaceAll(/\s*,\s*/g, " ")
-  var locationArgIndex = 2
-
-  var arg0 = getArgument(command, 0)
-  var arg1 = getArgument(command, 1)
-
-  if (arg0.toLowerCase() == "here") {
-    arg0 = state.x
-    arg1 = state.y
-    locationArgIndex = 1
-  } else if (arg0.toLowerCase() == "far") {
-    var cx = state.x
-    var cy = state.y
-    var coords = rotate(cx, cy, getRandomFloat(50, 100) + cx, cy, Math.random() * 360)
-
-    arg0 = coords[0]
-    arg1 = coords[1]
-    locationArgIndex = 1
-  } else if (arg0 == null || isNaN(arg0)) {
-    var cx = state.x
-    var cy = state.y
-    var coords = rotate(cx, cy, getRandomFloat(1, 10) + cx, cy, Math.random() * 360)
-
-    arg0 = coords[0]
-    arg1 = coords[1]
-    locationArgIndex = 0
-  } else if (arg1 == null || isNaN(arg1)) {
-    var cx = state.x
-    var cy = state.y
-    var coords = rotate(cx, cy, parseFloat(arg0) + cx, cy, Math.random() * 360)
-
-    arg0 = coords[0]
-    arg1 = coords[1]
-    locationArgIndex = 1
-  }
-
-  var arg2 = getArgumentRemainder(command, locationArgIndex)
-  if (arg2 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
-  }
-
-  var location = createLocation(arg0, arg1, arg2)
-  
-  state.show = "none"
-  return `\n[Location ${toTitleCase(arg2)} has been created at (${location.x},${location.y})]\n`
-}
-
-function doGoNorth(command) {
-  command = command.replaceAll(/\s*,\s*/g, " ")
-  var commandName = getCommandName(command)
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) arg0 = 1
-  else {
-    if (isNaN(arg0)) {
-      state.show = "none"
-      return "\n[Error: Expected a number. See #help]\n"
-    }
-    arg0 = parseInt(arg0)
-  }
-  return doGoToLocation(`${commandName} ${state.x} ${state.y - arg0}`)
-}
-
-function doGoSouth(command) {
-  command = command.replaceAll(/\s*,\s*/g, " ")
-  var commandName = getCommandName(command)
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) arg0 = 1
-  else {
-    if (isNaN(arg0)) {
-      state.show = "none"
-      return "\n[Error: Expected a number. See #help]\n"
-    }
-    arg0 = parseInt(arg0)
-  }
-  return doGoToLocation(`${commandName} ${state.x} ${state.y + arg0}`)
-}
-
-function doGoEast(command) {
-  command = command.replaceAll(/\s*,\s*/g, " ")
-  var commandName = getCommandName(command)
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) arg0 = 1
-  else {
-    if (isNaN(arg0)) {
-      state.show = "none"
-      return "\n[Error: Expected a number. See #help]\n"
-    }
-    arg0 = parseInt(arg0)
-  }
-  return doGoToLocation(`${commandName} ${state.x + arg0} ${state.y}`)
-}
-
-function doGoWest(command) {
-  command = command.replaceAll(/\s*,\s*/g, " ")
-  var commandName = getCommandName(command)
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) arg0 = 1
-  else {
-    if (isNaN(arg0)) {
-      state.show = "none"
-      return "\n[Error: Expected a number. See #help]\n"
-    }
-    arg0 = parseInt(arg0)
-  }
-  return doGoToLocation(`${commandName} ${state.x - arg0} ${state.y}`)
-}
-
-function doGoToLocation(command) {
-  command = command.replaceAll(/\s*,\s*/g, " ")
-  var character = getCharacter()
-  var characterName = character == null ? "You" : character.name
-  var possessiveName = getPossessiveName(characterName)
-  var travelWord = characterName == "You" ? "travel" : "travels"
-  var locationArgIndex = 2
-
-  var arg0 = getArgument(command, 0)
-  var arg1 = getArgument(command, 1)
-
-  if (arg0 == null || isNaN(arg0)) {
-    arg0 = state.x
-    arg1 = state.y
-    locationArgIndex = 0
-  }
-
-  if (arg0 != null && (arg1 == null || isNaN(arg1))) {
-    arg1 = null
-    locationArgIndex = 1
-  }
-
-  var distance = 0
-  var location
-  var locationName = getArgumentRemainder(command, locationArgIndex)
-  if (locationName == null && locationArgIndex == 0) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
-  }
-  
-  if (!isNaN(arg0) && arg1 == null && locationName == null) {
-    arg0 = parseInt(arg0) - 1
-
-    if (arg0 < 0 || arg0 >= state.locations.length) {
-      state.show = "none"
-      return "\n[Error: Incorrect location number. See #help]\n"
-    }
-
-    location = state.locations[arg0]
-    arg0 = null
-    arg1 = null
-  } else if (arg1 == null && locationName != null) {
-    var index = state.locations.findIndex(x => x.name.toLowerCase() == locationName.toLowerCase())
-    if (index != -1) {
-      location = state.locations[index]
-      var direction = pointDirection(state.x, state.y, location.x, location.y)
-      var args = rotate(state.x, state.y, state.x + parseInt(arg0), state.y, direction)
-      arg0 = Math.round(args[0])
-      arg1 = Math.round(args[1])
-      location = null
-    } else {
-      arg1 = state.y
-      location = null
-    }
-  } else if (locationName == null) {
-    var index = state.locations.findIndex(x => x.x == arg0 && x.y == arg1)
-    if (index != -1) location = state.locations[index]
-  } else {
-    var index = state.locations.findIndex(x => x.name.toLowerCase() == locationName.toLowerCase())
-    if (index != -1) location = state.locations[index]
-    else location = createLocation(arg0, arg1, locationName)
-  }
-  
-  if (location == null) {
-    distance = pointDistance(state.x, state.y, arg0, arg1)
-    state.x = parseInt(arg0)
-    state.y = parseInt(arg1)
-    state.location = null
-  } else {
-    distance = pointDistance(state.x, state.y, location.x, location.y)
-    state.x = location.x
-    state.y = location.y
-    state.location = location.name
-  }
-  distance = distance.toFixed(1)
-  
-  state.show = "none"
-  if (location == null) return `\n${characterName} ${travelWord} ${distance > 0 ? distance + " units " : ""} to (${arg0},${arg1})`
-  if (state.characters.length > 1) return `\n${possessiveName} party travels ${distance > 0 ? distance + " units " : ""}to ${toTitleCase(location.name)} at (${location.x},${location.y})\n`
-  return `\n${characterName} ${travelWord} ${distance > 0 ? distance + " units " : ""}to ${toTitleCase(location.name)} at (${location.x},${location.y})\n`
-}
-
-function doGetLocation(command) {
-  state.show = "location"
-  return `\n[You are at ${state.location == null ? "" : "the location " + toTitleCase(state.location) + " "}(${state.x},${state.y})]`
-}
-
-function doClearLocations(command) {
-  var arg0 = getArgument(command, 0)
-  if (arg0 != null) {
-    return doRemoveLocation(command)
-  }
-
-  state.locations = []
-  state.location = null
-
-  state.show = "none"
-  return "\n[The locations have been cleared]\n"
-}
-
-function doRemoveLocation(command) {
-  var arg0 = getArgumentRemainder(command, 0)
-  if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
-  }
-
-  if (/\d+\D+(\d+\D*)+/gi.test(arg0)) {
-
-    var list = arg0.split(/\D+/)
-    list.sort(function(a, b) {
-      return b - a;
-    });
-
-    var text = "\n"
-    list.forEach(x => {
-      var num = parseInt(x) - 1
-      if (num >= state.locations.length) {
-        state.show = "none"
-        return `\n[Error: Location ${x} does not exist. See #showlocations]\n`
-      }
-
-      var location = state.locations[num]
-      state.locations.splice(num, 1)
-      text += `[The location ${toTitleCase(location.name)} has been removed]\n`
-    })
-
-    state.show = "none"
-    return text
-  }
-
-  var location
-  if (isNaN(arg0)) arg0 = state.locations.findIndex(x => x.name.toLowerCase() == arg0.toLowerCase())
-  else arg0--
-
-  if (arg0 == -1) {
-    state.show = "none"
-    return "\n[Error: Location not found. See #showlocations]\n"
-  } else if (arg0 >= state.locations.length || arg0 < 0) {
-    state.show = "none"
-    return "\n[Error: Location number out of bounds. See #showlocations]\n"
-  } else {
-    location = state.locations[arg0]
-    state.locations.splice(arg0, 1)
-  }
-
-  state.show = "none"
-  return `\n[The location ${toTitleCase(location.name)} has been removed]\n`
-}
-
-function doShowLocations(command) {
-  var arg0 = searchArgument(command, /^sort$/gi)
-  state.sortLocations = arg0 != null
-
-  state.show = "locations"
-  return " "
-}
-
 function doEncounter(command) {
   var arg0 = getArgument(command, 0)
   if (arg0 == null) {
@@ -2482,7 +2190,7 @@ function doRemoveEnemy(command) {
     return "\n[Error: Enemy not found. See #showenemies]\n"
   } else if (arg0 >= state.enemies.length || arg0 < 0) {
     state.show = "none"
-    return "\n[Error: Location number out of bounds. See #showenemies]\n"
+    return "\n[Error: Index number out of bounds. See #showenemies]\n"
   } else {
     enemy = state.enemies[arg0]
     state.enemies.splice(arg0, 1)
@@ -2534,7 +2242,7 @@ function doRemoveAlly(command) {
     return "\n[Error: Ally not found. See #showallies]\n"
   } else if (arg0 >= state.allies.length || arg0 < 0) {
     state.show = "none"
-    return "\n[Error: Location number out of bounds. See #showallies]\n"
+    return "\n[Error: Index number out of bounds. See #showallies]\n"
   } else {
     ally = state.allies[arg0]
     state.allies.splice(arg0, 1)
@@ -3107,11 +2815,6 @@ function doReward(command) {
   }
 
   return text
-}
-
-function doMap(command) {
-  state.show = "map"
-  return " "
 }
 
 function doEquip(command) {
@@ -3869,8 +3572,6 @@ function doSetProficiency(command) {
 function doReset(command) {
   state.notes = []
   state.characters = []
-  state.locations = []
-  state.location = null
   state.enemies = null
   state.allies = null
   state.initiativeOrder = []

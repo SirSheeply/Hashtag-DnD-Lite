@@ -313,84 +313,6 @@ function DNDHash_output(text) {
       }
       text += "******************\n\n"
       break
-    case "location":
-      var localLocations = []
-      for (location of state.locations) {
-        if (location.x == state.x && location.y == state.y) localLocations.push(location)
-      }
-
-      if (localLocations.length > 0) {
-        text += "Places of interest here:\n"
-        for (location of localLocations) {
-          text += `* ${location.name}\n`
-        }
-      } else {
-        text += " "
-      }
-      break
-    case "locations":
-      text += `Player location: ${state.location == null ? "" : state.location + " "}(${state.x},${state.y})\n`
-      text += `*** LOCATIONS ***\n`
-      locations = state.locations
-      if (state.sortLocations) {
-        locations = [...new Set(state.locations)]
-        locations.sort(function(a, b) {
-          var distanceA = pointDistance(state.x, state.y, a.x, a.y)
-          var distanceB = pointDistance(state.x, state.y, b.x, b.y)
-          return distanceA - distanceB;
-        });
-      
-      }
-
-      if (locations.length > 0) {
-        var index = 0
-        locations.forEach(function(location) {
-          var distance = pointDistance(state.x, state.y, location.x, location.y).toFixed(1)
-          text += `${state.sortLocations ? "" : ++index + ". "}${toTitleCase(location.name)} (${location.x},${location.y}) Distance: ${distance}\n`
-        })
-      } else {
-        text += `No locations have been discovered!\n`
-      }
-      text += "******************\n\n"
-      break
-    case "map":
-      text += `A 11x11 map of the area surrounding (${state.x},${state.y}):\n`
-      var map = mapGenerate()
-      state.locations.forEach(location => {
-        map = mapReplace(map, location.x, location.y, location.name.substring(0, 1).toUpperCase())
-      })
-      map = mapReplace(map, state.x, state.y, "@")
-      text += map
-      break
-    case "none":
-      text += " "
-      break
-    case "prefix":
-      text = state.prefix + originalText
-      break
-    case "prefixOnly":
-      text = state.prefix
-      break
-    case "clearInventory":
-      text += `[${possessiveName} inventory has been emptied]\n`
-      break
-    case "clearSpells":
-      text += `[${possessiveName} spells have been cleared]\n`
-      break
-    case "showEnemies":
-      text += "*** ENEMIES ***\n"
-
-      if (state.enemies.length == 0) {
-        text += "There are no enemies present here. Type #encounter to generate a scripted set or #addenemy to add your own\n"
-      } else {
-        var index = 0
-        for (var enemy of state.enemies) {
-          text += `${++index}. ${toTitleCase(enemy.name)} (Health: ${enemy.health} AC: ${enemy.ac} Initiative: ${enemy.initiative})\n`
-        }
-      }
-
-      text += "******************\n\n"
-      break
     case "showAllies":
       text += "*** ALLIES ***\n"
 
@@ -454,9 +376,6 @@ function DNDHash_output(text) {
     case "help inventory":
       text = helpTextInventory
       break
-    case "help locations":
-      text = helpTextLocations
-      break
     default:
       text = helpText
       break
@@ -464,29 +383,6 @@ function DNDHash_output(text) {
 
   state.show = null
   return text
-}
-
-const mapLineBreak = "- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -\n"
-const mapLine = "|     *     *     *     *     *     *     *     *     *     *     *     |\n"
-
-function mapGenerate() {
-  var map = mapLineBreak
-  for (var i = 0; i < 11; i++) map += mapLine
-  map += mapLineBreak
-  return map
-}
-
-function mapReplace(map, x, y, character) {
-  x += 5 - state.x
-  y += 5 - state.y
-  
-  if (x < 0 || x > 10 || y < 0 || y > 10) return map
-
-  index = mapLineBreak.length + 6 + x * 6 + y * mapLine.length
-
-  map = map.replaceAt(index, character)
-
-  return map
 }
 
 function itemShopPushDeal(items, name) {
@@ -989,14 +885,13 @@ const helpText = `
 #help spells -- Extra help on spell related commnads.
 #help combat -- Extra help on combat related commnads.
 #help allies -- Extra help on ally related commnads.
-#help locations -- Extra help on location related commnads.
 
 <><> Other <><>
 #version -- Returns the current version of this scenario.
 #help (topic) -- This long help menu by defualt with optional argument for help topics.
 
 <><> Danger Zone <><>
-#reset -- Removes all characters, locations, and notes. Changes all settings to their defaults. Use with caution!
+#reset -- Removes all characters, and notes. Changes all settings to their defaults. Use with caution!
 `
 const helpTextCharacters = `
 <><> Characters <><>
@@ -1148,39 +1043,6 @@ const helpTextAllies = `
 
 #removeally name or index
 -- Removes the ally as specified by the name or index. To delete multiple allies, type the numbers with spaces or commas between them. This is safer than calling #removeally multiple times because the numbers shift as allies are deleted. Quotes are not necessary.
-`
-const helpTextLocations = `
-<><> Locations <><>
-#createlocation [(x) (y) or (here|far) or (distance)] location_name
--- Creates a location at the given coordinates. The coordinates must be integers. If the coordinates are not provided, they are randomized within a range of 10 units from the party's current location. You can also use "here" to indicate that the location is at party's coordinates. "far" indicates that the coordinates will be randomly generated 50-100 units away. You may also just specify a distance. Multiple locations may exist at the same coordinates. A story card is created for the location. Quotes are not necessary.
-
-#getlocation
--- Returns the coordinates that the party is at. It will also list a location if a location was specified when using #goto.
-
-#showlocations (sort)
--- Shows a list of all discovered locations with their coordinates and their distance from the party's current location. If the parameter "sort" is added, the locations will be listed by their distance to the party. Note that the location numbers will only be displayed in the unsorted list.
-
-#removelocation location_name or location_number
--- Removes the specified location by location_name or location_number as listed in #showlocations. To delete multiple locations, type the numbers with spaces or commas between them. This is safer than calling #removenote multiple times because the numbers shift as locations are deleted. Quotes are not necessary.
-
-#clearlocations -- Deletes all discovered locations.
-
-#map -- Generates an 11x11 ASCII map of the surrounding locations centered at the party location. The @ symbol is the party location.
-
-<><> Go Locations <><>
-#goto (x) (y) or (location_name) or (location_number)
--- Makes the party travel to the location specified by the coordinates (as integers), location_name, or location_number. You must provide at least one of these. If the location does not exist, it is created at your current coordinates. If you only specify coordinates, you will go to the first location at those coordinates. Quotes are not necessary.
-
-#goto distance location_name
--- An alternative of the above. Travels the specified distance towards the location indicated by location name. Quotes are not necessary
-
-#gonorth (distance) -- The party travels north the given distance (an integer). If distance is not specified, it is assumed to be 1.
-
-#gosouth (distance) -- The party travels south the given distance (an integer). If distance is not specified, it is assumed to be 1.
-
-#goeast (distance) -- The party travels east the given distance (an integer). If distance is not specified, it is assumed to be 1.
-
-#gowest (distance) -- The party travels west the given distance (an integer). If distance is not specified, it is assumed to be 1.
 `
 
 // Don't modify this part
