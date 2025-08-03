@@ -782,9 +782,7 @@ function handleItemShop() {
 
   switch (state.itemShopStep) {
     case 0:
-      text = `**Welcome to the Item Shop**
--${toTitleCase(state.itemShopCategoryName)}-
-Deals change every day!`
+      text = `**Welcome to the Item Shop**\n-${toTitleCase(state.itemShopCategoryName)}-\nDeals change every day!`
       break
     case 1:
       text = "Item purchased!"
@@ -797,10 +795,7 @@ Deals change every day!`
     case 0:
     case 1:
     case 2:
-      text += `
-Select a number from the list below to purchase an item:
-
-`
+      text += `\nSelect a number from the list below to purchase an item:\n\n`
       let deals = findItemShopDeals(state.itemShopCategoryName, false)
       deals = deals.filter(item => !item.bought)
 
@@ -820,10 +815,7 @@ Select a number from the list below to purchase an item:
         text += description
       }
 
-      text += `
-${state.itemShopIsFree ? "These items come at no cost!" : `You have ${numberWithCommas(gold)} gold`}
-Enter the number or q to quit:
-`
+      text += `\n${state.itemShopIsFree ? "These items come at no cost!" : `You have ${numberWithCommas(gold)} gold`}\nEnter the number or q to quit:\n`
       break
     case 500:
       text = "Thank you for shopping at the Item Shop!"
@@ -1121,8 +1113,7 @@ function handleSpellShop() {
 
   switch (state.spellShopStep) {
     case 0:
-      text = `**Welcome to the Spell Shop**
-Deals change every day!`
+      text = `**Welcome to the Spell Shop**\nDeals change every day!`
       break
     case 1:
       text = "Spell purchased!"
@@ -1138,10 +1129,7 @@ Deals change every day!`
     case 1:
     case 2:
     case 3:
-      text += `
-Select a number from the list below to purchase a spell:
-
-`
+      text += `\nSelect a number from the list below to purchase a spell:\n\n`
       let deals = findSpellShopDeals(state.spellShopClassName, state.spellShopLevel, false)
       if (deals.length == 0) text += "There are no spells left for sale!\n"
       for (var i = 0; i < deals.length; i++) {
@@ -1154,9 +1142,7 @@ Select a number from the list below to purchase a spell:
       }
 
       text += `
-${state.spellShopIsFree ? "These spells come at no cost!" : `You have ${numberWithCommas(gold)} gold`}
-Enter the number or q to quit:
-`
+${state.spellShopIsFree ? "These spells come at no cost!" : `You have ${numberWithCommas(gold)} gold`}\nEnter the number or q to quit:\n`
       break
     case 500:
       text = "Thank you for shopping at the Spell Shop!"
