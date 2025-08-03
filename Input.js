@@ -1,4 +1,5 @@
 // Based on version "Hashtag DnD v0.7.0" by Raeleus
+const version = "Hashtag DnD v0.7.0 by Raeleus / Lite Edition by SirSheeply"
 
 // Your "Input" tab should look like this
 
@@ -3884,7 +3885,9 @@ function doReset(command) {
 }
 
 function doHelp(command) {
-  state.show = "help"
+  const helpType = getArgument(command, 0)
+  if (helpType) state.show = "help "+helpType
+  else state.show = "help"
   return " "
 }
 
