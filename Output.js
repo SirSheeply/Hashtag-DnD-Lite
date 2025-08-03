@@ -912,11 +912,11 @@ const helpTextCharacters = `
 #setac value -- Sets the armor class of the character. The default is 10
 #setdamage value or dice_roll -- Sets the default damage that the character causes when attacking. If a dice_roll is specified, a randomized damage will be calculated at the time of the attack. The default is 1d6
 #setweaponproficiency value or dice_roll -- Sets the weapon proficiency of the character which affects the chance to hit. If a dice_roll is specified, a randomized value is calculated. The default is 2
-#rest -- Sets all of the characters' health to their maximums. Use #shortrest to only restore half health. This command increases the day counter and displays the number of days since your adventure began.
 
 <><> Time <><>
 #showday -- Shows the number of days since your adventure began.
 #setday -- Sets the number of days since your adventure began.
+#rest -- Sets all of the characters' health to their maximums. Use #shortrest to only restore half health. This command increases the day counter and displays the number of days since your adventure began.
 
 <><> Levels & Experience <><>
 #setxp value -- Sets the character's experience to the specified value.

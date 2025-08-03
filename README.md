@@ -5,6 +5,8 @@ This Lite Edition has several goals:
 1) Compatibility for other scripts (see the master branch for a raw compatibility version).
 2) Create a lighter version of scripts (may have less features and content in exchange for smaller files, compatibility, and simplicity).
 3) Add a few quality of life commands where needed, as well as uncapping or removing some restrictions.
+4) Improve customisation for users and dynamic generation of conent.
+5) Improve readability and simplify code for modders.
 
 ## A Scenario script for AI Dungeon<br>
 Hashtag DnD is a scripted AI Dungeon scenario that gives you a variety of tools to enhance your adventure!
