@@ -48,7 +48,7 @@ function DNDHash_output(text) {
           break
         case 100:
           text += `What character will you choose?\n`
-          const presetIndexes = listCharPresetCards()
+          const presetIndexes = getStoryCardListByType("preset")
           for (let index = 0; index < presetIndexes.length; index++) {
             text += `${index}. ${presetIndexes[index].title}\n`
           }
@@ -94,8 +94,8 @@ function DNDHash_output(text) {
         case 100:
           // The rework here is to have all the enemies inside story cards, from which we can pull.
           // This means players can curate the enemies prefabs, and we're not limited to X amount.
-          // We pass the enemy subtype as "" to find all enemy cards regardless of subtype
-          const enemyIndexes = listEnemyCards("")
+          // We pass the enemy subtype as "enemy - " to find all enemy cards regardless of subtype
+          const enemyIndexes = getStoryCardListByType("enemy - ")
           text += `What enemy preset will you choose?\n`
           for (let index = 0; index < enemyIndexes.length; index++) {
             text += `${index}. ${enemyIndexes[index].title}\n`
@@ -222,7 +222,7 @@ function DNDHash_output(text) {
       text += `-INVENTORY-\n`
       
       character.inventory.forEach(function(x) {
-        text += `* ${x.quantity} ${toTitleCase(x.name.plural(x.quantity == 1))}\n`
+        text += `* ${x.quantity} ${toTitleCase(pluralize(x.name, x.quantity == 1))}\n`
       })
 
       text += `----\n\n`
@@ -247,7 +247,7 @@ function DNDHash_output(text) {
       text += `*** ${possessiveName.toUpperCase()} INVENTORY ***`
       if (character.inventory.length > 0) {
         character.inventory.forEach(function(x) {
-          text += `\n* ${x.quantity} ${toTitleCase(x.name.plural(x.quantity == 1))}`
+          text += `\n* ${x.quantity} ${toTitleCase(pluralize(x.name, x.quantity == 1))}`
         })
       } else {
         text += `\n${possessiveName} inventory is empty!`
@@ -372,7 +372,7 @@ function DNDHash_output(text) {
       text = helpTextInventory
       break
     default:
-      text = helpText
+      text = " "
       break
   }
 

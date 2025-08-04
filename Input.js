@@ -229,6 +229,7 @@ function DNDHash_input (text) {
     if (commandResult != null) break;
   }
   text = commandResult;
+  log(text);
 
   // If text is still null, we try one last fallback:
   // If the command isn't a standard one, but it matches a known stat or skill, treat it like a flipped check/try command.
@@ -376,7 +377,7 @@ function handleCreateStep(text) {
         // This means players can curate the presests, and we're not limited to X amount.
 
         // Get a list of all the preset cards with the preset type
-        const presetIndexes = listCharPresetCards()
+        const presetIndexes = getStoryCardListByType("type")
         if (presetIndexes.length <= 0) {
           // Error no presets cards for this case!
           return "Error: No preset Cards Found!"
@@ -540,8 +541,8 @@ function handleSetupEnemyStep(text) {
         // This means players can curate the enemies prefabs, and we're not limited to X amount.
 
         // Get a list of all the enemy cards with the enemy subtype
-        // We pass the enemy subtype as "" to find all enemy cards regardless of subtype
-        const enemyIndexes = listEnemyCards("")
+        // We pass the enemy subtype as "enemy - " to find all enemy cards regardless of subtype
+        const enemyIndexes = getStoryCardListByType("enemy - ")
         if (enemyIndexes.length <= 0) {
           // Error no enemy cards for this case!
           return "Error: No Enemy Cards Found!"
@@ -2317,14 +2318,14 @@ function doTake(command) {
 
   const item = {
     quantity: isNaN(arg0) ? 1 : arg0,
-    name: getArgumentRemainder(command, itemIndex).replace(/^((the)|(a)|(an))\s/, "").plural(true)
+    name: pluralize(getArgumentRemainder(command, itemIndex).replace(/^((the)|(a)|(an))\s/, ""), true)
   }
 
   var character = getCharacter()
   var commandName = getCommandName(command)
-  var commandNamePlural =  commandName.plural(character.name == "You") 
+  var commandNamePlural = pluralize(commandName, character.name == "You") 
   var haveWord = character.name == "You" ? "have" : "has"
-  var displayItemName = item.name.plural(item.quantity == 1)
+  var displayItemName = pluralize(item.name, item.quantity == 1)
 
   if (item.quantity < 0) item.quantity = 1
 
@@ -2339,7 +2340,7 @@ function doTake(command) {
     var existingItem = character.inventory[index]
     existingItem.quantity = parseInt(existingItem.quantity) + parseInt(item.quantity)
 
-    displayItemName = existingItem.name.plural(existingItem.quantity == 1)
+    displayItemName = pluralize(existingItem.name, existingItem.quantity == 1)
     text += `${character.name} now ${haveWord} ${existingItem.quantity} ${displayItemName}.\n`
   }
 
@@ -2387,7 +2388,7 @@ function doTakeWeapon(command) {
 
   const item = {
     quantity: 1,
-    name: getArgumentRemainder(command, itemIndex).replace(/^((the)|(a)|(an))\s/, "").plural(true),
+    name: pluralize(getArgumentRemainder(command, itemIndex).replace(/^((the)|(a)|(an))\s/, ""), true),
     damageDice: arg0,
     toHitBonus: arg1,
     ability: arg2
@@ -2395,7 +2396,7 @@ function doTakeWeapon(command) {
 
   var character = getCharacter()
   var commandName = "take"
-  var commandNamePlural =  commandName.plural(character.name == "You") 
+  var commandNamePlural =  pluralize(commandName, character.name == "You")
   var haveWord = character.name == "You" ? "have" : "has"
 
   var text = "\n"
@@ -2408,7 +2409,7 @@ function doTakeWeapon(command) {
     var existingItem = character.inventory[index]
     existingItem.quantity = parseInt(existingItem.quantity) + parseInt(item.quantity)
 
-    let displayItemName = existingItem.name.plural(existingItem.quantity == 1)
+    let displayItemName = pluralize(existingItem.name, existingItem.quantity == 1)
     text += `${character.name} now ${haveWord} ${existingItem.quantity} ${displayItemName}.\n`
   }
 
@@ -2431,13 +2432,13 @@ function doTakeArmor(command) {
 
   const item = {
     quantity: 1,
-    name: getArgumentRemainder(command, itemIndex).replace(/^((the)|(a)|(an))\s/, "").plural(true),
+    name: pluralize(getArgumentRemainder(command, itemIndex).replace(/^((the)|(a)|(an))\s/, ""), true),
     ac: arg0,
   }
 
   var character = getCharacter()
   var commandName = "take"
-  var commandNamePlural =  commandName.plural(character.name == "You") 
+  var commandNamePlural =  pluralize(commandName, character.name == "You") 
   var haveWord = character.name == "You" ? "have" : "has"
 
   var text = "\n"
@@ -2450,7 +2451,7 @@ function doTakeArmor(command) {
     var existingItem = character.inventory[index]
     existingItem.quantity = parseInt(existingItem.quantity) + parseInt(item.quantity)
 
-    let displayItemName = existingItem.name.plural(existingItem.quantity == 1)
+    let displayItemName = pluralize(existingItem.name, existingItem.quantity == 1)
     text += `${character.name} now ${haveWord} ${existingItem.quantity} ${displayItemName}.\n`
   }
 
@@ -2467,7 +2468,7 @@ const helpDialog_itemStoryCards = `<><> Item Story Cards <><>
   -- Description: Use JSON to define item behavior and reward values.
 
 Example JSON format:
-{"item": "Orange", "plural": "Oranges", "minRewardAmount": 1, "maxRewardAmount": 10, "rewardChance": 1}`
+{"item": "Orange", "minRewardAmount": 1, "maxRewardAmount": 10, "rewardChance": 1}`
 
 const helpDialog_lootStoryCards = `<><> Loot Table Story Cards <><>
 * Thematic loot tables control the quantity and chance of rewards.
@@ -2480,8 +2481,8 @@ const helpDialog_lootStoryCards = `<><> Loot Table Story Cards <><>
 
 Example JSON format:
 [
-  {"item": "Orange", "plural": "Oranges", "minRewardAmount": 1, "maxRewardAmount": 10, "rewardChance": 1},
-  {"item": "Apple Sword", "plural": "Apple Swords", "minRewardAmount": 1, "maxRewardAmount": 1, "rewardChance": 0.1}
+  {"item": "Orange", "minRewardAmount": 1, "maxRewardAmount": 10, "rewardChance": 1},
+  {"item": "Apple Sword", "minRewardAmount": 1, "maxRewardAmount": 1, "rewardChance": 0.1}
 ]
 
 Note: rewardChance is a float from 0 to 1.
@@ -2549,7 +2550,7 @@ function doReward(command) {
     for (const [item, qty] of Object.entries(totalRewards)) {
       doTake(`take ${qty} ${item}`);
       if (qty > 1) {
-        text += ` ${qty} ${item}!`;
+        text += ` ${qty} ${pluralize(item)}!`;
       } else {
         const article = /^[aeiou]/i.test(item) ? "an" : "a";
         text += ` ${article} ${item}!`;
@@ -2632,10 +2633,10 @@ function doDrop(command) {
 
   const item = {
     quantity: arg0,
-    name: getArgumentRemainder(command, itemArgIndex).replace(/^((the)|(a)|(an))\s/, "").plural(true)
+    name: pluralize(getArgumentRemainder(command, itemArgIndex).replace(/^((the)|(a)|(an))\s/, ""), true)
   }
 
-  var displayItemName = item.name.plural(item.quantity == 1)
+  var displayItemName = pluralize(item.name, item.quantity == 1)
   
   if (item.quantity < 0) item.quantity = 1
 
@@ -2647,9 +2648,9 @@ function doDrop(command) {
   } else {
     var existingItem = character.inventory[index]
   
-    if (existingItem.quantity == 1) text = `\n${character.name} ${commandName.plural(character.name == "You")} the ${displayItemName.plural(true)}.\n`
-    else if (parseInt(item.quantity) >= parseInt(existingItem.quantity)) text = `${character.name} ${commandName.plural(character.name == "You")} all ${existingItem.quantity} of the ${displayItemName}.`
-    else text =  `\n${character.name} ${commandName.plural(character.name == "You")} ${item.quantity} ${displayItemName}. \n`
+    if (existingItem.quantity == 1) text = `\n${character.name} ${pluralize(commandName, character.name == "You")} the ${pluralize(displayItemName, true)}.\n`
+    else if (parseInt(item.quantity) >= parseInt(existingItem.quantity)) text = `${character.name} ${pluralize(commandName, character.name == "You")} all ${existingItem.quantity} of the ${displayItemName}.`
+    else text =  `\n${character.name} ${pluralize(commandName, character.name == "You")} ${item.quantity} ${displayItemName}. \n`
 
     existingItem.quantity -= item.quantity
     if (existingItem.quantity <= 0) {
@@ -2657,7 +2658,7 @@ function doDrop(command) {
       character.inventory.splice(index, 1)
     }
     if (existingItem.quantity > 0) {
-      displayItemName = existingItem.name.plural(existingItem.quantity == 1)
+      displayItemName = pluralize(existingItem.name, existingItem.quantity == 1)
       text += `${character.name} now ${haveWord} ${existingItem.quantity} ${displayItemName}.\n`
     }
   }
@@ -2684,7 +2685,7 @@ function doGive(command) {
 
   const item = {
     quantity: !isNaN(arg1) ? arg1 : foundAll ? Number.MAX_SAFE_INTEGER : 1,
-    name: getArgumentRemainder(command, isNaN(arg1) && !foundAll ? 1 : 2).replace(/^((the)|(a)|(an)|(of the))\s/, "").plural(true)
+    name: pluralize(getArgumentRemainder(command, isNaN(arg1) && !foundAll ? 1 : 2).replace(/^((the)|(a)|(an)|(of the))\s/, ""), true)
   }
 
   var otherCharacter = getCharacter(arg0)
@@ -2699,7 +2700,7 @@ function doGive(command) {
   var tryWord = character.name == "You" ? "try" : "tries"
   var otherHaveWord = otherCharacter.name == "You" ? "have" : "has"
   var otherNameAdjustedCase = otherCharacter.name == "You" ? "you" : otherCharacter.name
-  var displayItemName = item.name.plural(item.quantity == 1)
+  var displayItemName = pluralize(item.name, item.quantity == 1)
   var characterQuantityText = ""
 
   if (item.quantity < 0) item.quantity = 1
@@ -2708,8 +2709,8 @@ function doGive(command) {
 
   var index = character.inventory.findIndex((element) => element.name.toLowerCase() == item.name.toLowerCase())
   if (index == -1) {
-    if (item.quantity == 1) text += `${character.name} ${tryWord} to ${commandName.plural(true)} the ${displayItemName}, but ${characterNameAdjustedCase} ${dontWord} have any.`
-    else text += `${character.name} ${tryWord} to ${commandName.plural(true)} ${item.quantity == Number.MAX_SAFE_INTEGER ? arg0 : item.quantity} ${displayItemName}, but ${characterNameAdjustedCase} ${dontWord} have any.`
+    if (item.quantity == 1) text += `${character.name} ${tryWord} to ${pluralize(commandName, true)} the ${displayItemName}, but ${characterNameAdjustedCase} ${dontWord} have any.`
+    else text += `${character.name} ${tryWord} to ${pluralize(commandName, true)} ${item.quantity == Number.MAX_SAFE_INTEGER ? arg0 : item.quantity} ${displayItemName}, but ${characterNameAdjustedCase} ${dontWord} have any.`
     return text + "\n\n"
   } else {
     var existingItem = character.inventory[index]
@@ -2723,14 +2724,14 @@ function doGive(command) {
     }
 
     if (existingItem.quantity > 0) {
-      characterQuantityText = ` ${character.name} now ${haveWord} ${existingItem.quantity} ${existingItem.name.plural(existingItem.quantity == 1)}.`
+      characterQuantityText = ` ${character.name} now ${haveWord} ${existingItem.quantity} ${pluralize(existingItem.name, existingItem.quantity == 1)}.`
     } else if (item.quantity > 1) {
       characterQuantityText = ` ${character.name} ${dontWord} have any more.`
     }
   }
 
-  if (item.quantity == 1) text += `${character.name} ${commandName.plural(character.name == "You")} ${otherNameAdjustedCase} the ${displayItemName}.`
-  else text += `${character.name} ${commandName.plural(character.name == "You")} ${otherNameAdjustedCase} ${item.quantity} ${displayItemName}.`
+  if (item.quantity == 1) text += `${character.name} ${pluralize(commandName, character.name == "You")} ${otherNameAdjustedCase} the ${displayItemName}.`
+  else text += `${character.name} ${pluralize(commandName, character.name == "You")} ${otherNameAdjustedCase} ${item.quantity} ${displayItemName}.`
 
   var otherIndex = otherCharacter.inventory.findIndex((element) => element.name.toLowerCase() == item.name.toLowerCase())
   if (otherIndex == -1) {
@@ -2739,7 +2740,7 @@ function doGive(command) {
     var existingItem = otherCharacter.inventory[otherIndex]
     existingItem.quantity = parseInt(existingItem.quantity) + parseInt(item.quantity)
 
-    displayItemName = existingItem.name.plural(existingItem.quantity == 1)
+    displayItemName = pluralize(existingItem.name, existingItem.quantity == 1)
     text += ` ${otherCharacter.name} now ${otherHaveWord} ${existingItem.quantity} ${displayItemName}.`
   }
 
@@ -2774,7 +2775,7 @@ function doBuy(command) {
   }
 
   var buyName
-  buyName = args[0].plural(true)
+  buyName = pluralize(args[0], true)
 
   var sellQuantity
   if (isNaN(args[1])) {
@@ -2784,7 +2785,7 @@ function doBuy(command) {
     args.splice(1, 1)
   }
 
-  var sellName = args[1].plural(true)
+  var sellName = pluralize(args[1], true)
 
   var characterNameAdjustedCase = character.name == "You" ? "you" : character.name
   var dontWord = character.name == "You" ? "don't" : "doesn't"
@@ -2792,7 +2793,7 @@ function doBuy(command) {
   var tryWord = character.name == "You" ? "try" : "tries"
   var tradeWord = character.name == "You" ? "trade" : "trades"
   var buyWord = character.name == "You" ? "buy" : "buys"
-  var displayItemName = sellName.plural(sellQuantity == 1)
+  var displayItemName = pluralize(sellName, sellQuantity == 1)
   var buyItemTotal = 0;
   var sellItemTotal = 0;
 
@@ -2819,8 +2820,8 @@ function doBuy(command) {
     sellItemTotal = existingItem.quantity
   }
 
-  var suffix = `${buyQuantity} ${buyName.plural()}`
-  if (buyQuantity == 1) suffix = `the ${buyName.plural(true)}`
+  var suffix = `${buyQuantity} ${pluralize(buyName)}`
+  if (buyQuantity == 1) suffix = `the ${pluralize(buyName, true)}`
 
   if (sellQuantity == 1) text += `${character.name} ${tradeWord} the ${displayItemName} for ${suffix}.`
   else text += `${character.name} ${tradeWord} ${sellQuantity} ${displayItemName} for ${suffix}.`
@@ -2836,7 +2837,7 @@ function doBuy(command) {
     buyItemTotal = existingItem.quantity
   }
 
-  text += ` ${character.name} now ${haveWord} ${sellItemTotal} ${sellName.plural(sellItemTotal == 1)} and ${buyItemTotal} ${buyName.plural(buyItemTotal == 1)}.`
+  text += ` ${character.name} now ${haveWord} ${sellItemTotal} ${pluralize(sellName, sellItemTotal == 1)} and ${buyItemTotal} ${pluralize(buyName, buyItemTotal == 1)}.`
   return text + "\n\n"
 }
 
