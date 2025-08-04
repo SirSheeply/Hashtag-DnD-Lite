@@ -2493,126 +2493,108 @@ function doTakeArmor(command) {
 }
 
 const helpDialog_itemStoryCards = `<><> Item Story Cards <><>
-  * Every item should be an item type story card, and every item should have a category, and rarity.
-  * The Item story cards should be formatted as follows:
-  * -- Type: {{ Item - Category - Rarity }}
-  * -- Title: The name of the item.
-  * -- Entry: Some text to describe to the AI what this item represents.
-  * -- Kewords: For unique items only. Avoid common words and phrases!
-  * -- Description: Some items may have special values which will be here in JSON format.
-  * Here is an example of the JSON format:
-  * {"item": "Orange", "plural": "Oranges", "minRewardAmount": 1, "maxRewardAmount": 10, "rewardChance": 1}`
-const helpDialog_lootStoryCards = `
-<><> Loot Table Story Cards <><>
-  * Thematic Loot tables should control the quanity and chance of rewards.
-  * The loot table story card shoudl be formatted as follows:
-  * -- Type: {{ LootTable - Theme }}
-  * -- Title: {{ LootTable - Theme }}
-  * -- Entry: Some text to describe to the AI what this loot table thematically represents.
-  * -- Kewords: No keywords!
-  * -- Description: A JSON format of the loot table.
-  * Here is an example of the JSON formatted loot table:
-  * [
-  *   {"item": "Orange", "plural": "Oranges", "minRewardAmount": 1, "maxRewardAmount": 10, "rewardChance": 1},
-  *   {"item": "Apple Sword", "plural": "Apple Swords", "minRewardAmount": 1, "maxRewardAmount": 1, "rewardChance": 0.1}
-  * ]
-  * Where the rewardChance is a percentage chance of the item being rewarded.
-  * A rewardChance of 1 = 100%; and rewardChance of 0.1 = 10%`
-const HelpDialog_rewards = `#Reward Command Format: {{ (you|character) #reward (theme) (quantity) }}
--- An easy command that gives the character random rewards from a thematic loot table.
--- (quantity) is optional but defaults to 1.
--- Theme requires "" if spaces are included.
--- If the theme does not exist, the loot pool defaults to all items.
--- Special case: If (theme=item), then instead of a table, all items will be used.
--- Cheat case: If (theme="item - (catagory)") or (theme="item - (catagory) - (rarity)"), you can filter.
+* Every item should be an "Item" type story card, and must include a category and rarity.
+* Format each item story card as follows:
+  -- Type: {{ Item - Category - Rarity }}
+  -- Title: The name of the item.
+  -- Entry: A brief description to help the AI understand what this item represents.
+  -- Keywords: For unique items only. Avoid common words or phrases!
+  -- Description: Use JSON to define item behavior and reward values.
 
-If you'd like to create your own Item Story Cards or Thematic Loot Tables:
-${helpDialog_itemStoryCards}
-${helpDialog_lootStoryCards}`
+Example JSON format:
+{"item": "Orange", "plural": "Oranges", "minRewardAmount": 1, "maxRewardAmount": 10, "rewardChance": 1}`
+
+const helpDialog_lootStoryCards = `<><> Loot Table Story Cards <><>
+* Thematic loot tables control the quantity and chance of rewards.
+* Format each loot table story card as follows:
+  -- Type: {{ LootTable - Theme }}
+  -- Title: {{ LootTable - Theme }}
+  -- Entry: A short explanation of what this loot table thematically represents.
+  -- Keywords: Leave blank!
+  -- Description: A JSON array defining the loot and its drop chances.
+
+Example JSON format:
+[
+  {"item": "Orange", "plural": "Oranges", "minRewardAmount": 1, "maxRewardAmount": 10, "rewardChance": 1},
+  {"item": "Apple Sword", "plural": "Apple Swords", "minRewardAmount": 1, "maxRewardAmount": 1, "rewardChance": 0.1}
+]
+
+Note: rewardChance is a float from 0 to 1.
+1 = 100% chance. 0.1 = 10% chance.`
+
+const HelpDialog_rewards = `#Reward Command Format: {{ (you|character) #reward (theme) (quantity) }}
+-- Use this command to give the character random rewards from a loot table.
+-- (quantity) is optional; defaults to 1.
+-- If the theme contains spaces, wrap it in quotes (e.g. "ancient ruins").
+-- If the theme does not exist, all items will be used as the loot pool.
+-- Special Case: If (theme = item), all items are used directly, skipping loot tables.
+-- Cheat Case: You can filter directly using the follow as themes:
+     "item - (category)"
+     "item - (category) - (rarity)"
+
+To create your own:
+Type #help "item story cards"
+Type #help "loot story cards"`
+
 
 function doReward(command) {
-  const character = getCharacter()
-  // First things first, let's extract the arguments from the command
-  const rewardTheme = getArgument(command, 0) // Theme of the loot table which we wish to use
-  if (rewardTheme == null) {
-    state.show = "none"
-    return "\n[Error: No story cards found with that theme.]\n"+HelpDialog_rewards
+  const character = getCharacter();
+  const rewardTheme = getArgument(command, 0);
+
+  if (!rewardTheme) {
+    state.show = "none";
+    return `\n[Error: No story cards found with that theme.]\n`;
   }
 
-  let rewardQuantity = getArgument(command, 1) // Number of times we want to be rewarded
-  if (rewardQuantity == null || isNaN(rewardQuantity)) {
-    rewardQuantity = 1
-  }
-  rewardQuantity = parseInt(rewardQuantity)
-  if (rewardQuantity < 1) {
-    rewardQuantity = 1
-  }
-  
-  let lootTable = []
+  let rewardQuantity = parseInt(getArgument(command, 1)) || 1;
+  rewardQuantity = Math.max(rewardQuantity, 1);
+
+  let lootTable = [];
+
   if (rewardTheme.toLowerCase().startsWith("item")) {
-    // We have to populate the loot table with every item matching
-    const itemStoryCards =  getStoryCardListByType(rewardTheme, exactType=false)
-    itemStoryCards.forEach(itemCard => {
-      lootTable.push(JSON.parse(itemCard.description))
-    });
+    lootTable = getStoryCardListByType(rewardTheme, false).map(card => JSON.parse(card.description));
   } else {
-    // We have a theme loot table story card to populate the loot table from
-    let lootTableCard = getStoryCardListByType("loot table - "+rewardTheme, exactType=true)
-    if (lootTableCard.length < 1) {
-      state.show = "none"
-      return "\n[Error: No loot tables found in the story cards with that theme.]\n"+HelpDialog_rewards
-    } else {
-      lootTableCard = lootTableCard[0] // There should be only one
+    const lootCard = getStoryCardListByType("loot table - " + rewardTheme, true)[0];
+    if (!lootCard) {
+      state.show = "none";
+      return `\n[Error: No loot tables found in the story cards with that theme.]\n`;
     }
-    lootTable = JSON.parse(lootTableCard.description)
+    lootTable = JSON.parse(lootCard.description);
   }
-  
+
   if (lootTable.length < 1) {
-    state.show = "none"
-    return "\n[Error: There is no loot in the loot table.]\n"+HelpDialog_rewards
+    state.show = "none";
+    return `\n[Error: There is no loot in the loot table.]\n`;
   }
 
-  // ---- Main Reward Logic
-  let text = character.name+" found:"
-  let totalRewards = {}
-  for (let index = 0; index < rewardQuantity; index++) {
-    // Now we have a list of items, each with a unique drop chance
-    const randomRoll = getRandomFloat(0, 1) //0-100%
-    let possibleDrops = []
-    // Using the randomRoll build a list of possible rewards
-    // The higher an items rewardChance, the more likely it is to drop
-    lootTable.forEach(loot => {
-      if (randomRoll <= loot.rewardChance) {
-        possibleDrops.push(loot)
-      }
-    });
-    // Time to reward! First we need to pick one of the possible rewards
-    if (possibleDrops.length > 0)
-    {
-      const randomDrop = possibleDrops[getRandomInteger(0, possibleDrops.length-1)]
-      if (randomDrop.item in totalRewards) {
-        totalRewards[randomDrop.item] += getRandomInteger(randomDrop.minRewardAmount, randomDrop.maxRewardAmount)
-      } else {
-        totalRewards[randomDrop.item] = getRandomInteger(randomDrop.minRewardAmount, randomDrop.maxRewardAmount)
-      }
+  const totalRewards = {};
+  for (let i = 0; i < rewardQuantity; i++) {
+    const roll = getRandomFloat(0, 1);
+    const possibleDrops = lootTable.filter(item => roll <= item.rewardChance);
+
+    if (possibleDrops.length > 0) {
+      const drop = possibleDrops[getRandomInteger(0, possibleDrops.length - 1)];
+      const amount = getRandomInteger(drop.minRewardAmount, drop.maxRewardAmount);
+      totalRewards[drop.item] = (totalRewards[drop.item] || 0) + amount;
     }
   }
 
-  // ---- Inventory Logic
+  let text = `${character.name} found while searching${rewardTheme.includes("item")?" for items":" the "+rewardTheme}:`;
   if (Object.keys(totalRewards).length > 0) {
-    Object.keys(totalRewards).forEach(reward => {
-      doTake(`take ${totalRewards[reward].quantity} ${reward}`)
-      if (totalRewards[reward] > 1) {
-        text += ` ${totalRewards[reward]} ${reward}!`
+    for (const [item, qty] of Object.entries(totalRewards)) {
+      doTake(`take ${qty} ${item}`);
+      if (qty > 1) {
+        text += ` ${qty} ${item}!`;
       } else {
-        const aWord = ['a', 'e', 'i', 'o', 'u'].indexOf(reward.charAt(0).toLowerCase()) !== -1 ? "an" : "a"
-        text += ` ${aWord} ${reward}!`
+        const article = /^[aeiou]/i.test(item) ? "an" : "a";
+        text += ` ${article} ${item}!`;
       }
-    });
+    }
   } else {
-    text += " nothing!"
+    text += " nothing!";
   }
-  return text
+
+  return text;
 }
 
 // Since I've removed the itemShop, there may be some broken logic here
