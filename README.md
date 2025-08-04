@@ -13,16 +13,21 @@ Hashtag DnD is a scripted AI Dungeon scenario that gives you a variety of tools 
 
 ### Lite Edition Changes
 #### Removed Features
-- Removed Location System       (Hard to Manage T-T)
 - Removed Stragedy minigame     (Reduce script size)
 - Removed Lockpicking minigame  (Reduce script size)
 - Removed Memory minigame       (Reduce script size)
 - Removed Name generation       (Reduce script size)
-#### Added Features
+- Removed Location System       (Hard to Manage T-T)
+- Removed SpellShop System      (Hard to Manage T-T)
+- Removed ItemShop System       (Hard to Manage T-T)
+#### Enhanced Features
 - Story Card Encounters         (Encounters are now sourced from story cards, and can be player generated!)
 - Story Card Enemies            (Enemy presets are now sourced from story cards, and can be user generated!)
 - Story Card Allies             (Ally presets are now sourced from story cards, and can be user generated!)
 - Story Card Presets            (Character presets are now sourced from story cards, and can be user generated!)
+- Story Card Items              (Items are now sourced from story cards, and can be user generated!)
+#### Added Features
+- Thematic Loot Tables          (Reward command now uses thematic story card loot tables, which can be user generated!)
 #### Planned Features
 - Improve spell shop and source spells from story cards
 - Reduced Story Cards (remove keys for general items)
@@ -31,6 +36,8 @@ Hashtag DnD is a scripted AI Dungeon scenario that gives you a variety of tools 
 - Add increase skill/ability command for easy use
 - Add inventory management without AI output
 - Reimplement map system to work with story card based locations.
+- Reimplement spellShop system to work with story card based shop lists.
+- Reimplement itemShop system to work with story card based shop lists.
 
 ## Original Features:
 - Fully working inventory system, loot drops, and item/spell shops

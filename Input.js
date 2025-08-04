@@ -83,7 +83,6 @@ const giveSynonyms = ["give", "handover", "hand", "gift"]
 const renameItemSynonyms = ["renameitem", "renameobject", "renamegear", "renameequipment"]
 const inventorySynonyms = ["inv", "inventory", "backpack", "gear", "showinv", "showinventory", "viewinventory", "viewinv"]
 const clearInventorySynonyms = ["clearinventory", "clearinv", "emptyinventory", "emptybackpack", "clearbackpack", "emptygear", "cleargear"]
-const itemShopSynonyms = ["itemshop", "itemstore"]
 const equipSynonyms = ["equip", "arm", "wear"]
 const rewardSynonyms = ["reward"]
 // <><> Spells
@@ -92,7 +91,7 @@ const forgetSpellSynonyms = ["forgetspell", "forgetmagic", "forgetincantation", 
 const castSpellSynonyms = ["cast", "castspell", "castmagic", "castincantation", "castritual", "castsspell", "castsmagic", "castsincantation", "castsritual"]
 const clearSpellsSynonyms = ["clearspells", "clearmagic", "clearincantations", "clearrituals", "forgetallspells", "forgetallmagic", "forgetallincantation", "forgetallritual"]
 const spellbookSynonyms = ["spellbook", "spells", "listspells", "showspells", "spelllist", "spellcatalog", "spellinventory"]
-const spellShopSynonyms = ["spellshop", "spellstore"]
+// I want to replace this wiht a buy spell option (like items) // const spellShopSynonyms = ["spellshop", "spellstore"]
 // <><> Combat
 const attackSynonyms = ["attack", "strike", "ambush", "assault", "fireat", "fireon"]
 const setMeleeStatSynonyms = ["setmeleestat", "setmeleestatistic", "setmeleeability", "changemeleestat", "changemeleestatistic", "changemeleeability"]
@@ -140,18 +139,6 @@ function DNDHash_input (text) {
   if (state.setupAllyStep != null) {
     text = handleSetupAllyStep(text)
     if (state.setupAllyStep != null) return text
-    else text = rawText
-  }
-
-  if (state.spellShopStep != null) {
-    text = handleSpellShopStep(text)
-    if (state.spellShopStep != null) return text
-    else text = rawText
-  }
-
-  if (state.itemShopStep != null) {
-    text = handleItemShopStep(text)
-    if (state.itemShopStep != null) return text
     else text = rawText
   }
 
@@ -274,8 +261,6 @@ function DNDHash_input (text) {
   if (text == null) text = processCommandSynonyms(command, commandName, healPartySynonyms, doHealParty)
   if (text == null) text = processCommandSynonyms(command, commandName, blockSynonyms, doBlock)
   if (text == null) text = processCommandSynonyms(command, commandName, repeatTurnSynonyms, doRepeatTurn)
-  if (text == null) text = processCommandSynonyms(command, commandName, spellShopSynonyms, doSpellShop)
-  if (text == null) text = processCommandSynonyms(command, commandName, itemShopSynonyms, doItemShop)
   if (text == null) text = processCommandSynonyms(command, commandName, equipSynonyms, doEquip)
   if (text == null) text = processCommandSynonyms(command, commandName, rewardSynonyms, doReward)
   if (text == null) text = processCommandSynonyms(command, commandName, takeWeaponSynonyms, doTakeWeapon)
@@ -947,269 +932,6 @@ function doSetupAlly(command) {
   return " "
 }
 
-function doItemShop(command) {
-  command = command.replace(/very rare/gi, "phenomenal")
-
-  state.itemShopCategoryName = searchArgument(command, /default|weapons|armor|tools|gear|common|uncommon|rare|phenomenal|legendary|artifact/gi)
-  if (state.itemShopCategoryName == null && searchArgument(command, /weapon/) != null) state.itemShopCategoryName = "weapons"
-  if (state.itemShopCategoryName == null) state.itemShopCategoryName = "default"
-
-  let arg1 = searchArgument(command, /free/gi)
-  state.itemShopIsFree = arg1 != null
-
-  let arg2 = searchArgument(command, /all/gi)
-  let all = arg2 != null
-  state.itemShopClearDeals = state.itemShopAll || state.itemShopAll != all
-  state.itemShopAll = all
-
-  state.itemShopStep = 0
-  state.show = "itemShop"
-  return " "
-}
-
-function handleItemShopStep(text) {
-  state.show = "itemShop"
-
-  if (/^\s*>.*says? ".*/.test(text)) {
-    text = text.replace(/^\s*>.*says? "/, "")
-    text = text.replace(/"\s*$/, "")
-  } else if (/^\s*>\s.*/.test(text)) {
-    text = text.replace(/\s*> /, "")
-    for (var i = 0; i < info.characters.length; i++) {
-      var matchString = info.characters[i] == "" ? "You " : `${info.characters[i]} `
-      if (text.startsWith(matchString)) {
-        text = text.replace(matchString, "")
-        break
-      }
-    }
-    text = text.replace(/\.?\s*$/, "")
-  } else {
-    text = text.replace(/^\s+/, "")
-  }
-
-  if (text.toLowerCase() == "q") {
-    state.itemShopStep = 500
-    return text
-  }
-
-  switch (state.itemShopStep) {
-    case 0:
-    case 1:
-    case 2:
-    case 3:
-      if (isNaN(text)) return text
-      var index = parseInt(text) - 1
-
-      let deals = findItemShopDeals(state.itemShopCategoryName, false)
-      if (index < 0 || index >= deals.length) return text
-
-      let deal = deals[index]
-
-      var character = getCharacter()
-      var goldIndex = character.inventory.findIndex(x => x.name.toLowerCase() == "gold")
-      var gold = goldIndex == -1 ? 0 : character.inventory[goldIndex].quantity
-
-      if (!state.itemShopIsFree && deal.price > gold) {
-        state.itemShopStep = 2
-        return text
-      }
-
-      if ("damage" in deal) doTakeWeapon(`takeweapon ${deal.damage} ${deal.toHitBonus} ${deal.ability} ${deal.name}`)
-      else if ("ac" in deal) doTakeArmor(`takearmor ${deal.ac} ${deal.name}`)
-      else doTake(`take ${deal.quantity} ${deal.name}`)
-      if (!state.itemShopIsFree) character.inventory[goldIndex].quantity -= deal.price
-      deal.bought = true
-
-      state.itemShopStep = 1
-      break
-    case 500:
-      state.show = null
-      state.itemShopStep = null
-      break
-  }
-  return text
-}
-
-function doSpellShop(command) {
-  var character = getCharacter()
-
-  // I get the idea. This is meant to simulate the spell restrictions and progression of the base classes.
-  // But what if the player is a custom class, or wants to buy spells in general. They are assumed to be a wizard?
-  // What if we have custom spells tho?
-
-  let arg0 = searchArgument(command, /bard|cleric|druid|paladin|ranger|sorcerer|warlock|wizard/gi)
-  if (arg0 == null) {
-    arg0 = character.className.toLowerCase()
-    if (/bard|cleric|druid|paladin|ranger|sorcerer|warlock|wizard/gi.test(arg0) == false) arg0 = "wizard"
-  }
-  state.spellShopClassName = arg0
-
-  let arg1 = searchArgument(command, /\d+/gi)
-  if (arg1 == null) {
-    let level = getLevel(character.experience)
-    switch (state.spellShopClassName) {
-      case "bard":
-      case "cleric":
-      case "druid":
-      case "sorcerer":
-      case "warlock":
-      case "wizard":
-        switch(level) {
-          case 1:
-          case 2:
-            arg1 = 1
-            break
-          case 3:
-          case 4:
-            arg1 = 2
-            break
-          case 5:
-          case 6:
-            arg1 = 3
-            break
-          case 7:
-          case 8:
-            arg1 = 4
-            break
-          case 9:
-          case 10:
-            arg1 = 5
-            break
-          case 11:
-          case 12:
-            arg1 = 6
-            break
-          case 13:
-          case 14:
-            arg1 = 7
-            break
-          case 15:
-          case 16:
-            arg1 = 8
-            break
-          default:
-            arg1 = 9
-            break
-        }
-        break
-      case "paladin":
-      case "ranger":
-        switch(level) {
-          case 1:
-          case 2:
-          case 3:
-          case 4:
-            arg1 = 1
-            break
-          case 5:
-          case 6:
-          case 7:
-          case 8:
-            arg1 = 2
-            break
-          case 9:
-          case 10:
-          case 11:
-          case 12:
-            arg1 = 3
-            break
-          case 13:
-          case 14:
-          case 15:
-          case 16:
-            arg1 = 4
-            break
-          default:
-            arg1 = 5
-            break
-        }
-        break
-      default:
-        arg1 = 1
-        break
-    }
-  }
-  arg1 = parseInt(arg1)
-  state.spellShopLevel = arg1
-
-  let arg2 = searchArgument(command, /free/gi)
-  state.spellShopIsFree = arg2 != null
-
-  let arg3 = searchArgument(command, /all/gi)
-  let all = arg3 != null
-  state.spellShopClearDeals = state.spellShopAll || state.spellShopAll != all
-  state.spellShopAll = all
-
-  state.spellShopStep = 0
-  state.show = "spellShop"
-  return " "
-}
-
-function handleSpellShopStep(text) {
-  state.show = "spellShop"
-
-  if (/^\s*>.*says? ".*/.test(text)) {
-    text = text.replace(/^\s*>.*says? "/, "")
-    text = text.replace(/"\s*$/, "")
-  } else if (/^\s*>\s.*/.test(text)) {
-    text = text.replace(/\s*> /, "")
-    for (var i = 0; i < info.characters.length; i++) {
-      var matchString = info.characters[i] == "" ? "You " : `${info.characters[i]} `
-      if (text.startsWith(matchString)) {
-        text = text.replace(matchString, "")
-        break
-      }
-    }
-    text = text.replace(/\.?\s*$/, "")
-  } else {
-    text = text.replace(/^\s+/, "")
-  }
-
-  if (text.toLowerCase() == "q") {
-    state.spellShopStep = 500
-    return text
-  }
-
-  switch (state.spellShopStep) {
-    case 0:
-    case 1:
-    case 2:
-    case 3:
-      if (isNaN(text)) return text
-      var index = parseInt(text) - 1
-
-      let deals = findSpellShopDeals(state.spellShopClassName, state.spellShopLevel, false)
-      if (index < 0 || index >= deals.length) return text
-
-      let deal = deals[index]
-
-      var character = getCharacter()
-      var goldIndex = character.inventory.findIndex(x => x.name.toLowerCase() == "gold")
-      var gold = goldIndex == -1 ? 0 : character.inventory[goldIndex].quantity
-      var found = character.spells.find((element) => element == deal.name) != undefined
-
-      if (deal.price > gold) {
-        state.spellShopStep = 2
-        return text
-      } else if (found) {
-        state.spellShopStep = 3
-        return text
-      }
-
-      doLearnSpell(`learnspell ${deal.name}`)
-      if (!state.spellShopIsFree) character.inventory[goldIndex].quantity -= deal.price
-      deal.bought = true
-
-      state.spellShopStep = 1
-      break
-    case 500:
-      state.show = null
-      state.spellShopStep = null
-      break
-  }
-  return text
-}
-
 function doBio(command) {
   state.show = "bio"
   return " "
@@ -1725,8 +1447,6 @@ function doRest(command) {
   var commandName = getCommandName(command)
   state.day++
   state.enemies = []
-  state.spellShopDeals = null
-  state.itemShopDeals = null
 
   var healingFactor = 1
   var text
@@ -2772,66 +2492,130 @@ function doTakeArmor(command) {
   return text
 }
 
+const helpDialog_itemStoryCards = `<><> Item Story Cards <><>
+  * Every item should be an item type story card, and every item should have a category, and rarity.
+  * The Item story cards should be formatted as follows:
+  * -- Type: {{ Item - Category - Rarity }}
+  * -- Title: The name of the item.
+  * -- Entry: Some text to describe to the AI what this item represents.
+  * -- Kewords: For unique items only. Avoid common words and phrases!
+  * -- Description: Some items may have special values which will be here in JSON format.
+  * Here is an example of the JSON format:
+  * {"item": "Orange", "plural": "Oranges", "minRewardAmount": 1, "maxRewardAmount": 10, "rewardChance": 1}`
+const helpDialog_lootStoryCards = `
+<><> Loot Table Story Cards <><>
+  * Thematic Loot tables should control the quanity and chance of rewards.
+  * The loot table story card shoudl be formatted as follows:
+  * -- Type: {{ LootTable - Theme }}
+  * -- Title: {{ LootTable - Theme }}
+  * -- Entry: Some text to describe to the AI what this loot table thematically represents.
+  * -- Kewords: No keywords!
+  * -- Description: A JSON format of the loot table.
+  * Here is an example of the JSON formatted loot table:
+  * [
+  *   {"item": "Orange", "plural": "Oranges", "minRewardAmount": 1, "maxRewardAmount": 10, "rewardChance": 1},
+  *   {"item": "Apple Sword", "plural": "Apple Swords", "minRewardAmount": 1, "maxRewardAmount": 1, "rewardChance": 0.1}
+  * ]
+  * Where the rewardChance is a percentage chance of the item being rewarded.
+  * A rewardChance of 1 = 100%; and rewardChance of 0.1 = 10%`
+const HelpDialog_rewards = `#Reward Command Format: {{ (you|character) #reward (theme) (quantity) }}
+-- An easy command that gives the character random rewards from a thematic loot table.
+-- (quantity) is optional but defaults to 1.
+-- Theme requires "" if spaces are included.
+-- If the theme does not exist, the loot pool defaults to all items.
+-- Special case: If (theme=item), then instead of a table, all items will be used.
+-- Cheat case: If (theme="item - (catagory)") or (theme="item - (catagory) - (rarity)"), you can filter.
+
+If you'd like to create your own Item Story Cards or Thematic Loot Tables:
+${helpDialog_itemStoryCards}
+${helpDialog_lootStoryCards}`
+
 function doReward(command) {
-  command = command.replace(/very rare/gi, "phenomenal")
-
-  let quantity = getArgument(command, 0)
-  if (quantity == null || isNaN(quantity)) quantity = 1
-  if (!isNaN(quantity)) quantity = parseInt(quantity)
-  if (quantity < 1) quantity = 1
-
-  let categoryName = searchArgument(command, /default|weapons|armor|tools|gear|common|uncommon|rare|phenomenal|legendary|artifact/gi)
-  if (categoryName == null && searchArgument(command, /weapon/) != null) categoryName = "weapons"
-  if (categoryName == null) categoryName = "default"
-
-  let loot = []
-  for (let i = 0; i < quantity; i++) {
-    const rand = Math.random()
-    categoryName = categoryName.toLowerCase()
-    let category
-
-    if (categoryName == "weapons" || categoryName == "default" && rand <= .125) category = weaponsList
-    else if (categoryName == "armor" || categoryName == "default" && rand <= .25) category = armorList
-    else if (categoryName == "tools" || categoryName == "default" && rand <= .375) category = toolsList
-    else if (categoryName == "gear" || categoryName == "default" && rand <= .50) category = gearList
-    else if (categoryName == "common" || categoryName == "default" && rand <= .70) category = commonList
-    else if (categoryName == "uncommon" || categoryName == "default" && rand <= .80) category = uncommonList
-    else if (categoryName == "rare" || categoryName == "default" && rand <= .88) category = rareList
-    else if (categoryName == "phenomenal" || categoryName == "default" && rand <= .94) category = phenomenalList
-    else if (categoryName == "legendary" || categoryName == "default" && rand <= .98) category = legendaryList
-    else if (categoryName == "artifact" || categoryName == "default" && rand > .98) category = artifactList
-    else category = commonList
-
-    let itemStoryCardName
-    shuffled = [...category].sort(() => 0.5 - Math.random());
-    itemStoryCardName = shuffled[0]
-
-    let itemName = itemShopConvertGenericName(itemStoryCardName)
-    loot.push(itemName)
-
-    let itemStoryCard = findItemCard(itemName, itemStoryCardName)
-
-    if (itemStoryCard != null && itemStoryCard.type == "weapon") doTakeWeapon(`takeweapon ${itemStoryCard.description.split(",")[1]} ${itemStoryCard.description.split(",")[2]} ${itemStoryCard.description.split(",")[3]} ${itemName}`)
-    else if (itemStoryCard != null && itemStoryCard.type == "armor") doTakeArmor(`takearmor ${itemStoryCard.description.split(",")[1]} ${itemName}`)
-    else doTake(`take ${itemName}`)
+  const character = getCharacter()
+  // First things first, let's extract the arguments from the command
+  const rewardTheme = getArgument(command, 0) // Theme of the loot table which we wish to use
+  if (rewardTheme == null) {
+    state.show = "none"
+    return "\n[Error: No story cards found with that theme.]\n"+HelpDialog_rewards
   }
 
-  let text = "You have found"
-  if (loot.length == 1) {
-    let itemName = loot[0]
-    let aWord = ['a', 'e', 'i', 'o', 'u'].indexOf(itemName.charAt(0).toLowerCase()) !== -1 ? "an" : "a"
-    text += ` ${aWord} ${itemName}!`
+  let rewardQuantity = getArgument(command, 1) // Number of times we want to be rewarded
+  if (rewardQuantity == null || isNaN(rewardQuantity)) {
+    rewardQuantity = 1
+  }
+  rewardQuantity = parseInt(rewardQuantity)
+  if (rewardQuantity < 1) {
+    rewardQuantity = 1
+  }
+  
+  let lootTable = []
+  if (rewardTheme.toLowerCase().startsWith("item")) {
+    // We have to populate the loot table with every item matching
+    const itemStoryCards =  getStoryCardListByType(rewardTheme, exactType=false)
+    itemStoryCards.forEach(itemCard => {
+      lootTable.push(JSON.parse(itemCard.description))
+    });
   } else {
-    text += ":"
-    loot.forEach(itemName => {
-      let aWord = ['a', 'e', 'i', 'o', 'u'].indexOf(itemName.charAt(0).toLowerCase()) !== -1 ? "an" : "a"
-      text += `\n${aWord} ${itemName},`
-    })
+    // We have a theme loot table story card to populate the loot table from
+    let lootTableCard = getStoryCardListByType("loot table - "+rewardTheme, exactType=true)
+    if (lootTableCard.length < 1) {
+      state.show = "none"
+      return "\n[Error: No loot tables found in the story cards with that theme.]\n"+HelpDialog_rewards
+    } else {
+      lootTableCard = lootTableCard[0] // There should be only one
+    }
+    lootTable = JSON.parse(lootTableCard.description)
+  }
+  
+  if (lootTable.length < 1) {
+    state.show = "none"
+    return "\n[Error: There is no loot in the loot table.]\n"+HelpDialog_rewards
   }
 
+  // ---- Main Reward Logic
+  let text = character.name+" found:"
+  let totalRewards = {}
+  for (let index = 0; index < rewardQuantity; index++) {
+    // Now we have a list of items, each with a unique drop chance
+    const randomRoll = getRandomFloat(0, 1) //0-100%
+    let possibleDrops = []
+    // Using the randomRoll build a list of possible rewards
+    // The higher an items rewardChance, the more likely it is to drop
+    lootTable.forEach(loot => {
+      if (randomRoll <= loot.rewardChance) {
+        possibleDrops.push(loot)
+      }
+    });
+    // Time to reward! First we need to pick one of the possible rewards
+    if (possibleDrops.length > 0)
+    {
+      const randomDrop = possibleDrops[getRandomInteger(0, possibleDrops.length-1)]
+      if (randomDrop.item in totalRewards) {
+        totalRewards[randomDrop.item] += getRandomInteger(randomDrop.minRewardAmount, randomDrop.maxRewardAmount)
+      } else {
+        totalRewards[randomDrop.item] = getRandomInteger(randomDrop.minRewardAmount, randomDrop.maxRewardAmount)
+      }
+    }
+  }
+
+  // ---- Inventory Logic
+  if (Object.keys(totalRewards).length > 0) {
+    Object.keys(totalRewards).forEach(reward => {
+      doTake(`take ${totalRewards[reward].quantity} ${reward}`)
+      if (totalRewards[reward] > 1) {
+        text += ` ${totalRewards[reward]} ${reward}!`
+      } else {
+        const aWord = ['a', 'e', 'i', 'o', 'u'].indexOf(reward.charAt(0).toLowerCase()) !== -1 ? "an" : "a"
+        text += ` ${aWord} ${reward}!`
+      }
+    });
+  } else {
+    text += " nothing!"
+  }
   return text
 }
 
+// Since I've removed the itemShop, there may be some broken logic here
 function doEquip(command) {
   let character = getCharacter()
   let arg0 = getArgument(command, 0)
@@ -3590,8 +3374,6 @@ function doReset(command) {
   state.enemies = null
   state.allies = null
   state.initiativeOrder = []
-  state.x = null
-  state.y = null
   state.defaultDifficulty = null
   state.autoXp = null
   state.day = null
