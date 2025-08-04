@@ -27,55 +27,6 @@ function getRandom(seed) {
   return x - Math.floor(x)
 }
 
-function getRandomFromList(...choices) {
-  return choices[getRandomInteger(0, choices.length - 1)]
-}
-
-function numberWithCommas(x) {
-  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
-
-function isAnumber(number) {
-  return !isNaN(number)
-}
-
-function shuffle(array, seed) {
-  if (seed == null) seed = getRandomInteger(Number.MIN_SAFE_INTEGER, Number.MAX_SAFE_INTEGER)
-  let currentIndex = array.length
-  while (currentIndex != 0) {
-    let randomIndex = Math.floor(getRandom(seed + currentIndex) * currentIndex)
-    currentIndex--
-    [array[currentIndex], array[randomIndex]] = [
-      array[randomIndex], array[currentIndex]]
-  }
-}
-
-function pointDistance(x1, y1, x2, y2) {
-  return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2))
-}
-
-function pointDirection(x1, y1, x2, y2) {
-  Math.atn2
-  var a = Math.atan2(y2 - y1, x2 - x1);
-  if (a < 0) a += 2 * Math.PI;
-
-  if (a < 0) a += 2 * Math.PI;
-  if (a < 0) a += 2 * Math.PI;
-  a = Math.abs((Math.PI * 2) - a);
-  a *= 180 / Math.PI;
-
-  return a;
-}
-
-function rotate(cx, cy, x, y, angle) {
-  var radians = (Math.PI / 180) * angle
-  var cos = Math.cos(radians)
-  var sin = Math.sin(radians)
-  var nx = (cos * (x - cx)) + (sin * (y - cy)) + cx
-  var ny = (cos * (y - cy)) - (sin * (x - cx)) + cy
-  return [nx, ny];
-}
-
 function sanitizeText(text) {
   if (/^\s*>.*says? ".*/.test(text)) {
     text = text.replace(/^\s*>\s/, "")
@@ -423,6 +374,8 @@ function createEncounter(listName) {
 
   if (listName == null) {
     listName = "funny"
+  } else {
+    listName = listName.toLowerCase()
   }
 
   if (!isNaN(listName)) {
@@ -460,7 +413,7 @@ function createEncounter(listName) {
   // This means players can create custom encounters, and we're not limited to X amount.
 
   // Get a list of all the encounter cards with the listname type i.e. "encounter - funny"
-  const encounterIndexes = listEncounterCards(listName)
+  const encounterIndexes = getStoryCardListByType("encounter - "+listName, true)
   if (encounterIndexes.length <= 0) {
     // Error no encounter cards for this case!
     return encounter // Return default enconuter
@@ -642,23 +595,6 @@ function getModifier(statValue) {
   return Math.floor((statValue - 10) / 2)
 }
 
-// NOTE for later: Improve finding story cards as a general function for all cases
-function findSpellCardIndex(name) {
-  return storyCards.findIndex((element) => element.type == "spell" && element.title == name)
-}
-
-function findSpellCard(name) {
-  return storyCards[findSpellCardIndex(name)]
-}
-
-function findItemCardIndex(name, storyCardName) {
-  return storyCards.findIndex((element) => (element.type == "item" || element.type == "weapon" || element.type == "armor") && (element.title == name || element.title == storyCardName))
-}
-
-function findItemCard(name, storyCardName) {
-  return storyCards[findItemCardIndex(name, storyCardName)]
-}
-
 // The ultimate story cards retrieval for any cards of X type
 // exactType parameter allows us to choose whether to match the type exactly or just includes type as a substring
 function getStoryCardListByType(listType, exactType=true) {
@@ -677,153 +613,121 @@ function getStoryCardListByTitle(listTitle, exactTitle=true) {
   return storyCards.filter((element) => (element.type.toLowerCase().includes(listTitle.toLowerCase())));
 }
 
-// Depreciate for getStoryCardListByType()
-function listEncounterCards(listName) {
-  return storyCards.filter((element) => (element.type == "encounter - "+listName));
-}
+function pluralize(word, revert = false) {
+  const pluralRules = {
+    '(quiz)$': "$1zes",
+    '^(ox)$': "$1en",
+    '(m|l)ouse$': "$1ice",
+    '(matr|vert|ind)(ix|ex)$': "$1ices",
+    '(x|ch|ss|sh)$': "$1es",
+    '([^aeiouy]|qu)y$': "$1ies",
+    '(hive)$': "$1s",
+    '(?:([^f])fe|([lr])f)$': "$1$2ves",
+    '(shea|lea|loa|thie)f$': "$1ves",
+    'sis$': "ses",
+    '([ti])um$': "$1a",
+    '(tomat|potat|ech|her|vet)o$': "$1oes",
+    '(bu)s$': "$1ses",
+    '(alias)$': "$1es",
+    '(octop)us$': "$1i",
+    '(ax|test)is$': "$1es",
+    '(us)$': "$1es",
+    '([^s]+)$': "$1s" // fallback rule (leave this last)
+  };
 
-// Depreciate for getStoryCardListByType() but consider the includes option
-function listEnemyCards(enemyType) {
-  return storyCards.filter((element) => (element.type.includes("enemy - "+enemyType)));
-}
+  const singularRules = {
+    '(quiz)zes$': "$1",
+    '(matr)ices$': "$1ix",
+    '(vert|ind)ices$': "$1ex",
+    '^(ox)en$': "$1",
+    '(alias)es$': "$1",
+    '(octop|vir)i$': "$1us",
+    '(cris|ax|test)es$': "$1is",
+    '(shoe)s$': "$1",
+    '(o)es$': "$1",
+    '(bus)es$': "$1",
+    '(m|l)ice$': "$1ouse",
+    '(x|ch|ss|sh)es$': "$1",
+    '(m)ovies$': "$1ovie",
+    '(s)eries$': "$1eries",
+    '([^aeiouy]|qu)ies$': "$1y",
+    '([lr])ves$': "$1f",
+    '(tive)s$': "$1",
+    '(hive)s$': "$1",
+    '(li|wi|kni)ves$': "$1fe",
+    '(shea|loa|lea|thie)ves$': "$1f",
+    '(^analy)ses$': "$1sis",
+    '((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)ses$': "$1$2sis",
+    '([ti])a$': "$1um",
+    '(n)ews$': "$1ews",
+    '(h|bl)ouses$': "$1ouse",
+    '(corpse)s$': "$1",
+    '(us)es$': "$1",
+    's$': "" // fallback rule (leave this last)
+  };
 
-// Depreciate for getStoryCardListByType() but consider the includes option
-function listAllyCards(enemyType) {
-  return storyCards.filter((element) => (element.type.includes("ally - "+enemyType)));
-}
+  const irregular = {
+    move: 'moves',
+    foot: 'feet',
+    goose: 'geese',
+    sex: 'sexes',
+    child: 'children',
+    man: 'men',
+    woman: 'women',
+    tooth: 'teeth',
+    person: 'people'
+  };
 
-// Depreciate for getStoryCardListByType()
-function listCharPresetCards() {
-  return storyCards.filter((element) => (element.type == ("preset")));
-}
+  const uncountable = new Set([
+    'sheep',
+    'fish',
+    'deer',
+    'moose',
+    'series',
+    'species',
+    'money',
+    'rice',
+    'information',
+    'equipment',
+    'gold',
+    'bass',
+    'milk',
+    'food',
+    'water',
+    'bread',
+    'sugar',
+    'tea',
+    'cheese',
+    'coffee',
+    'currency',
+    'seafood',
+    'oil',
+    'software'
+  ]);
 
-String.prototype.replaceAt = function(index, replacement) {
-  return this.substring(0, index) + replacement + this.substring(index + replacement.length);
-}
+  const lower = word.toLowerCase();
 
-String.prototype.plural = function(revert) {
+  if (uncountable.has(lower)) return word;
 
-    var plural = {
-        '(quiz)$'               : "$1zes",
-        '^(ox)$'                : "$1en",
-        '([m|l])ouse$'          : "$1ice",
-        '(matr|vert|ind)ix|ex$' : "$1ices",
-        '(x|ch|ss|sh)$'         : "$1es",
-        '([^aeiouy]|qu)y$'      : "$1ies",
-        '(hive)$'               : "$1s",
-        '(?:([^f])fe|([lr])f)$' : "$1$2ves",
-        '(shea|lea|loa|thie)f$' : "$1ves",
-        'sis$'                  : "ses",
-        '([ti])um$'             : "$1a",
-        '(tomat|potat|ech|her|vet)o$': "$1oes",
-        '(bu)s$'                : "$1ses",
-        '(alias)$'              : "$1es",
-        '(octop)us$'            : "$1i",
-        '(ax|test)is$'          : "$1es",
-        '(us)$'                 : "$1es",
-        '([^s]+)$'              : "$1s"
-    };
+  for (let key in irregular) {
+    const pattern = revert
+      ? new RegExp(`^${irregular[key]}$`, 'i')
+      : new RegExp(`^${key}$`, 'i');
 
-    var singular = {
-        '(quiz)zes$'             : "$1",
-        '(matr)ices$'            : "$1ix",
-        '(vert|ind)ices$'        : "$1ex",
-        '^(ox)en$'               : "$1",
-        '(alias)es$'             : "$1",
-        '(octop|vir)i$'          : "$1us",
-        '(cris|ax|test)es$'      : "$1is",
-        '(shoe)s$'               : "$1",
-        '(o)es$'                 : "$1",
-        '(bus)es$'               : "$1",
-        '([m|l])ice$'            : "$1ouse",
-        '(x|ch|ss|sh)es$'        : "$1",
-        '(m)ovies$'              : "$1ovie",
-        '(s)eries$'              : "$1eries",
-        '([^aeiouy]|qu)ies$'     : "$1y",
-        '([lr])ves$'             : "$1f",
-        '(tive)s$'               : "$1",
-        '(hive)s$'               : "$1",
-        '(li|wi|kni)ves$'        : "$1fe",
-        '(shea|loa|lea|thie)ves$': "$1f",
-        '(^analy)ses$'           : "$1sis",
-        '((a)naly|(b)a|(d)iagno|(p)arenthe|(p)rogno|(s)ynop|(t)he)ses$': "$1$2sis",        
-        '([ti])a$'               : "$1um",
-        '(n)ews$'                : "$1ews",
-        '(h|bl)ouses$'           : "$1ouse",
-        '(corpse)s$'             : "$1",
-        '(us)es$'                : "$1",
-        's$'                     : ""
-    };
-
-    var irregular = {
-        'move'   : 'moves',
-        'foot'   : 'feet',
-        'goose'  : 'geese',
-        'sex'    : 'sexes',
-        'child'  : 'children',
-        'man'    : 'men',
-        'tooth'  : 'teeth',
-        'person' : 'people',
-        'woman' : 'women',
-    };
-
-    var uncountable = [
-        'sheep', 
-        'fish',
-        'deer',
-        'moose',
-        'series',
-        'species',
-        'money',
-        'rice',
-        'information',
-        'equipment',
-        'gold',
-        'bass',
-        'milk',
-        'food',
-        'water',
-        'bread',
-        'sugar',
-        'tea',
-        'cheese',
-        'coffee',
-        'currency',
-        'seafood',
-        'oil',
-        'software'
-    ];
-
-    // save some time in the case that singular and plural are the same
-    if(uncountable.indexOf(this.toLowerCase()) >= 0)
-      return this;
-
-    // check for irregular forms
-    for(word in irregular){
-
-      if(revert){
-              var pattern = new RegExp(irregular[word]+'$', 'i');
-              var replace = word;
-      } else{ var pattern = new RegExp(word+'$', 'i');
-              var replace = irregular[word];
-      }
-      if(pattern.test(this))
-        return this.replace(pattern, replace);
+    if (pattern.test(word)) {
+      return word.replace(pattern, revert ? key : irregular[key]);
     }
+  }
 
-    if(revert) var array = singular;
-         else  var array = plural;
-
-    // check for matches using regular expressions
-    for(reg in array){
-
-      var pattern = new RegExp(reg, 'i');
-
-      if(pattern.test(this))
-        return this.replace(pattern, array[reg]);
+  const rules = revert ? singularRules : pluralRules;
+  for (let rule in rules) {
+    const pattern = new RegExp(rule, 'i');
+    if (pattern.test(word)) {
+      return word.replace(pattern, rules[rule]);
     }
+  }
 
-    return this;
+  return word;
 }
 
 function clamp(num, min, max) {
