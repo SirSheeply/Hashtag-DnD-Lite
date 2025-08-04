@@ -29,7 +29,6 @@ Hashtag DnD is a scripted AI Dungeon scenario that gives you a variety of tools 
 #### Added Features
 - Thematic Loot Tables          (Reward command now uses thematic story card loot tables, which can be user generated!)
 #### Planned Features
-- Improve spell shop and source spells from story cards
 - Reduced Story Cards (remove keys for general items)
 - Uncap leveling
 - Leveling rewards
@@ -40,15 +39,15 @@ Hashtag DnD is a scripted AI Dungeon scenario that gives you a variety of tools 
 - Reimplement itemShop system to work with story card based shop lists.
 
 ## Original Features:
-- Fully working inventory system, loot drops, and item/spell shops
+- Fully working inventory system, loot drops, <s>and item/spell shops</s>
 - Hit points, turn-based battles, and a focus on strategic combat
--  Skill/Ability based gameplay guarantees a challenge at every turn
+- Skill/Ability based gameplay guarantees a challenge at every turn
 - Advanced dice rolling syntax allows you to set the precise odds
 - Unlimited party size with each character having their own inventory, stats, and biographies
 - Multiplayer compatible
 - Personalized note system that does not take up context space
-- Create locations to travel to and view them in a map
-- Minigames including Mastermind, Memory, and Stragedy, a fully developed trading card game
+- <s>Create locations to travel to and view them in a map</s>
+- <s>Minigames including Mastermind, Memory, and Stragedy, a fully developed trading card game</s>
 
 See the [user guide here](https://github.com/raeleus/Hashtag-DnD/wiki).
 Watch the [tutorial video](https://youtu.be/E5TYU7rDaBQ).

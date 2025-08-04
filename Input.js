@@ -21,99 +21,124 @@ const modifier = (text) => {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-// <><> General
-const rollSynonyms = ["roll"]
-const trySynonyms = ["try", "tryto", "tries", "triesto", "attempt", "attemptto", "attemptsto", "do"]
-const setDefaultDifficultySynonyms = ["setdefaultdifficulty", "defaultdifficulty", "setdefaultdc", "defaultdc", "setdefaultac", "defaultac", "setdifficulty", "difficulty", "dc"]
-const showDefaultDifficultySynonyms = ["showdefaultdifficulty", "showdefaultdc", "showdefaultac"]
-// <><> Time
-const showDaySynonyms = ["showday", "showdate", "day", "date"]
-const setDaySynonyms = ["setday", "setdate"]
-const restSynonyms = ["rest", "longrest", "shortrest", "sleep", "nap"]
-// System
-const resetSynonyms = ["reset", "cleandata", "cleardata", "resetdata", "resetsettings", "clearsettings", "profile"]
+const commandRegistry = [
+    // <><> General
+    { handler: doRoll,                  synonyms: ["roll"] },
+    { handler: doTry,                   synonyms: ["try", "tryto", "tries", "triesto", "attempt", "attemptto", "attemptsto", "do"] },
+    { handler: doSetDefaultDifficulty,  synonyms: ["setdefaultdifficulty", "defaultdifficulty", "setdefaultdc", "defaultdc", "setdefaultac", "defaultac", "setdifficulty", "difficulty", "dc"] },
+    { handler: doShowDefaultDifficulty, synonyms: ["showdefaultdifficulty", "showdefaultdc", "showdefaultac"] },
+    
+    // <><> Time
+    { handler: doShowDay,               synonyms: ["showday", "showdate", "day", "date"] },
+    { handler: doSetDay,                synonyms: ["setday", "setdate"] },
+    { handler: doRest,                  synonyms: ["rest", "longrest", "shortrest", "sleep", "nap"] },
+    
+    // System
+    { handler: doReset,                 synonyms: ["reset", "cleandata", "cleardata", "resetdata", "resetsettings", "clearsettings", "profile"] },
+    { handler: doVersion,               synonyms: ["version", "ver", "showversion"] },
+    { handler: doHelp,                  synonyms: ["help"] },
+    
+    // <><> Character
+    { handler: doCreate,                synonyms: ["create", "generate", "start", "begin", "setup", "party", "member", "new"] },
+    { handler: doRenameCharacter,       synonyms: ["renamecharacter", "renameperson"] },
+    { handler: doCloneCharacter,        synonyms: ["clone", "clonecharacter", "cloneperson", "copycharacter", "copyperson", "duplicatecharacter", "duplicateperson", "dupecharacter", "dupeperson"] },
+    { handler: doBio,                   synonyms: ["bio", "biography", "summary", "character", "charactersheet", "statsheet"] },
+    { handler: doSetClass,              synonyms: ["setclass", "class"] },
+    { handler: doSetSummary,            synonyms: ["setsummary", "summary"] },
+    { handler: doShowCharacters,        synonyms: ["showcharacters", "showparty", "showteam", "characters", "party", "team"] },
+    { handler: doRemoveCharacter,       synonyms: ["removecharacter", "deletecharacter", "erasecharacter"] },
+    { handler: doSetProficiency,        synonyms: ["setproficiency", "setweaponproficiency"] },
+    
+    // <><> Health & Damage
+    { handler: doSetHealth,             synonyms: ["sethealth"] },
+    { handler: doHeal,                  synonyms: ["heal", "mend", "restore"] },
+    { handler: doDamage,                synonyms: ["damage", "hurt", "harm", "injure"] },
+    { handler: doHealParty,             synonyms: ["healparty", "healcharacters"] },
+    
+    // <><> Levels & Experience
+    { handler: doSetExperience,         synonyms: ["setexperience", "setexp", "setxp", "setexperiencepoints"] },
+    { handler: doAddExperience,         synonyms: ["addexperience", "addexp", "addxp", "addexperiencepoints", "experience", "exp", "gainxp", "gainexperience", "xp", "experiencepoints"] },
+    { handler: doLevelUp,               synonyms: ["levelup", "level"] },
+    { handler: doSetAutoXp,             synonyms: ["setautoxp", "autoxp"] },
+    { handler: doShowAutoXp,            synonyms: ["showautoxp"] },
+    
+    // <><> Abilities & Skills
+    { handler: doSetStat,               synonyms: ["setstat", "setstatistic", "setattribute", "setability", "changestat", "changestatistic", "changeattribute", "changeability", "updatestat", "updatestatistic", "updateattribute", "updateability", "stat", "attribute", "ability"] },
+    { handler: doShowStats,             synonyms: ["showstats", "stats", "viewstats", "showabilities", "abilities", "viewabilities", "showstatistics", "statistics", "viewstatistics", "showattributes", "attributes", "viewattributes"] },
+    { handler: doRemoveStat,            synonyms: ["removestat", "deletestat", "cancelstat", "removeability", "deleteability", "cancelAbility", "removestatistic", "deletestatistic", "cancelstatistic", "removeattribute", "deleteattribute", "cancelattribute"] },
+    { handler: doClearStats,            synonyms: ["clearstats", "clearabilities", "clearstatistics", "clearattributes"] },
+    { handler: doSetSpellStat,          synonyms: ["setspellstat", "setspellstatistic", "setspellability", "setspellcastingability", "changespellstat", "changespellstatistic", "changespellability", "changespellcastingability"] },
+    { handler: doSetSkill,              synonyms: ["setskill", "changeskill", "updateskill", "skill"] },
+    { handler: doShowSkills,            synonyms: ["showskills", "skills"] },
+    { handler: doRemoveSkill,           synonyms: ["removeskill", "deleteskill", "cancelskill"] },
+    { handler: doClearSkills,           synonyms: ["clearskills"] },
+    { handler: doCheck,                 synonyms: ["check", "checkstat", "checkstatistic", "checkattribute", "checkability", "checkskill", "skillcheck", "abilitycheck"] },
+    
+    // <><> Notes
+    { handler: doShowNotes,             synonyms: ["notes", "shownotes", "viewnotes"] },
+    { handler: doNote,                  synonyms: ["note", "takenote", "setnote", "createnote", "remember"] },
+    { handler: doClearNotes,            synonyms: ["clearnotes"] },
+    { handler: doEraseNote,             synonyms: ["erasenote", "removenote", "deletenote", "cancelnote"] },
+    
+    // <><> Inventory
+    { handler: doTake,                  synonyms: ["take", "steal", "get", "grab", "receive", "loot"] },
+    { handler: doTakeWeapon,            synonyms: ["takeweapon", "stealweapon", "getweapon", "grabweapon", "receiveweapon", "lootweapon"] },
+    { handler: doTakeArmor,             synonyms: ["takearmor", "stealarmor", "getarmor", "grabarmor", "receivearmor", "lootarmor"] },
+    { handler: doBuy,                   synonyms: ["buy", "purchase", "barter", "trade", "swap", "exchange"] },
+    { handler: doSell,                  synonyms: ["sell"] },
+    { handler: doDrop,                  synonyms: ["remove", "discard", "drop", "leave", "dispose", "toss", "throw", "throwaway", "trash", "donate", "eat", "consume", "use", "drink", "pay", "lose"] },
+    { handler: doGive,                  synonyms: ["give", "handover", "hand", "gift"] },
+    { handler: doRenameItem,            synonyms: ["renameitem", "renameobject", "renamegear", "renameequipment"] },
+    { handler: doInventory,             synonyms: ["inv", "inventory", "backpack", "gear", "showinv", "showinventory", "viewinventory", "viewinv"] },
+    { handler: doClearInventory,        synonyms: ["clearinventory", "clearinv", "emptyinventory", "emptybackpack", "clearbackpack", "emptygear", "cleargear"] },
+    { handler: doEquip,                 synonyms: ["equip", "arm", "wear"] },
+    { handler: doReward,                synonyms: ["reward"] },
+    
+    // <><> Spells
+    { handler: doLearnSpell,            synonyms: ["learnspell", "learnmagic", "learnincantation", "learnritual", "memorizespell", "memorizemagic", "memorizeincantation", "memorizeritual", "learnsspell", "learnsmagic", "learnsincantation", "learnsritual", "memorizesspell", "memorizesmagic", "memorizesincantation", "memorizesritual", "learn"] },
+    { handler: doForgetSpell,           synonyms: ["forgetspell", "forgetmagic", "forgetincantation", "forgetritual", "forgetsspell", "forgetsmagic", "forgetsincantation", "forgetsritual", "deletespell", "deletemagic", "deleteincantation", "deleteritual", "deletesspell", "deletesmagic", "deletesincantation", "deletesritual", "cancelspell", "cancelmagic", "cancelincantation", "cancelritual", "cancelsspell", "cancelsmagic", "cancelsincantation", "cancelsritual", "removespell", "removemagic", "removeincantation", "removeritual", "removesspell", "removesmagic", "removesincantation", "removesritual", "forget"] },
+    { handler: doCastSpell,             synonyms: ["cast", "castspell", "castmagic", "castincantation", "castritual", "castsspell", "castsmagic", "castsincantation", "castsritual"] },
+    { handler: doClearSpells,           synonyms: ["clearspells", "clearmagic", "clearincantations", "clearrituals", "forgetallspells", "forgetallmagic", "forgetallincantation", "forgetallritual"] },
+    { handler: doSpellbook,             synonyms: ["spellbook", "spells", "listspells", "showspells", "spelllist", "spellcatalog", "spellinventory"] },
+    
+    // <><> Combat
+    { handler: doAttack,                synonyms: ["attack", "strike", "ambush", "assault", "fireat", "fireon"] },
+    { handler: doSetMeleeStat,          synonyms: ["setmeleestat", "setmeleestatistic", "setmeleeability", "changemeleestat", "changemeleestatistic", "changemeleeability"] },
+    { handler: doSetRangedStat,         synonyms: ["setrangedstat", "setrangedstatistic", "setrangedability", "changerangedstat", "changerangedstatistic", "changerangedability"] },
+    { handler: doEncounter,             synonyms: ["encounter", "startencounter"] },
+    { handler: doShowEnemies,           synonyms: ["showenemies", "enemies"] },
+    { handler: doShowAllies,            synonyms: ["showallies", "allies"] },
+    { handler: doAddEnemy,              synonyms: ["addenemy"] },
+    { handler: doAddAlly,               synonyms: ["addally"] },
+    { handler: doRemoveEnemy,           synonyms: ["removeenemy"] },
+    { handler: doRemoveAlly,            synonyms: ["removeally"] },
+    { handler: doClearEnemies,          synonyms: ["clearenemies", "resetenemies", "removeenemies"] },
+    { handler: doClearAllies,           synonyms: ["clearallies", "resetallies", "removeallies"] },
+    { handler: doInitiative,            synonyms: ["initiative"] },
+    { handler: doSetAc,                 synonyms: ["setac", "setarmorclass", "ac", "armorclass"] },
+    { handler: doFlee,                  synonyms: ["flee", "retreat", "runaway", "endcombat"] },
+    { handler: doSetupEnemy,            synonyms: ["setupenemy", "createenemy"] },
+    { handler: doSetupAlly,             synonyms: ["setupally", "createally"] },
+    { handler: doSetDamage,             synonyms: ["setdamage"] },
+    { handler: doBlock,                 synonyms: ["block", "parry", "nullify", "invalidate"] },
+    { handler: doRepeatTurn,            synonyms: ["repeatturn", "repeat"] }
+];
+
+// Helper: Look up command handler from registry
+function findCommandHandler(commandName) {
+  for (let entry of commandRegistry) {
+    if (entry.synonyms.some(s => s === commandName || s + "s" === commandName)) {
+      return entry.handler
+    }
+  }
+  return null
+}
+
 const allSynonyms = ["all", "every", "each", "every one", "everyone"]
-const versionSynonyms = ["version", "ver", "showversion"]
-const helpSynonyms = ["help"]
-// <><> Character
-const createSynonyms = ["create", "generate", "start", "begin", "setup", "party", "member", "new"]
-const renameCharacterSynonyms = ["renamecharacter", "renameperson"]
-const cloneCharacterSynonyms = ["clone", "clonecharacter", "cloneperson", "copycharacter", "copyperson", "duplicatecharacter", "duplicateperson", "dupecharacter", "dupeperson"]
-const bioSynonyms = ["bio", "biography", "summary", "character", "charactersheet", "statsheet"]
-const setClassSynonyms = ["setclass", "class"]
-const setSummarySynonyms = ["setsummary", "summary"]
-const showCharactersSynonyms = ["showcharacters", "showparty", "showteam", "characters", "party", "team"]
-const removeCharacterSynonyms = ["removecharacter", "deletecharacter", "erasecharacter"]
-const setProficiencySynonyms = ["setproficiency", "setweaponproficiency"]
-// <><> Health & Damage
-const setHealthSynonyms = ["sethealth"]
-const healSynonyms = ["heal", "mend", "restore"]
-const damageSynonyms = ["damage", "hurt", "harm", "injure"]
-const healPartySynonyms = ["healparty", "healcharacters"]
-// <><> Levels & Experience
-const setExperienceSynonyms = ["setexperience", "setexp", "setxp", "setexperiencepoints"]
-const addExperienceSynonyms = ["addexperience", "addexp", "addxp", "addexperiencepoints", "experience", "exp", "gainxp", "gainexperience", "xp", "experiencepoints"]
-const levelUpSynonyms = ["levelup", "level"]
-const setAutoXpSynonyms = ["setautoxp", "autoxp"]
-const showAutoXpSynonyms = ["showautoxp"]
-// <><> Abilities & Skills
-const setStatSynonyms = ["setstat", "setstatistic", "setattribute", "setability", "changestat", "changestatistic", "changeattribute", "changeability", "updatestat", "updatestatistic", "updateattribute", "updateability", "stat", "attribute", "ability"]
-const showStatsSynonym = ["showstats", "stats", "viewstats", "showabilities", "abilities", "viewabilities", "showstatistics", "statistics", "viewstatistics", "showattributes", "attributes", "viewattributes"]
-const removeStatSynonyms = ["removestat", "deletestat", "cancelstat", "removeability", "deleteability", "cancelAbility", "removestatistic", "deletestatistic", "cancelstatistic", "removeattribute", "deleteattribute", "cancelattribute"]
-const clearStatsSynonyms = ["clearstats", "clearabilities", "clearstatistics", "clearattributes"]
-const setSpellStatSynonyms = ["setspellstat", "setspellstatistic", "setspellability", "setspellcastingability", "changespellstat", "changespellstatistic", "changespellability", "changespellcastingability"]
-const setSkillSynonyms = ["setskill", "changeskill", "updateskill", "skill"]
-const showSkillsSynonyms = ["showskills", "skills"]
-const removeSkillSynonyms = ["removeskill", "deleteskill", "cancelskill"]
-const clearSkillsSynonyms = ["clearskills"]
-const checkSynonyms = ["check", "checkstat", "checkstatistic", "checkattribute", "checkability", "checkskill", "skillcheck", "abilitycheck"]
-// <><> Notes
-const showNotesSynonyms = ["notes", "shownotes", "viewnotes"]
-const noteSynonyms = ["note", "takenote", "setnote", "createnote", "remember"]
-const clearNotesSynonyms = ["clearnotes"]
-const eraseNoteSynonyms = ["erasenote", "removenote", "deletenote", "cancelnote"]
-// <><> Inventory
-const takeSynonyms = ["take", "steal", "get", "grab", "receive", "loot"]
-const takeWeaponSynonyms = ["takeweapon", "stealweapon", "getweapon", "grabweapon", "receiveweapon", "lootweapon"]
-const takeArmorSynonyms = ["takearmor", "stealarmor", "getarmor", "grabarmor", "receivearmor", "lootarmor"]
-const buySynonyms = ["buy", "purchase", "barter", "trade", "swap", "exchange"]
-const sellSynonyms = ["sell"]
-const dropSynonyms = ["remove", "discard", "drop", "leave", "dispose", "toss", "throw", "throwaway", "trash", "donate", "eat", "consume", "use", "drink", "pay", "lose"]
-const giveSynonyms = ["give", "handover", "hand", "gift"]
-const renameItemSynonyms = ["renameitem", "renameobject", "renamegear", "renameequipment"]
-const inventorySynonyms = ["inv", "inventory", "backpack", "gear", "showinv", "showinventory", "viewinventory", "viewinv"]
-const clearInventorySynonyms = ["clearinventory", "clearinv", "emptyinventory", "emptybackpack", "clearbackpack", "emptygear", "cleargear"]
-const equipSynonyms = ["equip", "arm", "wear"]
-const rewardSynonyms = ["reward"]
-// <><> Spells
-const learnSpellSynonyms = ["learnspell", "learnmagic", "learnincantation", "learnritual", "memorizespell", "memorizemagic", "memorizeincantation", "memorizeritual", "learnsspell", "learnsmagic", "learnsincantation", "learnsritual", "memorizesspell", "memorizesmagic", "memorizesincantation", "memorizesritual", "learn"]
-const forgetSpellSynonyms = ["forgetspell", "forgetmagic", "forgetincantation", "forgetritual", "forgetsspell", "forgetsmagic", "forgetsincantation", "forgetsritual", "deletespell", "deletemagic", "deleteincantation", "deleteritual", "deletesspell", "deletesmagic", "deletesincantation", "deletesritual", "cancelspell", "cancelmagic", "cancelincantation", "cancelritual", "cancelsspell", "cancelsmagic", "cancelsincantation", "cancelsritual", "removespell", "removemagic", "removeincantation", "removeritual", "removesspell", "removesmagic", "removesincantation", "removesritual", "forget"]
-const castSpellSynonyms = ["cast", "castspell", "castmagic", "castincantation", "castritual", "castsspell", "castsmagic", "castsincantation", "castsritual"]
-const clearSpellsSynonyms = ["clearspells", "clearmagic", "clearincantations", "clearrituals", "forgetallspells", "forgetallmagic", "forgetallincantation", "forgetallritual"]
-const spellbookSynonyms = ["spellbook", "spells", "listspells", "showspells", "spelllist", "spellcatalog", "spellinventory"]
-// I want to replace this wiht a buy spell option (like items) // const spellShopSynonyms = ["spellshop", "spellstore"]
-// <><> Combat
-const attackSynonyms = ["attack", "strike", "ambush", "assault", "fireat", "fireon"]
-const setMeleeStatSynonyms = ["setmeleestat", "setmeleestatistic", "setmeleeability", "changemeleestat", "changemeleestatistic", "changemeleeability"]
-const setrangedStatSynonyms = ["setrangedstat", "setrangedstatistic", "setrangedability", "changerangedstat", "changerangedstatistic", "changerangedability"]
-const encounterSynonyms = ["encounter", "startencounter"]
-const showEnemiesSynonyms = ["showenemies", "enemies"]
-const showAlliesSynonyms = ["showallies", "allies"]
-const addEnemySynonyms = ["addenemy"]
-const addAllySynonyms = ["addally"]
-const removeEnemySynonyms = ["removeenemy"]
-const removeAllySynonyms = ["removeally"]
-const clearEnemiesSynonyms = ["clearenemies", "resetenemies", "removeenemies"]
-const clearAlliesSynonyms = ["clearallies", "resetallies", "removeallies"]
-const initiativeSynonyms = ["initiative"]
-const setAcSynonyms = ["setac", "setarmorclass", "ac", "armorclass"]
 const turnSynonyms = ["turn", "doturn", "taketurn"]
-const fleeSynonyms = ["flee", "retreat", "runaway", "endcombat"]
-const setupEnemySynonyms = ["setupenemy", "createenemy"]
-const setupAllySynonyms = ["setupally", "createally"]
-const setDamageSynonyms = ["setdamage"]
-const blockSynonyms = ["block", "parry", "nullify", "invalidate"]
-const repeatTurnSynonyms = ["repeatturn", "repeat"]
+const createSynonyms = ["create", "generate", "start", "begin", "setup", "party", "member", "new"]
+const checkSynonyms = ["check", "checkstat", "checkstatistic", "checkattribute", "checkability", "checkskill", "skillcheck", "abilitycheck"]
+const trySynonyms = ["try", "tryto", "tries", "triesto", "attempt", "attemptto", "attemptsto", "do"]
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -121,9 +146,11 @@ const repeatTurnSynonyms = ["repeatturn", "repeat"]
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 function DNDHash_input (text) {
-  init()
+  init() // Creates templates and inital values in state
   const rawText = text
 
+  // These handle steps don't have commands, we're inputing answers to form like questions.
+  // E.g. Do you want to use a character preset? (y/n/q)
   if (state.createStep != null) {
     text = handleCreateStep(text)
     if (state.createStep != null) return text
@@ -142,6 +169,8 @@ function DNDHash_input (text) {
     else text = rawText
   }
 
+  // I assume this prevents us running commands the first time this function is called.
+  // If there's no #, it just passes the message through as-is (probably flavor/narrative).
   if (state.initialized == null || !text.includes("#")) {
     state.initialized = true;
     return text
@@ -150,6 +179,9 @@ function DNDHash_input (text) {
   state.characterName = getCharacterName(rawText)
   text = sanitizeText(text)
 
+  // Extracts "flavor text" after a newline.
+  // Keeps the #command separated from the rest of the input.
+  // This is later appended back after processing the command.
   var lineBreakIndex = text.indexOf("\n")
   if (lineBreakIndex > -1) {
     state.flavorText = text.substring(lineBreakIndex + 1)
@@ -158,114 +190,48 @@ function DNDHash_input (text) {
   } else {
     state.flavorText = null
   }
+
+  // Extract the command portion of the input after #
+  // Sanitize and extract just the base command phrase
+  let command = text.substring(text.search(/#/) + 1)
+  let commandName = getCommandName(command)?.toLowerCase().replaceAll(/[^a-z0-9\s]*/gi, "").trim()
+  if (!commandName) {
+    text = "\n[Error: Invalid or missing command.]\n"
+    return text
+  }
   
-  command = text.substring(text.search(/#/) + 1)
-  var commandName = getCommandName(command).toLowerCase().replaceAll(/[^a-z0-9\s]*/gi, "")
-  
-  if (state.characterName == null || !hasCharacter(state.characterName)) {
-    var found = processCommandSynonyms(command, commandName, createSynonyms, function () {return true})
+  // The idea of this block is to prevent us from running commmands if we have no character created
+  const youNeedACharacter = `\n[Error: Character name not specified. Use the "do" or "say" modes. Alternatively, use "story" mode in the following format without quotes: "charactername #hashtag"]\n`
+  const isCreateCommand = createSynonyms.includes(commandName)
+  const hasChar = state.characterName != null
+  const exists = hasChar && hasCharacter(state.characterName)
+  const hasHandler = findCommandHandler(commandName)
 
-    if (state.characterName == null && found) {
-      state.show = "none"
-      text = `\n[Error: Character name not specified. Use the "do" or "say" modes. Alternatively, use "story" mode in the following format without quotes: "charactername #hashtag"]\n`
-      return text
-    }
-
-    if (!found) found = processCommandSynonyms(command, commandName, helpSynonyms.concat(rollSynonyms, noteSynonyms, eraseNoteSynonyms, showNotesSynonyms, clearNotesSynonyms, showCharactersSynonyms, removeCharacterSynonyms, setDefaultDifficultySynonyms, showDefaultDifficultySynonyms, renameCharacterSynonyms, cloneCharacterSynonyms, encounterSynonyms, showEnemiesSynonyms, showAlliesSynonyms, addEnemySynonyms, addAllySynonyms, removeEnemySynonyms, removeAllySynonyms, clearEnemiesSynonyms, clearAlliesSynonyms, initiativeSynonyms, turnSynonyms, fleeSynonyms, versionSynonyms, setupEnemySynonyms, setupAllySynonyms, healSynonyms, damageSynonyms, restSynonyms, addExperienceSynonyms, healPartySynonyms, blockSynonyms, repeatTurnSynonyms, resetSynonyms), function () {return true})
-
-    if (found == null) {
-      if (state.characterName == null) {
-        state.show = "none"
-        text = `\n[Error: Character name not specified. Use the "do" or "say" modes. Alternatively, use "story" mode in the following format without quotes: "charactername #hashtag"]\n`
-        return text
-      } else {
-        state.show = "none"
-        text = `\n[Error: Character ${state.characterName} does not exist. Type #setup to create this character]\n`
-        return text
-      }
-    }
+  if (!exists && !isCreateCommand) {
+    state.show = "none"
+    text = hasChar
+      ? `\n[Error: Character ${state.characterName} does not exist. Type #setup to create this character]\n`
+      : youNeedACharacter
+    return text
   }
 
-  text = processCommandSynonyms(command, commandName, rollSynonyms, doRoll)
-  if (text == null) text = processCommandSynonyms(command, commandName, createSynonyms, doCreate)
-  if (text == null) text = processCommandSynonyms(command, commandName, showCharactersSynonyms, doShowCharacters)
-  if (text == null) text = processCommandSynonyms(command, commandName, removeCharacterSynonyms, doRemoveCharacter)
-  if (text == null) text = processCommandSynonyms(command, commandName, bioSynonyms, doBio)
-  if (text == null) text = processCommandSynonyms(command, commandName, setClassSynonyms, doSetClass)
-  if (text == null) text = processCommandSynonyms(command, commandName, setSummarySynonyms, doSetSummary)
-  if (text == null) text = processCommandSynonyms(command, commandName, setHealthSynonyms, doSetHealth)
-  if (text == null) text = processCommandSynonyms(command, commandName, healSynonyms, doHeal)
-  if (text == null) text = processCommandSynonyms(command, commandName, damageSynonyms, doDamage)
-  if (text == null) text = processCommandSynonyms(command, commandName, restSynonyms, doRest)
-  if (text == null) text = processCommandSynonyms(command, commandName, setExperienceSynonyms, doSetExperience)
-  if (text == null) text = processCommandSynonyms(command, commandName, addExperienceSynonyms, doAddExperience)
-  if (text == null) text = processCommandSynonyms(command, commandName, levelUpSynonyms, doLevelUp)
-  if (text == null) text = processCommandSynonyms(command, commandName, showStatsSynonym, doShowStats)
-  if (text == null) text = processCommandSynonyms(command, commandName, setStatSynonyms, doSetStat)
-  if (text == null) text = processCommandSynonyms(command, commandName, setSpellStatSynonyms, doSetSpellStat)
-  if (text == null) text = processCommandSynonyms(command, commandName, showSkillsSynonyms, doShowSkills)
-  if (text == null) text = processCommandSynonyms(command, commandName, setSkillSynonyms, doSetSkill)
-  if (text == null) text = processCommandSynonyms(command, commandName, checkSynonyms, doCheck)
-  if (text == null) text = processCommandSynonyms(command, commandName, trySynonyms, doTry)
-  if (text == null) text = processCommandSynonyms(command, commandName, showNotesSynonyms, doShowNotes)
-  if (text == null) text = processCommandSynonyms(command, commandName, noteSynonyms, doNote)
-  if (text == null) text = processCommandSynonyms(command, commandName, clearNotesSynonyms, doClearNotes)
-  if (text == null) text = processCommandSynonyms(command, commandName, eraseNoteSynonyms, doEraseNote)
-  if (text == null) text = processCommandSynonyms(command, commandName, takeSynonyms, doTake)
-  if (text == null) text = processCommandSynonyms(command, commandName, dropSynonyms, doDrop)
-  if (text == null) text = processCommandSynonyms(command, commandName, giveSynonyms, doGive)
-  if (text == null) text = processCommandSynonyms(command, commandName, renameItemSynonyms, doRenameItem)
-  if (text == null) text = processCommandSynonyms(command, commandName, inventorySynonyms, doInventory)
-  if (text == null) text = processCommandSynonyms(command, commandName, clearInventorySynonyms, doClearInventory)
-  if (text == null) text = processCommandSynonyms(command, commandName, learnSpellSynonyms, doLearnSpell)
-  if (text == null) text = processCommandSynonyms(command, commandName, forgetSpellSynonyms, doForgetSpell)
-  if (text == null) text = processCommandSynonyms(command, commandName, castSpellSynonyms, doCastSpell)
-  if (text == null) text = processCommandSynonyms(command, commandName, clearSpellsSynonyms, doClearSpells)
-  if (text == null) text = processCommandSynonyms(command, commandName, spellbookSynonyms, doSpellbook)
-  if (text == null) text = processCommandSynonyms(command, commandName, removeStatSynonyms, doRemoveStat)
-  if (text == null) text = processCommandSynonyms(command, commandName, clearStatsSynonyms, doClearStats)
-  if (text == null) text = processCommandSynonyms(command, commandName, removeSkillSynonyms, doRemoveSkill)
-  if (text == null) text = processCommandSynonyms(command, commandName, clearSkillsSynonyms, doClearSkills)
-  if (text == null) text = processCommandSynonyms(command, commandName, attackSynonyms, doAttack)
-  if (text == null) text = processCommandSynonyms(command, commandName, setMeleeStatSynonyms, doSetMeleeStat)
-  if (text == null) text = processCommandSynonyms(command, commandName, setrangedStatSynonyms, doSetRangedStat)
-  if (text == null) text = processCommandSynonyms(command, commandName, buySynonyms, doBuy)
-  if (text == null) text = processCommandSynonyms(command, commandName, sellSynonyms, doSell)
-  if (text == null) text = processCommandSynonyms(command, commandName, resetSynonyms, doReset)
-  if (text == null) text = processCommandSynonyms(command, commandName, setAutoXpSynonyms, doSetAutoXp)
-  if (text == null) text = processCommandSynonyms(command, commandName, showAutoXpSynonyms, doShowAutoXp)
-  if (text == null) text = processCommandSynonyms(command, commandName, setDefaultDifficultySynonyms, doSetDefaultDifficulty)
-  if (text == null) text = processCommandSynonyms(command, commandName, showDefaultDifficultySynonyms, doShowDefaultDifficulty)
-  if (text == null) text = processCommandSynonyms(command, commandName, renameCharacterSynonyms, doRenameCharacter)
-  if (text == null) text = processCommandSynonyms(command, commandName, cloneCharacterSynonyms, doCloneCharacter)
-  if (text == null) text = processCommandSynonyms(command, commandName, showDaySynonyms, doShowDay)
-  if (text == null) text = processCommandSynonyms(command, commandName, setDaySynonyms, doSetDay)
-  if (text == null) text = processCommandSynonyms(command, commandName, versionSynonyms, doVersion)
-  if (text == null) text = processCommandSynonyms(command, commandName, setAcSynonyms, doSetAc)
-  if (text == null) text = processCommandSynonyms(command, commandName, encounterSynonyms, doEncounter)
-  if (text == null) text = processCommandSynonyms(command, commandName, showEnemiesSynonyms, doShowEnemies)
-  if (text == null) text = processCommandSynonyms(command, commandName, showAlliesSynonyms, doShowAllies)
-  if (text == null) text = processCommandSynonyms(command, commandName, removeEnemySynonyms, doRemoveEnemy)
-  if (text == null) text = processCommandSynonyms(command, commandName, removeAllySynonyms, doRemoveAlly)
-  if (text == null) text = processCommandSynonyms(command, commandName, clearEnemiesSynonyms, doClearEnemies)
-  if (text == null) text = processCommandSynonyms(command, commandName, clearAlliesSynonyms, doClearAllies)
-  if (text == null) text = processCommandSynonyms(command, commandName, addEnemySynonyms, doAddEnemy)
-  if (text == null) text = processCommandSynonyms(command, commandName, addAllySynonyms, doAddAlly)
-  if (text == null) text = processCommandSynonyms(command, commandName, initiativeSynonyms, doInitiative)
-  if (text == null) text = processCommandSynonyms(command, commandName, fleeSynonyms, doFlee)
-  if (text == null) text = processCommandSynonyms(command, commandName, turnSynonyms, doTurn)
-  if (text == null) text = processCommandSynonyms(command, commandName, setupEnemySynonyms, doSetupEnemy)
-  if (text == null) text = processCommandSynonyms(command, commandName, setupAllySynonyms, doSetupAlly)
-  if (text == null) text = processCommandSynonyms(command, commandName, setDamageSynonyms, doSetDamage)
-  if (text == null) text = processCommandSynonyms(command, commandName, setProficiencySynonyms, doSetProficiency)
-  if (text == null) text = processCommandSynonyms(command, commandName, healPartySynonyms, doHealParty)
-  if (text == null) text = processCommandSynonyms(command, commandName, blockSynonyms, doBlock)
-  if (text == null) text = processCommandSynonyms(command, commandName, repeatTurnSynonyms, doRepeatTurn)
-  if (text == null) text = processCommandSynonyms(command, commandName, equipSynonyms, doEquip)
-  if (text == null) text = processCommandSynonyms(command, commandName, rewardSynonyms, doReward)
-  if (text == null) text = processCommandSynonyms(command, commandName, takeWeaponSynonyms, doTakeWeapon)
-  if (text == null) text = processCommandSynonyms(command, commandName, takeArmorSynonyms, doTakeArmor)
-  if (text == null) text = processCommandSynonyms(command, commandName, helpSynonyms, doHelp)
+  if (!hasChar && isCreateCommand && !hasHandler) {
+    state.show = "none"
+    text = youNeedACharacter
+    return text
+  }
+  // ------
+  
+  // Command Processing Block
+  let commandResult = null
+  for (const { synonyms, handler } of commandRegistry) {
+    commandResult = processCommandSynonyms(command, commandName, synonyms, handler);
+    if (commandResult != null) break;
+  }
+  text = commandResult;
+
+  // If text is still null, we try one last fallback:
+  // If the command isn't a standard one, but it matches a known stat or skill, treat it like a flipped check/try command.
   if (text == null) {
     var character = getCharacter()
     var statNames = []
@@ -275,7 +241,6 @@ function DNDHash_input (text) {
     character.skills.forEach(x => {
       statNames.push(x.name.toLowerCase())
     })
-
     text = processCommandSynonyms(command, commandName, statNames, doFlipCommandAbility)
   }
 

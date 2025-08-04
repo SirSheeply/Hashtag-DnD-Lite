@@ -628,7 +628,7 @@ function addXpToAll(experience) {
 }
 
 function getHealthMax(character) {
-  if (character == null) character = getCharacter()
+  if (character == null) character = getCharacter() // Does this work without a name argument?
   
   var modifier = 0
   var stat = character.stats.find((element) => element.name.toLowerCase() == "constitution")
