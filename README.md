@@ -12,33 +12,42 @@ This Lite Edition has several goals:
 Hashtag DnD is a scripted AI Dungeon scenario that gives you a variety of tools to enhance your adventure!
 
 ### Lite Edition Changes
-- Removed Location System       (Hard to Manage T-T)
+#### Removed Features
 - Removed Stragedy minigame     (Reduce script size)
 - Removed Lockpicking minigame  (Reduce script size)
 - Removed Memory minigame       (Reduce script size)
 - Removed Name generation       (Reduce script size)
+- Removed Location System       (Hard to Manage T-T)
+- Removed SpellShop System      (Hard to Manage T-T)
+- Removed ItemShop System       (Hard to Manage T-T)
+#### Enhanced Features
 - Story Card Encounters         (Encounters are now sourced from story cards, and can be player generated!)
 - Story Card Enemies            (Enemy presets are now sourced from story cards, and can be user generated!)
 - Story Card Allies             (Ally presets are now sourced from story cards, and can be user generated!)
 - Story Card Presets            (Character presets are now sourced from story cards, and can be user generated!)
-
-### Planned Changes
-- Reduced Story Cards (removed general items)
+- Story Card Items              (Items are now sourced from story cards, and can be user generated!)
+#### Added Features
+- Thematic Loot Tables          (Reward command now uses thematic story card loot tables, which can be user generated!)
+#### Planned Features
+- Reduced Story Cards (remove keys for general items)
 - Uncap leveling
-- Add leveling rewards
-- Add increase skill / ability command for easy use
+- Leveling rewards
+- Add increase skill/ability command for easy use
 - Add inventory management without AI output
+- Reimplement map system to work with story card based locations.
+- Reimplement spellShop system to work with story card based shop lists.
+- Reimplement itemShop system to work with story card based shop lists.
 
 ## Original Features:
-Fully working inventory system, loot drops, and item/spell shops<br>
-Hit points, turn-based battles, and a focus on strategic combat<br>
-Skill/Ability based gameplay guarantees a challenge at every turn<br>
-Advanced dice rolling syntax allows you to set the precise odds<br>
-Unlimited party size with each character having their own inventory, stats, and biographies<br>
-Multiplayer compatible<br>
-Personalized note system that does not take up context space<br>
-Create locations to travel to and view them in a map<br>
-Minigames including Mastermind, Memory, and Stragedy, a fully developed trading card game
+- Fully working inventory system, loot drops, <s>and item/spell shops</s>
+- Hit points, turn-based battles, and a focus on strategic combat
+- Skill/Ability based gameplay guarantees a challenge at every turn
+- Advanced dice rolling syntax allows you to set the precise odds
+- Unlimited party size with each character having their own inventory, stats, and biographies
+- Multiplayer compatible
+- Personalized note system that does not take up context space
+- <s>Create locations to travel to and view them in a map</s>
+- <s>Minigames including Mastermind, Memory, and Stragedy, a fully developed trading card game</s>
 
 See the [user guide here](https://github.com/raeleus/Hashtag-DnD/wiki).
 Watch the [tutorial video](https://youtu.be/E5TYU7rDaBQ).
