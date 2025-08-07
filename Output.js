@@ -222,7 +222,7 @@ function DNDHash_output(text) {
       text += `-INVENTORY-\n`
       
       character.inventory.forEach(function(x) {
-        text += `* ${x.quantity} ${toTitleCase(pluralize(x.name, x.quantity == 1))}\n`
+        text += `* ${x.quantity} ${toTitleCase(singularize(x.itemName, x.quantity == 1))}\n`
       })
 
       text += `----\n\n`
@@ -247,7 +247,7 @@ function DNDHash_output(text) {
       text += `*** ${possessiveName.toUpperCase()} INVENTORY ***`
       if (character.inventory.length > 0) {
         character.inventory.forEach(function(x) {
-          text += `\n* ${x.quantity} ${toTitleCase(pluralize(x.name, x.quantity == 1))}`
+          text += `\n* ${x.quantity} ${toTitleCase(singularize(x.itemName, x.quantity == 1))}`
         })
       } else {
         text += `\n${possessiveName} inventory is empty!`
@@ -308,6 +308,34 @@ function DNDHash_output(text) {
       }
       text += "******************\n\n"
       break
+    case "none":
+      text += " "
+      break
+    case "prefix":
+      text = state.prefix + originalText
+      break
+    case "prefixOnly":
+      text = state.prefix
+      break
+    case "clearInventory":
+      text += `[${possessiveName} inventory has been emptied]\n`
+      break
+    case "clearSpells":
+      text += `[${possessiveName} spells have been cleared]\n`
+      break
+    case "showEnemies":
+      text += "*** ENEMIES ***\n"
+
+      if (state.enemies.length == 0) {
+        text += "There are no enemies present here. Type #encounter to generate a scripted set or #addenemy to add your own\n"
+      } else {
+        var index = 0
+        for (var enemy of state.enemies) {
+          text += `${++index}. ${toTitleCase(enemy.name)} (Health: ${enemy.health} AC: ${enemy.ac} Initiative: ${enemy.initiative})\n`
+        }
+      }
+      text += "******************\n\n"
+      break
     case "showAllies":
       text += "*** ALLIES ***\n"
 
@@ -321,25 +349,6 @@ function DNDHash_output(text) {
       }
 
       text += "******************\n\n"
-      break
-    case "initiative":
-      text += "*** INITIATIVE ORDER ***\n"
-
-      if (state.initiativeOrder.length == 0) {
-        text += "There is no one in the battle. This makes no sense!"
-      } else {
-        var index = 0
-        for (var character of state.initiativeOrder) {
-          text += `${++index}. ${toTitleCase(character.name)} (Initiative: ${character.calculatedInitiative})\n`
-        }
-      }
-
-      text += "******************\n\n"
-      
-      if (state.initiativeOrder.length > 0) {
-        state.initiativeOrder = []
-        text += `[Type #turn]\n`
-      }
       break
     case "reset":
       text += "[All settings have been reset]\n"
@@ -447,14 +456,6 @@ const helpTextChecks = `
 #try (ability|skill) (advantage|disadvantage) (difficulty_class or automatic|effortless|easy|medium|hard|impossible) task
 -- Attempts to do the task based on the character's ability/skill against the specified difficulty. Quotes are not necessary.
 
-#attack (ranged) (advantage|disadvantage) (ac or effortless|easy|medium|hard|impossible) target
--- Attacks the specified target with a melee (the default) or ranged attack. The roll is compared against the specified AC which will determine if the attack succeeds or misses. If the AC is not specified, the default AC or the AC of the opponent in combat will be used. The parameters can be listed in any order, except the target must be listed last. The target can include the name of the enemy or the word "enemy" and the number of the enemy as listed in #enemies. The target can also include a damage amount. If the damage is not specified, the character's default damage is used. Quotes are not necessary.
--- Example: Astri #attack advantage The Evil Knight for 2d12+2 damage
-
-#cast (advantage|disadvantage) (difficulty_class or effortless|easy|medium|hard|impossible) spell(target)
--- Character will cast the indicated spell if the spell is in their spellbook. It will be a targeted spell if a target is indicated. The roll is modified by the spell casting ability of the character. You may type a phrase without quotes for spell such as "cast fire bolt at the giant chicken". If the difficulty is not specified, the default difficulty or the AC of the opponent in combat will be used. The parameters can be listed in any order, except the target must be listed last. The target can include the name of the enemy or the word "enemy" and the number of the enemy as listed in #enemies. The target can also include a damage amount. If the damage is not specified, the character's default damage is used. Quotes are not necessary.
--- Example: Astri #attack advantage The Evil Knight for 2d12+2 damage
-
 <><> Check Difficulty <><>
 #setdefaultdifficulty (difficulty_class or automatic|effortless|easy|medium|hard|impossible)
 -- Sets the default difficulty for #check, #try, #attack, and #cast when a difficulty is not specified. The normal default is 10 (easy). If you do not pass any parameters, the default will be set to 10 (easy).
@@ -538,22 +539,24 @@ const helpTextCombat = `
 #repeatTurn -- Repeats the turn. If it is currently an enemy's turn, it will attack or cast another spell again.
 #block -- Reverses the damage that has been inflicted in the last turn. This applies to damage on characters and enemies.
 #flee (difficulty_class or automatic|effortless|easy|medium|hard|impossible) -- Attempt to flee from combat. If the difficulty is not specified, the default difficulty will be used instead.
+#attack (ranged) (advantage|disadvantage) (ac or effortless|easy|medium|hard|impossible) target
+-- Attacks the specified target with a melee (the default) or ranged attack. The roll is compared against the specified AC which will determine if the attack succeeds or misses. If the AC is not specified, the default AC or the AC of the opponent in combat will be used. The parameters can be listed in any order, except the target must be listed last. The target can include the name of the enemy or the word "enemy" and the number of the enemy as listed in #enemies. The target can also include a damage amount. If the damage is not specified, the character's default damage is used. Quotes are not necessary.
+-- Example: Astri #attack advantage The Evil Knight for 2d12+2 damage
+#cast (advantage|disadvantage) (difficulty_class or effortless|easy|medium|hard|impossible) spell(target)
+-- Character will cast the indicated spell if the spell is in their spellbook. It will be a targeted spell if a target is indicated. The roll is modified by the spell casting ability of the character. You may type a phrase without quotes for spell such as "cast fire bolt at the giant chicken". If the difficulty is not specified, the default difficulty or the AC of the opponent in combat will be used. The parameters can be listed in any order, except the target must be listed last. The target can include the name of the enemy or the word "enemy" and the number of the enemy as listed in #enemies. The target can also include a damage amount. If the damage is not specified, the character's default damage is used. Quotes are not necessary.
+-- Example: Astri #attack advantage The Evil Knight for 2d12+2 damage
 `
 const helpTextAllies = `
 <><> Allies <><>
 #setupally 
 -- Follow prompts to create an ally from a template or completely from scratch. It will be added to the existing encounter if there is one already specified.
-
 #showallies -- Shows the list of current allies.
-
 #clearallies -- Removes all allies.
-
 #addally name health ac hitModifier damage initiative spells
 -- Adds the specified ally to the list of allies. health, ac, hitModifier, damage, and initiative can be numbers or dice rolls such as 3d6+5. Type the name in quotes if the name contains a space. The rest of the parameters can be a list of spells. Each spell must be typed in quotes if it has a space. If the spell does damage, write the name and damage roll in the following format: "Ray of Frost5d10"
-
 #removeally name or index
 -- Removes the ally as specified by the name or index. To delete multiple allies, type the numbers with spaces or commas between them. This is safer than calling #removeally multiple times because the numbers shift as allies are deleted. Quotes are not necessary.
 `
 
-// Don't modify this part
+// AI DUNGEON -- Don't modify this part
 modifier(text)

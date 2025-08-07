@@ -1,5 +1,5 @@
 // Based on version "Hashtag DnD v0.7.0" by Raeleus
-// const version = "Hashtag DnD v0.7.0 by Raeleus / Lite Edition by SirSheeply"
+const version = "Hashtag DnD v0.7.0 by Raeleus / Lite Edition by SirSheeply"
 
 // Your "Library" tab should look like this
 
@@ -92,7 +92,6 @@ function getArgument(command, index) {
 
 function getArgumentRemainder(command, index) {
   var counter = 0
-
   const pattern = new RegExp(argumentPattern)
   while ((match = pattern.exec(command)) != null) {
     if (counter++ == index + 1) {
@@ -264,105 +263,6 @@ function deleteCharacter(name) {
   state.characters.splice(index, 1)
 }
 
-function executeTurn(activeCharacter) {
-  var activeCharacterName = toTitleCase(activeCharacter.name)
-  var possessiveName = getPossessiveName(activeCharacter.name)
-  if (possessiveName == "Your") possessiveName = "your"
-
-  if (activeCharacter.className != null) {
-    //player
-    state.show = "none"
-    return `\n[It is ${possessiveName} turn]\n`
-  } else if (activeCharacter.ally == false) {
-    //enemy
-    var characters = state.characters.filter(x => x.health > 0)
-    characters.push(...state.allies.filter(x => x.health > 0))
-    var target = characters[getRandomInteger(0, characters.length - 1)]
-    var areWord = target.name == "You" ? "are" : "is"
-    var targetNameAdjustedCase = target.name == "You" ? "you" : toTitleCase(target.name)
-    var attack = calculateRoll(`1d20${activeCharacter.hitModifier > 0 ? "+" + activeCharacter.hitModifier : activeCharacter.hitModifier < 0 ? activeCharacter.hitModifier : ""}`)
-    var hit = attack >= target.ac
-
-    var text = `\n[It is ${possessiveName} turn]\n`
-    if (getRandomBoolean() || activeCharacter.spells.length == 0) {
-      if (hit) {
-        state.blockCharacter = target
-        state.blockPreviousHealth = target.health
-        var damage = isNaN(activeCharacter.damage) ? calculateRoll(activeCharacter.damage) : activeCharacter.damage
-        target.health = Math.max(target.health - damage, 0)
-
-        text += `\n[Character AC: ${target.ac} Attack roll: ${attack}]\n`
-
-        text += `${activeCharacterName} attacks ${targetNameAdjustedCase} for ${damage} damage!\n`
-        if (target.health == 0) text += ` ${toTitleCase(target.name)} ${areWord} unconscious! \n`
-        else text += ` ${toTitleCase(target.name)} ${areWord} at ${target.health} health.\n`
-      } else text += `${activeCharacterName} attacks ${targetNameAdjustedCase} but misses!\n`
-    } else {
-      var spell = activeCharacter.spells[getRandomInteger(0, activeCharacter.spells.length - 1)]
-      var diceMatches = spell.match(/(?<=^.*)\d*d\d+((\+|-)\d+)?$/gi)
-      if (diceMatches == null) text += `${activeCharacterName} casts spell ${spell}!`
-      else {
-        var spell = spell.substring(0, spell.length - diceMatches[0].length)
-        if (hit) {
-          var damage = calculateRoll(diceMatches[0])
-          target.health = Math.max(target.health - damage, 0)
-
-          text += `\n[Character AC: ${target.ac} Attack roll: ${attack}]\n`
-
-          text += `${activeCharacterName} casts spell ${spell} at ${targetNameAdjustedCase} for ${damage} damage!`
-          
-          if (target.health == 0) text += ` ${toTitleCase(target.name)} ${areWord} unconscious!\n`
-          else text += ` ${toTitleCase(target.name)} ${areWord} at ${target.health} health.\n`
-        } else text += `${activeCharacterName} casts spell ${spell} at ${targetNameAdjustedCase} but misses!\n`
-      }
-    }
-    return text
-  } else {
-    //ally
-    var enemies = state.enemies.filter(x => x.health > 0)
-    var target = enemies[getRandomInteger(0, enemies.length - 1)]
-    var areWord = target.name == "You" ? "are" : "is"
-    var targetNameAdjustedCase = target.name == "You" ? "you" : toTitleCase(target.name)
-    var attack = calculateRoll(`1d20${activeCharacter.hitModifier > 0 ? "+" + activeCharacter.hitModifier : activeCharacter.hitModifier < 0 ? activeCharacter.hitModifier : ""}`)
-    var hit = attack >= target.ac
-
-    var text = `\n[It is ${possessiveName} turn]\n`
-    if (getRandomBoolean() || activeCharacter.spells.length == 0) {
-      if (hit) {
-        state.blockCharacter = target
-        state.blockPreviousHealth = target.health
-        var damage = isNaN(activeCharacter.damage) ? calculateRoll(activeCharacter.damage) : activeCharacter.damage
-        target.health = Math.max(target.health - damage, 0)
-
-        text += `\n[Enemy AC: ${target.ac} Attack roll: ${attack}]\n`
-
-        text += `${activeCharacterName} attacks ${targetNameAdjustedCase} for ${damage} damage!\n`
-        if (target.health == 0) text += ` ${toTitleCase(target.name)} ${areWord} unconscious! \n`
-        else text += ` ${toTitleCase(target.name)} ${areWord} at ${target.health} health.\n`
-      } else text += `${activeCharacterName} attacks ${targetNameAdjustedCase} but misses!\n`
-    } else {
-      var spell = activeCharacter.spells[getRandomInteger(0, activeCharacter.spells.length - 1)]
-      var diceMatches = spell.match(/(?<=^.*)\d*d\d+((\+|-)\d+)?$/gi)
-      if (diceMatches == null) text += `${activeCharacterName} casts spell ${spell}!`
-      else {
-        var spell = spell.substring(0, spell.length - diceMatches[0].length)
-        if (hit) {
-          var damage = calculateRoll(diceMatches[0])
-          target.health = Math.max(target.health - damage, 0)
-
-          text += `\n[Character AC: ${target.ac} Attack roll: ${attack}]\n`
-
-          text += `${activeCharacterName} casts spell ${spell} at ${targetNameAdjustedCase} for ${damage} damage!`
-          
-          if (target.health == 0) text += ` ${toTitleCase(target.name)} ${areWord} unconscious!\n`
-          else text += ` ${toTitleCase(target.name)} ${areWord} at ${target.health} health.\n`
-        } else text += `${activeCharacterName} casts spell ${spell} at ${targetNameAdjustedCase} but misses!\n`
-      }
-    }
-    return text
-  }
-}
-
 function createEncounter(listName) {
   // Defualt Encounter
   var encounter = {
@@ -522,29 +422,6 @@ function getUniqueName(name) {
   return newName
 }
 
-function createInitiativeOrder() {
-  state.initiativeOrder = []
-
-  for (var character of state.characters) {
-    if (character.health <= 0) continue
-    state.initiativeOrder.push(character)
-  }
-
-  for (var enemy of state.enemies) {
-    if (enemy.health <= 0) continue
-    state.initiativeOrder.push(enemy)
-  }
-
-  for (var ally of state.allies) {
-    if (ally.health <= 0) continue
-    state.initiativeOrder.push(ally)
-  }
-
-  state.initiativeOrder.sort(function(a, b) {
-    return b.calculatedInitiative - a.calculatedInitiative;
-  });
-}
-
 const levelSplits = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000]
 
 function getLevel(experience) {
@@ -604,16 +481,18 @@ function getStoryCardListByType(listType, exactType=true) {
   return storyCards.filter((element) => (element.type.toLowerCase().includes(listType.toLowerCase())));
 }
 
-// The ultimate story cards retrieval for any cards of X title
-// exactType parameter allows us to choose whether to match the title exactly or just includes type as a substring
-function getStoryCardListByTitle(listTitle, exactTitle=true) {
+// The ultimate story card retrieval for any cards of X title
+// exactTitle parameter allows us to choose whether to match the title exactly or by inclusion
+function getStoryCardListByTitle(listTitle, exactTitle = true) {
+  const normalizedTitle = singularize(listTitle, true).toLowerCase()
   if (exactTitle) {
-    return storyCards.filter((element) => (element.type.toLowerCase() == listTitle.toLowerCase()));
+    return storyCards.filter((element) => singularize(element.title, true).toLowerCase() === normalizedTitle )
   }
-  return storyCards.filter((element) => (element.type.toLowerCase().includes(listTitle.toLowerCase())));
+  return storyCards.filter((element) => singularize(element.title, true).toLowerCase().includes(normalizedTitle) )
 }
 
-function pluralize(word, revert = false) {
+
+function singularize(word, makeSingle = true) { //TODO: Changed to default true from false, need to check all usage
   const pluralRules = {
     '(quiz)$': "$1zes",
     '^(ox)$': "$1en",
@@ -710,16 +589,16 @@ function pluralize(word, revert = false) {
   if (uncountable.has(lower)) return word;
 
   for (let key in irregular) {
-    const pattern = revert
+    const pattern = makeSingle
       ? new RegExp(`^${irregular[key]}$`, 'i')
       : new RegExp(`^${key}$`, 'i');
 
     if (pattern.test(word)) {
-      return word.replace(pattern, revert ? key : irregular[key]);
+      return word.replace(pattern, makeSingle ? key : irregular[key]);
     }
   }
 
-  const rules = revert ? singularRules : pluralRules;
+  const rules = makeSingle ? singularRules : pluralRules;
   for (let rule in rules) {
     const pattern = new RegExp(rule, 'i');
     if (pattern.test(word)) {
@@ -728,6 +607,13 @@ function pluralize(word, revert = false) {
   }
 
   return word;
+}
+
+function compareWithoutPlural(searchForThis, searchInThis, exactMatch=true) {
+  if (exactMatch) {
+    return singularize(searchInThis.toLowerCase()) === singularize(searchForThis.toLowerCase())
+  }
+  return singularize(searchInThis.toLowerCase()).includes(singularize(searchForThis.toLowerCase()))
 }
 
 function clamp(num, min, max) {
@@ -747,4 +633,153 @@ function toTitleCase(str) {
 
 function stripPunctuation(str) {
   return str.replaceAll(/((\.)|(!))\s*$/g, "")
+}
+
+const O = hoistO();
+/*** Creates a new story card with the specified parameters
+* Credits to Lewd Leah
+* @function
+* @param {string|Object} title Card title string or full card template object containing all fields
+* @param {string} [entry] The entry text for the card
+* @param {string} [type] The card type (e.g., "character", "location")
+* @param {string} [keys] The keys (triggers) for the card
+* @param {string} [description] The notes or memory bank of the card
+* @param {number} [insertionIndex] Optional index to insert the card at a specific position within storyCards
+* @returns {Object|null} The created card object reference, or null if creation failed
+*/
+function buildStoryCard (title, entry, type, keys, description, insertionIndex) {
+    if (isTitleInObj(title)) {
+        type = title.type ?? type;
+        keys = title.keys ?? keys;
+        entry = title.entry ?? entry;
+        description = title.description ?? description;
+        title = title.title;
+    }
+    title = cast(title);
+    const card = constructCard(O.f({
+        type: cast(type),
+        title,
+        keys: cast(keys, buildKeys("", title)),
+        entry: cast(entry),
+        description: cast(description)
+    }), boundInteger(0, insertionIndex, storyCards.length, newCardIndex()));
+    if (notEmptyObj(card)) {
+        return card;
+    }
+    function cast(value, fallback = "") {
+        if (typeof value === "string") {
+            return value;
+        } else {
+            return fallback;
+        }
+    }
+    return null;
+}
+
+function hoistO() {
+  return (class O {
+    static f(obj) {
+      return Object.freeze(obj); // Makes the object immutable
+    }
+    static v(base) {
+      return see(Words.copy) + base;
+    }
+    static s(obj) {
+      return Object.seal(obj); // Prevents adding/removing properties
+    }
+  });
+}
+
+function isTitleInObj(obj) {
+  return (
+    (typeof obj === "object")
+    && (obj !== null)
+    && ("title" in obj)
+    && (typeof obj.title === "string")
+  );
+}
+
+function notEmptyObj(obj) {
+    return (obj && (0 < Object.keys(obj).length));
+}
+
+function boundInteger(lowerBound, value, upperBound, fallback) {
+    if (!Number.isInteger(value)) {
+        if (!Number.isInteger(fallback)) {
+            throw new Error("Invalid arguments: value and fallback are not integers");
+        }
+        value = fallback;
+    }
+    if (Number.isInteger(lowerBound) && (value < lowerBound)) {
+        if (Number.isInteger(upperBound) && (upperBound < lowerBound)) {
+            throw new Error("Invalid arguments: The inequality (lowerBound <= upperBound) must be satisfied");
+        }
+        return lowerBound;
+    } else if (Number.isInteger(upperBound) && (upperBound < value)) {
+        return upperBound;
+    } else {
+        return value;
+    }
+}
+
+// Constructs a new story card from a standardized story card template object
+// {type: "", title: "", keys: "", entry: "", description: ""}
+// Returns a reference to the newly constructed card
+function constructCard(templateCard, insertionIndex = 0) {
+    addStoryCard("%@%");
+    for (const [index, card] of storyCards.entries()) {
+        if (card.title !== "%@%") {
+            continue;
+        }
+        card.type = templateCard.type;
+        card.title = templateCard.title;
+        card.keys = templateCard.keys;
+        card.entry = templateCard.entry;
+        card.description = templateCard.description;
+        if (index !== insertionIndex) {
+            // Remove from the current position and reinsert at the desired index
+            storyCards.splice(index, 1);
+            storyCards.splice(insertionIndex, 0, card);
+        }
+        return O.s(card);
+    }
+    return {};
+}
+function newCardIndex() {
+    return 0;
+}
+
+function buildKeys(keys, key) {
+    key = key.trim().replace(/\s+/g, " ");
+    const keyset = [];
+    if (key === "") {
+        return keys;
+    } else if (keys.trim() !== "") {
+        keyset.push(...keys.split(","));
+        const lowerKey = key.toLowerCase();
+        for (let i = keyset.length - 1; 0 <= i; i--) {
+            const preKey = keyset[i].trim().replace(/\s+/g, " ").toLowerCase();
+            if ((preKey === "") || preKey.includes(lowerKey)) {
+                keyset.splice(i, 1);
+            }
+        }
+    }
+    if (key.length < 6) {
+        keyset.push(...[
+            " " + key + " ", " " + key + "'", "\"" + key + " ", " " + key + ".", " " + key + "?", " " + key + "!", " " + key + ";", "'" + key + " ", "(" + key + " ", " " + key + ")", " " + key + ":", " " + key + "\"", "[" + key + " ", " " + key + "]", "—" + key + " ", " " + key + "—", "{" + key + " ", " " + key + "}"
+        ]);
+    } else if (key.length < 9) {
+        keyset.push(...[
+            key + " ", " " + key, key + "'", "\"" + key, key + ".", key + "?", key + "!", key + ";", "'" + key, "(" + key, key + ")", key + ":", key + "\"", "[" + key, key + "]", "—" + key, key + "—", "{" + key, key + "}"
+        ]);
+    } else {
+        keyset.push(key);
+    }
+    keys = keyset[0] || key;
+    let i = 1;
+    while ((i < keyset.length) && ((keys.length + 1 + keyset[i].length) < 101)) {
+        keys += "," + keyset[i];
+        i++;
+    }
+    return keys;
 }

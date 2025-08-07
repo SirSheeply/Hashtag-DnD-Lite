@@ -1,5 +1,5 @@
 // Based on version "Hashtag DnD v0.7.0" by Raeleus
-const version = "Hashtag DnD v0.7.0 by Raeleus / Lite Edition by SirSheeply"
+// const version = "Hashtag DnD v0.7.0 by Raeleus / Lite Edition by SirSheeply"
 
 // Your "Input" tab should look like this
 
@@ -31,11 +31,11 @@ const commandRegistry = [
     // <><> Time
     { handler: doShowDay,               synonyms: ["showday", "showdate", "day", "date"] },
     { handler: doSetDay,                synonyms: ["setday", "setdate"] },
-    { handler: doRest,                  synonyms: ["rest", "longrest", "shortrest", "sleep", "nap"] },
     
     // System
     { handler: doReset,                 synonyms: ["reset", "cleandata", "cleardata", "resetdata", "resetsettings", "clearsettings", "profile"] },
     { handler: doVersion,               synonyms: ["version", "ver", "showversion"] },
+    { handler: doTest,                  synonyms: ["testcode", "debug"]},
     { handler: doHelp,                  synonyms: ["help"] },
     
     // <><> Character
@@ -47,13 +47,6 @@ const commandRegistry = [
     { handler: doSetSummary,            synonyms: ["setsummary", "summary"] },
     { handler: doShowCharacters,        synonyms: ["showcharacters", "showparty", "showteam", "characters", "party", "team"] },
     { handler: doRemoveCharacter,       synonyms: ["removecharacter", "deletecharacter", "erasecharacter"] },
-    { handler: doSetProficiency,        synonyms: ["setproficiency", "setweaponproficiency"] },
-    
-    // <><> Health & Damage
-    { handler: doSetHealth,             synonyms: ["sethealth"] },
-    { handler: doHeal,                  synonyms: ["heal", "mend", "restore"] },
-    { handler: doDamage,                synonyms: ["damage", "hurt", "harm", "injure"] },
-    { handler: doHealParty,             synonyms: ["healparty", "healcharacters"] },
     
     // <><> Levels & Experience
     { handler: doSetExperience,         synonyms: ["setexperience", "setexp", "setxp", "setexperiencepoints"] },
@@ -82,16 +75,14 @@ const commandRegistry = [
     
     // <><> Inventory
     { handler: doTake,                  synonyms: ["take", "steal", "get", "grab", "receive", "loot"] },
-    { handler: doTakeWeapon,            synonyms: ["takeweapon", "stealweapon", "getweapon", "grabweapon", "receiveweapon", "lootweapon"] },
-    { handler: doTakeArmor,             synonyms: ["takearmor", "stealarmor", "getarmor", "grabarmor", "receivearmor", "lootarmor"] },
     { handler: doBuy,                   synonyms: ["buy", "purchase", "barter", "trade", "swap", "exchange"] },
     { handler: doSell,                  synonyms: ["sell"] },
     { handler: doDrop,                  synonyms: ["remove", "discard", "drop", "leave", "dispose", "toss", "throw", "throwaway", "trash", "donate", "eat", "consume", "use", "drink", "pay", "lose"] },
     { handler: doGive,                  synonyms: ["give", "handover", "hand", "gift"] },
+
     { handler: doRenameItem,            synonyms: ["renameitem", "renameobject", "renamegear", "renameequipment"] },
     { handler: doInventory,             synonyms: ["inv", "inventory", "backpack", "gear", "showinv", "showinventory", "viewinventory", "viewinv"] },
     { handler: doClearInventory,        synonyms: ["clearinventory", "clearinv", "emptyinventory", "emptybackpack", "clearbackpack", "emptygear", "cleargear"] },
-    { handler: doEquip,                 synonyms: ["equip", "arm", "wear"] },
     { handler: doReward,                synonyms: ["reward"] },
     
     // <><> Spells
@@ -102,10 +93,35 @@ const commandRegistry = [
     { handler: doSpellbook,             synonyms: ["spellbook", "spells", "listspells", "showspells", "spelllist", "spellcatalog", "spellinventory"] },
     
     // <><> Combat
+    // PLAN: Replace health/damage/ac system with injury system
+    // Wepaons have injury types which source from injury tables, armor has injury resistance
+    // This will allow us to introduce damage types (something not present)
+    // The injury system will be narrative based, not turn based (A deviation from D&D)
+    // This removes the need for players to book-keep encounters, memorize command sequences, and allow free-form combat
+
+    // As I am in the middle of overhauling equip, items, and inventory; the injury mechanic will have to wait
+    // However, to preapre for it, and to avoid needless overhauling, I'll be striping the following commands:
+    // doTurn, doInitiative, doRepeatTurn, doFlee
+    // 
+    // What can be done after the removals?
+    // Allies and Enemies may still be created, viewed, edited, and such
+    // Health & Damage commands should work just fine (for manual combat)
+    // doAttack and doBlock, may be broken in the meantime
+
+    // <><> Character Actions in Combat
     { handler: doAttack,                synonyms: ["attack", "strike", "ambush", "assault", "fireat", "fireon"] },
-    { handler: doSetMeleeStat,          synonyms: ["setmeleestat", "setmeleestatistic", "setmeleeability", "changemeleestat", "changemeleestatistic", "changemeleeability"] },
-    { handler: doSetRangedStat,         synonyms: ["setrangedstat", "setrangedstatistic", "setrangedability", "changerangedstat", "changerangedstatistic", "changerangedability"] },
-    { handler: doEncounter,             synonyms: ["encounter", "startencounter"] },
+    { handler: doBlock,                 synonyms: ["block", "parry", "nullify", "invalidate"] },
+
+    // <><> TTRPG Mechanics
+    { handler: doEncounter,             synonyms: ["encounter", "startencounter"] }, //TODO: Make like thematic loot tables (no need for entity creation anymore)
+
+    // <><> Health & Damage
+    { handler: doHeal,                  synonyms: ["heal", "mend", "restore"] },
+    { handler: doDamage,                synonyms: ["damage", "hurt", "harm", "injure"] },
+    { handler: doHealParty,             synonyms: ["healparty", "healcharacters"] },
+    { handler: doRest,                  synonyms: ["rest", "longrest", "shortrest", "sleep", "nap"] },
+
+    // <><> Allies and Enemies
     { handler: doShowEnemies,           synonyms: ["showenemies", "enemies"] },
     { handler: doShowAllies,            synonyms: ["showallies", "allies"] },
     { handler: doAddEnemy,              synonyms: ["addenemy"] },
@@ -114,14 +130,17 @@ const commandRegistry = [
     { handler: doRemoveAlly,            synonyms: ["removeally"] },
     { handler: doClearEnemies,          synonyms: ["clearenemies", "resetenemies", "removeenemies"] },
     { handler: doClearAllies,           synonyms: ["clearallies", "resetallies", "removeallies"] },
-    { handler: doInitiative,            synonyms: ["initiative"] },
-    { handler: doSetAc,                 synonyms: ["setac", "setarmorclass", "ac", "armorclass"] },
-    { handler: doFlee,                  synonyms: ["flee", "retreat", "runaway", "endcombat"] },
     { handler: doSetupEnemy,            synonyms: ["setupenemy", "createenemy"] },
     { handler: doSetupAlly,             synonyms: ["setupally", "createally"] },
+
+    // <><> Character Combat Values
+    { handler: doSetHealth,             synonyms: ["sethealth"] },
+    { handler: doSetMeleeStat,          synonyms: ["setmeleestat", "setmeleestatistic", "setmeleeability", "changemeleestat", "changemeleestatistic", "changemeleeability"] },
+    { handler: doSetRangedStat,         synonyms: ["setrangedstat", "setrangedstatistic", "setrangedability", "changerangedstat", "changerangedstatistic", "changerangedability"] },
+    { handler: doSetAc,                 synonyms: ["setac", "setarmorclass", "ac", "armorclass"] },
     { handler: doSetDamage,             synonyms: ["setdamage"] },
-    { handler: doBlock,                 synonyms: ["block", "parry", "nullify", "invalidate"] },
-    { handler: doRepeatTurn,            synonyms: ["repeatturn", "repeat"] }
+    { handler: doSetProficiency,        synonyms: ["setproficiency", "setweaponproficiency"] },
+    { handler: doEquip,                 synonyms: ["equip", "arm", "wear"] }
 ];
 
 // Helper: Look up command handler from registry
@@ -134,6 +153,7 @@ function findCommandHandler(commandName) {
   return null
 }
 
+const articleSysnonyms = ["a", "an", "the"]
 const allSynonyms = ["all", "every", "each", "every one", "everyone"]
 const turnSynonyms = ["turn", "doturn", "taketurn"]
 const createSynonyms = ["create", "generate", "start", "begin", "setup", "party", "member", "new"]
@@ -377,7 +397,7 @@ function handleCreateStep(text) {
         // This means players can curate the presests, and we're not limited to X amount.
 
         // Get a list of all the preset cards with the preset type
-        const presetIndexes = getStoryCardListByType("type")
+        const presetIndexes = getStoryCardListByType("preset")
         if (presetIndexes.length <= 0) {
           // Error no presets cards for this case!
           return "Error: No preset Cards Found!"
@@ -393,7 +413,7 @@ function handleCreateStep(text) {
         entity.abilities.forEach(ability => {
           state.tempCharacter.stats.push({name: ability.name, value: ability.value})
         });
-        entity.skills.forEach(skill => { //HERE
+        entity.skills.forEach(skill => {
           const findSkill = state.tempCharacter.skills.find((element) => element.name.toLowerCase() == skill.name.toLowerCase())
           if (findSkill) {
             // NOTE: If we implement character saving and loading we may want to consider fully deifining skills with stat base
@@ -402,8 +422,9 @@ function handleCreateStep(text) {
             state.tempCharacter.skills.push({name: skill.name, stat:skill.stat, modifier: skill.modifier})
           }
         });
+        // TODO: Update the presets to be proper items
         entity.inventory.forEach(item => {
-          state.tempCharacter.inventory.push({name: item.name, quantity: item.quantity})
+          putItemIntoInventory(character, {itemName:item.name}, item.quantity)
         });
         state.tempCharacter.summary = presetCard.entry
         state.tempCharacter.spellStat = entity.spellStat
@@ -823,7 +844,6 @@ function init() {
   if (state.day == null) state.day = 0
   if (state.enemies == null) state.enemies = []
   if (state.allies == null) state.allies = []
-  if (state.initiativeOrder == null) state.initiativeOrder = []
   state.show = null
   state.prefix = null
   state.critical = null
@@ -869,10 +889,10 @@ function doCreate(command) {
 
   state.createStep = 0
   state.tempCharacter.name = character.name
-  resetTempCharacterSkills()
+  resetTempCharacterSkills() // Why for skills and not for stats?
   state.tempCharacter.stats = []
   state.tempCharacter.spells = []
-  state.tempCharacter.inventory = [{name: "Gold", quantity: 50}, {name: "Rope", quantity: 1}, {name: "Ration", quantity: 10}, {name: "Torch", quantity: 1}]
+  state.tempCharacter.inventory = [] // Anything that goes into the inventory must go through doTake()!
   state.tempCharacter.spellStat = null
   state.tempCharacter.meleeStat = "Strength"
   state.tempCharacter.rangedStat = "Dexterity"
@@ -1675,82 +1695,80 @@ function doAttack(command) {
 
   var enemyString = ""
   var allyString = ""
-  if (state.initiativeOrder.length > 0) {
-    var foundEnemy
+  var foundEnemy
 
-    for (var enemy of state.enemies) {
-      if (targetText.toLowerCase().includes(enemy.name.toLowerCase())) {
-        foundEnemy = enemy
-        break
-      }
+  for (var enemy of state.enemies) {
+    if (targetText.toLowerCase().includes(enemy.name.toLowerCase())) {
+      foundEnemy = enemy
+      break
     }
+  }
 
-    if (foundEnemy == null) {
-      var indexMatches = targetText.match(/(?<=enemy\s*)\d+/gi)
-      if (indexMatches != null) {
-        foundEnemy = state.enemies[parseInt(indexMatches[0]) - 1]
-        targetText = targetText.replace(/enemy\s*d+/gi, foundEnemy.name)
-      }
+  if (foundEnemy == null) {
+    var indexMatches = targetText.match(/(?<=enemy\s*)\d+/gi)
+    if (indexMatches != null) {
+      foundEnemy = state.enemies[parseInt(indexMatches[0]) - 1]
+      targetText = targetText.replace(/enemy\s*d+/gi, foundEnemy.name)
     }
+  }
 
-    var foundAlly
+  var foundAlly
 
-    if (foundEnemy == null) for (var ally of state.allies) {
-      if (targetText.toLowerCase().includes(ally.name.toLowerCase())) {
-        foundAlly = ally
-        break
-      }
+  if (foundEnemy == null) for (var ally of state.allies) {
+    if (targetText.toLowerCase().includes(ally.name.toLowerCase())) {
+      foundAlly = ally
+      break
     }
+  }
 
-    if (foundAlly == null) {
-      var indexMatches = targetText.match(/(?<=ally\s*)\d+/gi)
-      if (indexMatches != null) {
-        foundAlly = state.allies[parseInt(indexMatches[0]) - 1]
-        targetText = targetText.replace(/ally\s*d+/gi, foundAlly.name)
-      }
+  if (foundAlly == null) {
+    var indexMatches = targetText.match(/(?<=ally\s*)\d+/gi)
+    if (indexMatches != null) {
+      foundAlly = state.allies[parseInt(indexMatches[0]) - 1]
+      targetText = targetText.replace(/ally\s*d+/gi, foundAlly.name)
     }
+  }
 
-    var damage
-    if (/^\d*d\d+((\+|-)d+)?$/gi.test(character.damage)) damage = score == 20 ? calculateRoll(character.damage) + calculateRoll(character.damage) : calculateRoll(character.damage)
-    else damage = parseInt(character.damage)
+  var damage
+  if (/^\d*d\d+((\+|-)d+)?$/gi.test(character.damage)) damage = score == 20 ? calculateRoll(character.damage) + calculateRoll(character.damage) : calculateRoll(character.damage)
+  else damage = parseInt(character.damage)
 
-    var damageMatches = targetText.match(/\d*d\d+((\+|-)d+)?/gi)
-    if (damageMatches != null) damage = score == 20 ? calculateRoll(damageMatches[0]) + calculateRoll(damageMatches[0]) : calculateRoll(damageMatches[0])
-    else {
-      damageMatches = targetText.match(/\d+/g)
-      if (damageMatches != null) damage = score == 20 ? parseInt(damageMatches[damageMatches.length - 1]) * 2 : parseInt(damageMatches[damageMatches.length - 1])
+  var damageMatches = targetText.match(/\d*d\d+((\+|-)d+)?/gi)
+  if (damageMatches != null) damage = score == 20 ? calculateRoll(damageMatches[0]) + calculateRoll(damageMatches[0]) : calculateRoll(damageMatches[0])
+  else {
+    damageMatches = targetText.match(/\d+/g)
+    if (damageMatches != null) damage = score == 20 ? parseInt(damageMatches[damageMatches.length - 1]) * 2 : parseInt(damageMatches[damageMatches.length - 1])
+  }
+
+  if (foundEnemy != null) {
+    if (usingDefaultDifficulty) targetRoll = foundEnemy.ac
+    if (score == 20 || score + modifier >= targetRoll) {
+      if (score == 20) enemyString += `\nCritical Damage: ${damage}\n`
+      else enemyString += `\nDamage: ${damage}\n`
+
+      state.blockCharacter = foundEnemy
+      state.blockPreviousHealth = foundEnemy.health
+      foundEnemy.health = Math.max(0, foundEnemy.health - damage)
+      if (foundEnemy.health == 0) {
+        enemyString += ` ${toTitleCase(foundEnemy.name)} has been defeated!`
+        
+      } else enemyString += ` ${toTitleCase(foundEnemy.name)} has ${foundEnemy.health} health remaining!`
     }
+  }
 
-    if (foundEnemy != null) {
-      if (usingDefaultDifficulty) targetRoll = foundEnemy.ac
-      if (score == 20 || score + modifier >= targetRoll) {
-        if (score == 20) enemyString += `\nCritical Damage: ${damage}\n`
-        else enemyString += `\nDamage: ${damage}\n`
+  if (foundAlly != null) {
+    if (usingDefaultDifficulty) targetRoll = foundAlly.ac
+    if (score == 20 || score + modifier >= targetRoll) {
+      if (score == 20) allyString += `\nCritical Damage: ${damage}\n`
+      else allyString += `\nDamage: ${damage}\n`
 
-        state.blockCharacter = foundEnemy
-        state.blockPreviousHealth = foundEnemy.health
-        foundEnemy.health = Math.max(0, foundEnemy.health - damage)
-        if (foundEnemy.health == 0) {
-          enemyString += ` ${toTitleCase(foundEnemy.name)} has been defeated!`
-          
-        } else enemyString += ` ${toTitleCase(foundEnemy.name)} has ${foundEnemy.health} health remaining!`
-      }
-    }
-
-    if (foundAlly != null) {
-      if (usingDefaultDifficulty) targetRoll = foundAlly.ac
-      if (score == 20 || score + modifier >= targetRoll) {
-        if (score == 20) allyString += `\nCritical Damage: ${damage}\n`
-        else allyString += `\nDamage: ${damage}\n`
-
-        state.blockCharacter = foundAlly
-        state.blockPreviousHealth = foundAlly.health
-        foundAlly.health = Math.max(0, foundAlly.health - damage)
-        if (foundAlly.health == 0) {
-          allyString += ` ${toTitleCase(foundAlly.name)} has been defeated!`
-          
-        } else allyString += ` ${toTitleCase(foundAlly.name)} has ${foundAlly.health} health remaining!`
-      }
+      state.blockCharacter = foundAlly
+      state.blockPreviousHealth = foundAlly.health
+      foundAlly.health = Math.max(0, foundAlly.health - damage)
+      if (foundAlly.health == 0) {
+        allyString += ` ${toTitleCase(foundAlly.name)} has been defeated!`
+        
+      } else allyString += ` ${toTitleCase(foundAlly.name)} has ${foundAlly.health} health remaining!`
     }
   }
 
@@ -1873,8 +1891,6 @@ function doRemoveEnemy(command) {
 
       var enemy = state.enemies[num]
       state.enemies.splice(num, 1)
-      var index = state.initiativeOrder.indexOf(enemy)
-      if (index >= 0) state.initiativeOrder.splice(index, 1)
       text += `[The enemy ${toTitleCase(enemy.name)} has been removed]\n`
     })
 
@@ -1925,8 +1941,6 @@ function doRemoveAlly(command) {
 
       var ally = state.allies[num]
       state.allies.splice(num, 1)
-      var index = state.initiativeOrder.indexOf(ally)
-      if (index >= 0) state.initiativeOrder.splice(index, 1)
       text += `[The ally ${toTitleCase(ally.name)} has been removed]\n`
     })
 
@@ -1960,7 +1974,6 @@ function doClearEnemies(command) {
   }
 
   state.enemies = []
-  state.initiativeOrder = []
 
   state.show = "none"
   return "\n[The enemies have been cleared]\n"
@@ -1973,7 +1986,6 @@ function doClearAllies(command) {
   }
 
   state.allies = []
-  state.initiativeOrder = []
 
   state.show = "none"
   return "\n[The allies have been cleared]\n"
@@ -2157,125 +2169,6 @@ function doAddAlly(command) {
   return `[Ally ${toTitleCase(ally.name)} has been created]`
 }
 
-function doInitiative(command) {
-  for (character of state.characters) {
-    var stat = character.stats.find(element => element.name.toLowerCase() == "dexterity")
-    if (stat == null) character.calculatedInitiative = calculateRoll("d20")
-    else character.calculatedInitiative = calculateRoll("d20") + getModifier(stat.value)
-  }
-
-  for (enemy of state.enemies) {
-    if (isNaN(enemy.initiative)) enemy.calculatedInitiative = calculateRoll(enemy.initiative)
-    else enemy.calculatedInitiative = enemy.initiative
-  }
-
-  for (ally of state.allies) {
-    if (isNaN(ally.initiative)) ally.calculatedInitiative = calculateRoll(ally.initiative)
-    else ally.calculatedInitiative = ally.initiative
-  }
-
-  if (state.enemies.length == 0) {
-    state.show = "none"
-    return "\n[Error: No enemies! Type #addenemy or #encounter]\n"
-  }
-
-  createInitiativeOrder()
-
-  if (state.initiativeOrder.length == 0) {
-    state.show = "none"
-    return "\n[Error: No combatants! Ensure that your characters have health and you have added enemies. See #help]\n"
-  }
-
-  state.show = "initiative"
-  return "\nBattle has commenced!\n"
-}
-
-function doFlee(command) {
-  if (state.initiativeOrder.length == 0) {
-    state.show = "none"
-    return "\n[Error: Not in combat. Type #initiative first]\n"
-  }
-
-  var difficulty = getArgument(command, 0)
-  if (difficulty != null) {
-    const difficultyNames = ["impossible", "extreme", "hard", "medium", "easy", "effortless", "veryeasy", "very easy", "automatic", "auto"]
-    const difficultyScores = [30, 25, 20, 15, 10, 5, 5, 5, 0, 0]
-
-    const difficultyPatternNames = [...new Set(difficultyNames)]
-    difficultyPatternNames.push("\\d+")
-    var difficultyIndex = difficultyNames.indexOf(difficulty)
-    if (difficultyIndex >= 0 && difficultyIndex < difficultyNames.length) {
-      difficulty = difficultyScores[difficultyIndex]
-    }
-  } else {
-    difficulty = state.defaultDifficulty
-  }
-
-  var roll = calculateRoll("d20")
-
-  var text = ""
-  if (difficulty != 0) text += `\n[DC: ${difficulty} Roll: ${roll}]\n`
-  if (roll >= difficulty) {
-    state.initiativeOrder = []
-    text += `\nThe party successfuly flees from battle!\n`
-  } else text += `\nThe party tries to flee from battle, but fails!\n`
-
-  return text
-}
-
-function doTurn(command) {
-  if (state.initiativeOrder.length > 0) state.initiativeOrder.splice(0, 1)
-
-  var defeatedEnemies = 0
-  for (var enemy of state.enemies) {
-    if (enemy.health > 0) continue
-
-    defeatedEnemies++
-    var index = state.initiativeOrder.findIndex(x => x.name.toLowerCase() == enemy.name.toLowerCase())
-    if (index >= 0) state.initiativeOrder.splice(index, 1)
-  }
-
-  var defeatedAllies = 0
-  for (var ally of state.allies) {
-    if (ally.health > 0) continue
-
-    defeatedAllies++
-    var index = state.initiativeOrder.findIndex(x => x.name.toLowerCase() == ally.name.toLowerCase())
-    if (index >= 0) state.initiativeOrder.splice(index, 1)
-  }
-
-  var defeatedCharacters = 0
-  for (var character of state.characters) {
-    if (character.health > 0) continue
-
-    defeatedCharacters++
-    var index = state.initiativeOrder.findIndex(x => x.name.toLowerCase() == character.name.toLowerCase())
-    if (index >= 0) state.initiativeOrder.splice(index, 1)
-  }
-
-  if (state.initiativeOrder.length == 0) createInitiativeOrder()
-  
-  if (state.initiativeOrder.length == 0) {
-    return "\nDraw! All combatants have been incapacitated.\n"
-  }
-
-  if (defeatedEnemies == state.enemies.length) {
-    state.initiativeOrder = []
-    return "\nVictory! The party has defeated all opponents.\n"
-  }
-
-  if (defeatedCharacters == state.characters.length) {
-    state.initiativeOrder = []
-    return "\nDefeat! The entire party has been incapacitated.\n"
-  }
-
-  return executeTurn(state.initiativeOrder[0])
-}
-
-function doRepeatTurn(command) {
-  return executeTurn(state.initiativeOrder[0])
-}
-
 function doBlock(command) {
   if (state.blockCharacter == null) {
     state.show = "none"
@@ -2298,167 +2191,8 @@ function doBlock(command) {
   return `\nHowever, the damage to ${properName} was blocked!\n`
 }
 
-function doTake(command) {
-  var itemIndex = 0
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
-  }
-
-  if (arg0 == "the") {
-    var tempArg = getArgument(command, 1)
-    if (tempArg != null && !isNaN(tempArg)) {
-      arg0 = tempArg
-      itemIndex++
-    }
-  }
-
-  if (!isNaN(arg0)) itemIndex++
-
-  const item = {
-    quantity: isNaN(arg0) ? 1 : arg0,
-    name: pluralize(getArgumentRemainder(command, itemIndex).replace(/^((the)|(a)|(an))\s/, ""), true)
-  }
-
-  var character = getCharacter()
-  var commandName = getCommandName(command)
-  var commandNamePlural = pluralize(commandName, character.name == "You") 
-  var haveWord = character.name == "You" ? "have" : "has"
-  var displayItemName = pluralize(item.name, item.quantity == 1)
-
-  if (item.quantity < 0) item.quantity = 1
-
-  var text = "\n"
-  if (item.quantity == 1) text += `${character.name} ${commandNamePlural} ${displayItemName.toLowerCase().startsWith("the ") ? "" : "the "}${displayItemName}.\n`
-  else text += `${character.name} ${commandNamePlural} ${item.quantity} ${displayItemName}.\n`
-
-  var index = character.inventory.findIndex((element) => element.name.toLowerCase() == item.name.toLowerCase())
-  if (index == -1) {
-    character.inventory.push(item)
-  } else {
-    var existingItem = character.inventory[index]
-    existingItem.quantity = parseInt(existingItem.quantity) + parseInt(item.quantity)
-
-    displayItemName = pluralize(existingItem.name, existingItem.quantity == 1)
-    text += `${character.name} now ${haveWord} ${existingItem.quantity} ${displayItemName}.\n`
-  }
-
-  return text
-}
-
-function doTakeWeapon(command) {
-  var itemIndex = 3
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
-  }
-
-  var arg1 = getArgument(command, 1)
-  if (arg1 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
-  }
-  if (isNaN(arg1)) {
-    state.show = "none"
-    return "\n[Error: Expected a number. See #help]\n"
-  }
-  arg1 = parseInt(arg1)
-
-  var arg2 = getArgument(command, 2)
-  if (arg2 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
-  }
-
-  var arg3 = getArgument(command, 3)
-  if (arg3 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
-  }
-
-  if (arg3 == "the") {
-    var tempArg = getArgument(command, 1)
-    if (tempArg != null && !isNaN(tempArg)) {
-      arg3 = tempArg
-      itemIndex++
-    }
-  }
-
-  const item = {
-    quantity: 1,
-    name: pluralize(getArgumentRemainder(command, itemIndex).replace(/^((the)|(a)|(an))\s/, ""), true),
-    damageDice: arg0,
-    toHitBonus: arg1,
-    ability: arg2
-  }
-
-  var character = getCharacter()
-  var commandName = "take"
-  var commandNamePlural =  pluralize(commandName, character.name == "You")
-  var haveWord = character.name == "You" ? "have" : "has"
-
-  var text = "\n"
-  text += `${character.name} ${commandNamePlural} ${item.name.toLowerCase().startsWith("the ") ? "" : "the "}${item.name}.\n`
-
-  var index = character.inventory.findIndex((element) => element.name.toLowerCase() == item.name.toLowerCase())
-  if (index == -1) {
-    character.inventory.push(item)
-  } else {
-    var existingItem = character.inventory[index]
-    existingItem.quantity = parseInt(existingItem.quantity) + parseInt(item.quantity)
-
-    let displayItemName = pluralize(existingItem.name, existingItem.quantity == 1)
-    text += `${character.name} now ${haveWord} ${existingItem.quantity} ${displayItemName}.\n`
-  }
-
-  return text
-}
-
-function doTakeArmor(command) {
-  var itemIndex = 1
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
-  }
-
-  var arg1 = getArgument(command, 1)
-  if (arg1 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
-  }
-
-  const item = {
-    quantity: 1,
-    name: pluralize(getArgumentRemainder(command, itemIndex).replace(/^((the)|(a)|(an))\s/, ""), true),
-    ac: arg0,
-  }
-
-  var character = getCharacter()
-  var commandName = "take"
-  var commandNamePlural =  pluralize(commandName, character.name == "You") 
-  var haveWord = character.name == "You" ? "have" : "has"
-
-  var text = "\n"
-  text += `${character.name} ${commandNamePlural} ${item.name.toLowerCase().startsWith("the ") ? "" : "the "}${item.name}.\n`
-
-  var index = character.inventory.findIndex((element) => element.name.toLowerCase() == item.name.toLowerCase())
-  if (index == -1) {
-    character.inventory.push(item)
-  } else {
-    var existingItem = character.inventory[index]
-    existingItem.quantity = parseInt(existingItem.quantity) + parseInt(item.quantity)
-
-    let displayItemName = pluralize(existingItem.name, existingItem.quantity == 1)
-    text += `${character.name} now ${haveWord} ${existingItem.quantity} ${displayItemName}.\n`
-  }
-
-  return text
-}
-
-const helpDialog_itemStoryCards = `<><> Item Story Cards <><>
+const helpDialog_itemStoryCards = `
+<><> Item Story Cards <><>
 * Every item should be an "Item" type story card, and must include a category and rarity.
 * Format each item story card as follows:
   -- Type: {{ Item - Category - Rarity }}
@@ -2468,31 +2202,289 @@ const helpDialog_itemStoryCards = `<><> Item Story Cards <><>
   -- Description: Use JSON to define item behavior and reward values.
 
 Example JSON format:
-{"item": "Orange", "minRewardAmount": 1, "maxRewardAmount": 10, "rewardChance": 1}`
+{
+  "itemName": "Orange",
+  "minRewardAmount": 1,
+  "maxRewardAmount": 10,
+  "rewardChance": 1,
+  "worth": 100,
+  "dmgDice": "1d4",
+  "hitBonus": 0,
+  "ability":"none",
+  "acBonus": 0
+}`
+// NOTE: Needs to review all places where items are interacted with!
+// NOTE: Should not contain plurals
+// NOTE: could store category and rarity
+const defaultItemDetails = {
+    itemName: "Orange",
+    minRewardAmount: 1, // For #Reward command
+    maxRewardAmount: 1, // -- Restrict to one
+    rewardChance: 0,    // -- No chance
+    worth: 0,
+    dmgDice: "1d4", // Can be a number
+    hitBonus: 0,
+    ability: "none",
+    acBonus: 0,
+    quantity: 1 // Inventory value (or added upon taking)
+}
+const HelpDialog_createItem = `
+#createitem item_name
+#createitem (quantity) item_name
+#createitem (quantity) (ac_bonus) item_name
+#createitem (quantity) (damage_dice) (hit_bonus) (ability) item_name
+#createitem (quantity) (damage_dice) (hit_bonus) (ability) (ac_bonus) item_name
+-- Creates a story card for an item using specified values, or use default ones.
+-- If a story card with the same name already exists, then the create fails.
 
-const helpDialog_lootStoryCards = `<><> Loot Table Story Cards <><>
+Notes:
+- (damage_dice) can be a number (e.g. "4") or a dice string like "1d4".
+- Use quotes for item_name and ability if they contain spaces.
+
+To manually create your own item cards, type: #help "item story cards"
+`
+/**********|
+* Creates a story card for an item using specified values, or use default ones.
+* @function
+* @param {string} [command] #createitem item_name (quantity) (damage_dice) (hit_bonus) (ability) (ac_bonus)
+* @returns {string} Text containing the result fo the action, or an error with (state.show = "none")
+***********/
+//TODO: This function would allow players to more easily create items, without having to manually create story cards
+// We could have this function command hold all the values, or we could step the player through a item creation form
+function doCreateItem(command) {
+  const args = getArguments(command)
+  let itemIndex = -1
+  state.show = "none" // Never display output after this input
+  if (!args.length) {
+    return "\n[Error: No arguments provided. See #help]\n"
+  }
+
+  // New Item with default values!
+  let newItem = { ...defaultItemDetails }
+
+  // 6-arg format: Full description of the item
+  // #take (quantity) (damage_dice) (hit_bonus) (ability) (ac_bonus) item_name
+  if (args.length == 6) {
+    newItem.quantity = parseInt(args[0])
+    newItem.dmgDice = args[1]
+    newItem.hitBonus = parseInt(args[2])
+    newItem.ability = args[3]
+    newItem.acBonus = parseInt(args[4])
+    itemIndex = 5
+  }
+  // 5-arg format: Like #takeWeapon
+  // #take (quantity) (damage_dice) (hit_bonus) (ability) item_name
+  else if (args.length == 5) {
+    newItem.quantity = parseInt(args[0])
+    newItem.dmgDice = args[1]
+    newItem.hitBonus = parseInt(args[2])
+    newItem.ability = args[3]
+    itemIndex = 4
+  }
+  // 3-arg format: Like #takeArmor
+  // #take (quantity) (ac_bonus) item_name
+  else if (args.length === 3) {
+    newItem.quantity = parseInt(args[0])
+    newItem.acBonus = parseInt(args[1])
+    itemIndex = 2
+  }
+  // 2-arg format: #take X items
+  // #take (quantity) item_name
+  else if (args.length == 2) {
+    newItem.quantity = parseInt(args[0])
+    itemIndex = 1
+  }
+  // 1-arg format: #take item
+  // #take item_name
+  // itemIndex = 0
+
+  // Set the item name from the itemIndex
+  const argRemainder = getArgumentRemainder(command, itemIndex) // +1 is added to the index inside
+  const replacedArg = argRemainder.replace(/^((the)|(a)|(an))\s/, "")
+  newItem.itemName = singularize(replacedArg, true) // Name assignment
+  if (!newItem.quantity || isNaN(newItem.quantity) || newItem.quantity < 1) {
+    newItem.quantity = 1
+  }
+  
+  // Check and build item
+  newItem = checkItemCards(newItem) // Returns an updated item (and builds story card if needed)
+  // TODO: Some kind of repsonse to the player
+  if (newItem) return `${item.itemName} was succesfully created!`
+  else return `ERROR: ${item.itemName} was not created: A story card with that name already exists!`
+}
+
+const HelpDialog_takeCommand = `
+#take item_name
+#take (quantity) item_name
+
+-- Adds an instance of the specified item(s) to a character's inventory.
+-- item_name must use "quotation" for names with spaces.
+-- (quantity) is optional.
+
+To create your own item cards, type: #help "create item"
+`
+/**********|
+* Adds an instance of the specified item(s) to a character's inventory.
+* @function
+* @param {string} [command] (you|character) #take (quantity) item_name
+* @returns {string} Text containing the result fo the action, or an error with (state.show = "none")
+***********/
+function doTake(command) {
+  let text = "\n"
+  const character = getCharacter()
+  let quantity = getArgument(command, 0)
+  if (quantity == null) {
+    state.show = "none"
+    return "\n[Error: Not enough parameters. See #help]\n"
+  }
+
+  // Check the quantity (optional)
+  let itemName = getArgument(command, 1) // Potential item_name
+  if (isNaN(quantity)) { // quantity might be (a|an|the) or the itemName
+    if (articleSysnonyms.indexOf(quantity.toLowerCase()) < 0) {
+      if (itemName != null) { // Two strings have been given (this is wrong)
+        state.show = "none"
+        return "\n[Error: Invalid quantity. See #help]\n"
+      } else { // quantity must of been the item name
+        itemName = quantity
+      }
+    } // else quantity is (a|an|the) and should = 1
+    quantity = 1
+  } else { // else quantity was a number
+    quantity = parseInt(quantity, 10)
+    if (quantity < 1) {
+      quantity = 1
+    }
+  }
+  
+  // Check the item name, and add it to the inventory
+  if (itemName == null) {
+    state.show = "none"
+    return "\n[Error: Invalid item_name. See #help]\n"
+  } else {
+    itemName = itemName.replace(/^((the)|(a)|(an))\s/, "")
+  }
+
+  const invItem = putItemIntoInventory(character, {itemName:itemName}, quantity)
+  const displayItemName = singularize(itemName, quantity === 1)
+  const displayHowMany = (quantity === 1) ? `the` : `${quantity}`;
+
+  // Take text & Now have text
+  const commandName = getCommandName(command) // "take"
+  const displayCommandName = singularize(commandName, character.name == "You")
+  text += `${character.name} ${displayCommandName} ${displayHowMany} ${displayItemName}. `
+  text += `${character.name} now ${character.name == "You" ? "have" : "has"} ${invItem.quantity} ${singularize(itemName, invItem.quantity === 1)}.`
+
+  return text+`\n`
+}
+
+/**********| This function adds, or increases, an item in the character's inventory
+* @function
+* @param {character} [character] The character whose inventory is being manipulated
+* @param {item} [newItem] The item to be added or increased
+* @param {number} [quantity] The quantity of the item attempting to add
+* @returns {item} Returns the inventory item just added or increased
+***********/
+function putItemIntoInventory(character, newItem, quantityOverride=null)
+{
+  // Check story cards (create one if needed), and make sure it's a complete item
+  newItem = checkItemCards(newItem, true)
+  // Has to be done after checkItemCards, so that new cards don't have the override quantity
+  newItem.quantity = (quantityOverride ?? newItem.quantity) // Enforce override quantity
+  // Update inventory
+  const index = character.inventory.findIndex((element) => compareWithoutPlural(newItem.itemName, element.itemName))
+  if (index == -1) {
+    character.inventory.push(newItem)
+    return character.inventory[character.inventory.length-1]
+  }
+  character.inventory[index].quantity += newItem.quantity
+  return character.inventory[index]
+}
+
+/**********| ITEM STORY CARDS!
+* 1) Check the item story cards to see if the item exists!
+* 2) If the item exists, replace remaining default values with item card values!
+* 3) If the item does not exist, create a story card for one.
+* @function
+* @param {item} [newItem] The item to be checked.
+* @returns {item} Returns the newItem with updated details.
+***********/
+function checkItemCards(newItem, buildCard=false) {
+  const itemName = singularize(newItem.itemName).toLowerCase()
+  const itemCards = getStoryCardListByTitle(itemName, true)
+  const itemCard = itemCards.length > 0 ? itemCards[0] : null;
+  if (itemCard) {
+    const existingDetails = JSON.parse(itemCard.description)
+    for (const key in existingDetails) {
+      if (newItem[key] === defaultItemDetails[key] && existingDetails[key] !== undefined) {
+        newItem[key] = existingDetails[key]
+      }
+    }
+  } else {
+    // Make sure newItem is a complete item
+    for (const key in defaultItemDetails) {
+      if (newItem[key] === undefined) {
+        newItem[key] = defaultItemDetails[key]
+      }
+    }
+    if (buildCard) {
+      buildStoryCard(newItem.itemName, "", "Item - Misc - Uncommon", "", JSON.stringify(newItem))
+    } else {
+      return null // null for error
+    }
+  }
+  return newItem
+}
+
+// A helper function for creating items
+// TODO: Commented out until I find a use for this.
+// function createItem(itemName,
+//   minRewardAmount=defaultItemDetails.minRewardAmount,
+//   maxRewardAmount=defaultItemDetails.maxRewardAmount,
+//   rewardChance=defaultItemDetails.rewardChance,
+//   worth=defaultItemDetails.worth,
+//   dmgDice=defaultItemDetails.dmgDice,
+//   hitBonus=defaultItemDetails.hitBonus,
+//   ability=defaultItemDetails.ability,
+//   acBonus=defaultItemDetails.acBonus,
+//   quantity=defaultItemDetails.quantity,
+//   itemCategory = "Misc",
+//   itemRarity = "Uncommon",) {
+//   const newItem = {
+//       itemName: itemName,
+//       minRewardAmount: minRewardAmount, // For #Reward command
+//       maxRewardAmount: maxRewardAmount, // -- 
+//       rewardChance: rewardChance,       // -- 
+//       worth: worth,
+//       dmgDice: dmgDice, // Can be a number
+//       hitBonus: hitBonus,
+//       ability: ability,
+//       acBonus: acBonus,
+//       quantity: quantity // Inventory value (or added upon taking)
+//   }
+//   return checkItemCards(newItem)
+// }
+
+const helpDialog_lootStoryCards = `
+<><> Loot Table Story Cards <><>
 * Thematic loot tables control the quantity and chance of rewards.
 * Format each loot table story card as follows:
   -- Type: {{ LootTable - Theme }}
   -- Title: {{ LootTable - Theme }}
   -- Entry: A short explanation of what this loot table thematically represents.
   -- Keywords: Leave blank!
-  -- Description: A JSON array defining the loot and its drop chances.
+  -- Description: A JSON array containing item story card JSONs.
 
-Example JSON format:
-[
-  {"item": "Orange", "minRewardAmount": 1, "maxRewardAmount": 10, "rewardChance": 1},
-  {"item": "Apple Sword", "minRewardAmount": 1, "maxRewardAmount": 1, "rewardChance": 0.1}
-]
-
+Example JSON format: #help "item story cards"
 Note: rewardChance is a float from 0 to 1.
 1 = 100% chance. 0.1 = 10% chance.`
 
-const HelpDialog_rewards = `#Reward Command Format: {{ (you|character) #reward (theme) (quantity) }}
+const HelpDialog_rewards = `
+#Reward Command Format: {{ (you|character) #reward (quantity) (theme) }}
 -- Use this command to give the character random rewards from a loot table.
 -- (quantity) is optional; defaults to 1.
+-- (theme) is optional; defualts to all story card items.
 -- If the theme contains spaces, wrap it in quotes (e.g. "ancient ruins").
--- If the theme does not exist, all items will be used as the loot pool.
 -- Special Case: If (theme = item), all items are used directly, skipping loot tables.
 -- Cheat Case: You can filter directly using the follow as themes:
      "item - (category)"
@@ -2500,24 +2492,34 @@ const HelpDialog_rewards = `#Reward Command Format: {{ (you|character) #reward (
 
 To create your own:
 Type #help "item story cards"
-Type #help "loot story cards"`
-
-
+Type #help "loot story cards"
+`
+/**********|
+* Use this command to give the character random rewards from a loot table, or a pool of all items.
+* @function
+* @param {string} [command] #Reward Command Format: {{ (you|character) #reward (quantity) (theme) }}
+* @returns {string} Text containing the result fo the action, or an error with (state.show = "none")
+***********/
 function doReward(command) {
-  const character = getCharacter();
-  const rewardTheme = getArgument(command, 0);
-
-  if (!rewardTheme) {
-    state.show = "none";
-    return `\n[Error: No story cards found with that theme.]\n`;
+  let text = "\n"
+  const character = getCharacter()
+  let rewardQuantity = getArgument(command, 0)
+  // Check the rewardQuantity argument, and get the rewardTheme
+  let rewardTheme = "Item -" // Defaults to all items later
+  if (isNaN(rewardQuantity)) { // rewardQuantity arg was the theme
+    rewardQuantity = 1
+    rewardTheme = getArgumentRemainder(command, 0)
+  } else { // else quantity was a number
+    rewardQuantity = parseInt(rewardQuantity, 10)
+    if (rewardQuantity < 1) {
+      rewardQuantity = 1
+    }
+    const nextArgument = getArgumentRemainder(command, 1)
+    rewardTheme =  nextArgument ? nextArgument.toLowerCase() : rewardTheme.toLowerCase()
   }
 
-  let rewardQuantity = parseInt(getArgument(command, 1)) || 1;
-  rewardQuantity = Math.max(rewardQuantity, 1);
-
   let lootTable = [];
-
-  if (rewardTheme.toLowerCase().startsWith("item")) {
+  if (rewardTheme.startsWith("item -")) { // use all "item" story cards as the lootTable
     lootTable = getStoryCardListByType(rewardTheme, false).map(card => JSON.parse(card.description));
   } else {
     const lootCard = getStoryCardListByType("loot table - " + rewardTheme, true)[0];
@@ -2533,6 +2535,7 @@ function doReward(command) {
     return `\n[Error: There is no loot in the loot table.]\n`;
   }
 
+  // Time to roll the ~Loot!
   const totalRewards = {};
   for (let i = 0; i < rewardQuantity; i++) {
     const roll = getRandomFloat(0, 1);
@@ -2540,130 +2543,238 @@ function doReward(command) {
 
     if (possibleDrops.length > 0) {
       const drop = possibleDrops[getRandomInteger(0, possibleDrops.length - 1)];
-      const amount = getRandomInteger(drop.minRewardAmount, drop.maxRewardAmount);
-      totalRewards[drop.item] = (totalRewards[drop.item] || 0) + amount;
+      const randomAmount = getRandomInteger(drop.minRewardAmount, drop.maxRewardAmount);
+      const newAmount = (totalRewards[drop.itemName] ? totalRewards[drop.itemName].quantity : 0) + randomAmount
+      totalRewards[drop.itemName] = {item: drop, quantity: newAmount};
     }
   }
 
-  let text = `${character.name} found while searching${rewardTheme.includes("item")?" for items":" the "+rewardTheme}:`;
-  if (Object.keys(totalRewards).length > 0) {
-    for (const [item, qty] of Object.entries(totalRewards)) {
-      doTake(`take ${qty} ${item}`);
-      if (qty > 1) {
-        text += ` ${qty} ${pluralize(item)}!`;
-      } else {
-        const article = /^[aeiou]/i.test(item) ? "an" : "a";
-        text += ` ${article} ${item}!`;
-      }
-    }
-  } else {
-    text += " nothing!";
-  }
+  // Return text block and inventory add
+  text += `${character.name} found while searching ${rewardTheme.includes("item -") ? "for items" : "the " + rewardTheme}:`;
 
+  const rewardEntries = Object.entries(totalRewards)
+  if (rewardEntries.length < 1) return text += " nothing!";
+  rewardEntries.forEach(([itemKey, reward], index) => {
+    putItemIntoInventory(character, reward.item); // INVENTORY <---
+    if (reward.quantity > 1) {
+      text += ` ${reward.quantity} ${singularize(itemKey, false)}`;
+    } else {
+      const article = /^[aeiou]/i.test(itemKey) ? "an" : "a";
+      text += ` ${article} ${itemKey}`;
+    }
+    text += `${index < rewardEntries.length-1 ? "," : "."}`
+  })
   return text;
 }
 
+const HelpDialog_doEquip = `
+#equip item_name slot
+-- Equips an item in the character's inventory for a given slot.
+-- item_name must be an exact match the the inventory item's name.
+-- Equiped items change the character's damage/hit/ac values respectively based on slot.
+-- Slots are:
+-- -- "wepaon" - changes hit bonus, damage dice, ability mod (only one wepaon may be equiped) 
+-- -- "armor"  - changes base ac (only one armor may be equiped)
+
+To create your own:
+Type #help "item take"
+Type #help "item story cards"
+`
+// NEEDS REVIEW after item card changes
 // Since I've removed the itemShop, there may be some broken logic here
 function doEquip(command) {
   let character = getCharacter()
-  let arg0 = getArgument(command, 0)
-  if (arg0 == null) {
+  const itemName = getArgument(command, 0)
+  const slotType = getArgument(command, 1)
+  if (itemName == null || slotType == null) {
     state.show = "none"
     return "\n[Error: Not enough parameters. See #help]\n"
   }
+  // At this point we assume that every item in the character's inventory has gone through putItemIntoInventory()
+  // Thus, there is no need to check all the various properties or story cards for it
+  const invItem = character.inventory.find((element) => element.name.toLowerCase() === itemName.toLowerCase())
 
-  var dontWord = character.name == "You" ? "don't" : "doesn't"
+  const dontWord = character.name == "You" ? "don't" : "doesn't"
+  if (invItem == null) return `${character.name} tried to equip ${toTitleCase(itemName)}, but ${dontWord} possess it.`
 
-  let itemName = getArgumentRemainder(command, 0)
+  // Recalculate the character's equipment bonuses (based on D&D 5e logic)
 
-  let item = character.inventory.find((element) => element.name.toLowerCase() == itemName.toLowerCase())
+  // TODO: Add the category and rairty of an item into it's JSON details
+  // -- We can't tell what an item is from the invItem details
+  // -- Since only the item story card type contains the category
 
-  if (item == null) return `${character.name} tried to equip ${toTitleCase(itemName)}, but ${dontWord} possess it`
+  // NOW, technically in D&D a character would attack with X wepaon
+  // BUT, (damage/hitBonus/etc) character values
+  // -- I assume the idea is to make the #attack command easier
+  // -- If that's the case, then what about a specific #equip command for weapons
+  // ...
+  // TODO: Add an argument to #equip to handle equipment slots, like: (#equip itemName as weapon)
+  // -- This way, even if we can't tell if an item is a (weapon, armor, etc), we will know how the character intends to use it
+  // ...
 
-  let text = `\n${character.name} equipped the item ${toTitleCase(itemName)}!\n`
-  if ("damageDice" in item && "toHitBonus" in item) {
-    let abilityValue = character.stats.find((element) => element.name.toLowerCase() == item.ability)
-    let ability = abilityValue == null ? 10 : abilityValue.value
-    let abilityModifier = Math.ceil((ability - 10) / 2)
+  // NOW, technically in D&D a character's hit bonus would be calculated as:
+  // -- character's base proficiency bonus + character's ability modifier for weapon's ability type + weapon's hit bonus
+  // -- however, if a character is not proficient with a weapon type, they don't get thier character's base proficiency bonus
+  // BUT, our character code doesn't have a proficiency bonus, nor any proficiency types (at least not yet)
+  // SO, we'll just use: character's ability modifier for weapon's ability type + weapon's hit bonus
 
-    let damageBase = item.damageDice.replaceAll(/\+.*/gi, "")
-    let damageModifier = parseInt(item.damageDice.replaceAll(/.*\+/gi, "")) + abilityModifier
-    character.damage = `${damageBase}+${damageModifier}`
-    character.proficiency = abilityModifier
-    character.meleeStat = item.ability
-  } else if ("ac" in item) {
-    let dexterityStat = character.stats.find((element) => element.name.toLowerCase() == "dexterity")
-    let dexterity = dexterityStat == null ? 10 : dexterityStat.value
-    let ac = parseInt(item.ac.replaceAll(/(?<=.)\+.*/gi, ""))
-    if (/.*\+dmax2/i.test(item.ac)) character.ac = ac + Math.max(2, Math.ceil((dexterity - 10) / 2))
-    else if (/.*\+d/i.test(item.ac)) character.ac = ac + Math.ceil((dexterity - 10) / 2)
-    else if (/\+.*/i.test(item.ac)) character.ac += ac
-    else character.ac = ac
+  // NOW, technically in D&D a character's base AC is typically 10 + their Dexterity modifier
+  // -- Wearing armor changes the base AC value (i.e. light armor has a base of 11)
+  // -- However! Some armors don't allow the Dexterity bonus, or restrict it (i.e. heavy armor)
+  // -- However! Shields and some items have plus bonus's to AC which stack (i.e. shields give +2 AC)
+  // BUT, we can't tell if an item is a armor piece from the invItem details
+  // -- also our items only have an acBonus value, not a acBase value (tho we could assume)
+  // -- only item story card type contains the category, and categories are ambiguous at best
+  // ...
+  // TODO: Add an argument to #equip to handle equipment slots, like: (#equip itemName as armor)
+  // -- This way, even if we can't tell if an item is a (shield, armor, etc), we will know how the character intends to use it
+  // -- now, for AC we need two or three slots:
+  // -- -- an armor slot for the base AC (only allows one item)
+  // -- -- a shield slot for the shield's AC bonus (only allows one)
+  // -- -- a misc slot for any other item's AC bonus (allows many)
+  // ...
+
+  // NOW, technically in D&D character's don't have equipment slots, but there are restrictions
+  // -- like off-hand attacks not having the character's base proficiency bonus on damage (normally)
+  // -- only one armor and one shield may confer a bonus (shields also take up a hand)
+  // -- two-handing and two-handed weapons (damage and hand occupation)
+  // -- And there is more...
+  // BUT, for now our character code can't handle any of these restrictions, nor does our #attack command
+  // -- Something to look into later down the line when we can handle more complexities
+  // SO, for now, we'll just use equipment slots as a makeshift implementation
+  // -- (1 weapon, 1 armor, 1 shield, and then misc items)
+
+  // ----
+
+  // Equip the item!
+  let text = `\n${character.name} equipped the item ${toTitleCase(invItem.itemName)}!\n`
+
+  // Slot types
+  // TODO: Add slots for shields, and accessories
+  switch (slotType.toLowerCase()) {
+    case "weapon":
+      let abilityValue = character.stats.find((element) => element.name.toLowerCase() == invItem.ability)
+      let ability = abilityValue == null ? 10 : abilityValue.value
+      let abilityModifier = Math.ceil((ability - 10) / 2)
+      let damageBase = invItem.dmgDice.replaceAll(/\+.*/gi, "")
+      let damageModifier = parseInt(invItem.dmgDice.replaceAll(/.*\+/gi, "")) + abilityModifier
+      character.damage = `${damageBase}+${damageModifier}`
+      character.proficiency = invItem.hitBonus + abilityModifier
+      character.meleeStat = invItem.ability
+      break;
+
+    case "armor":
+      let dexterityStat = character.stats.find((element) => element.name.toLowerCase() == "dexterity")
+      let dexterity = dexterityStat == null ? 10 : dexterityStat.value
+      let ac = parseInt(invItem.acBonus.replaceAll(/(?<=.)\+.*/gi, ""))
+      if (/.*\+dmax2/i.test(invItem.acBonus)) character.ac = ac + Math.max(2, Math.ceil((dexterity - 10) / 2))
+      else if (/.*\+d/i.test(invItem.acBonus)) character.ac = ac + Math.ceil((dexterity - 10) / 2)
+      else if (/\+.*/i.test(invItem.acBonus)) character.ac += ac
+      else character.ac = ac
+      break;
+  
+    default:
+      state.show = "none"
+      text = `\n${character.name} cannot equip the item ${toTitleCase(invItem.itemName)} as ${slotType}!\n`
+      break;
   }
   
   text += "\n"
   return text
 }
 
+const HelpDialog_doDrop = `
+#drop (quantity or all|every) item_name
+-- Removes the specified quantity of item from the character's inventory.
+-- The words the, a, and an are ignored. Quotes are not necessary.
+-- If a quantity is omitted, it's assumed to be 1.
+-- Equipped items are unequipped.
+`
+/**********| Removes the specified quantity of item from the character's inventory.
+* @function
+* @param {string} [command] (you|character) #drop (quantity|"all"|"every") item_name
+* @returns {string} Text containing the result fo the action, or an error with (state.show = "none")
+***********/
 function doDrop(command) {
-  var character = getCharacter()
-  var commandName = getCommandName(command)
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
+  let text = "\n"
+  const character = getCharacter()
+  let quantity = getArgument(command, 0)
+  if (quantity == null) {
     state.show = "none"
     return "\n[Error: Not enough parameters. See #help]\n"
   }
 
-  var characterNameAdjustedCase = character.name == "You" ? "you" : character.name
-  var dontWord = character.name == "You" ? "don't" : "doesn't"
-  var haveWord = character.name == "You" ? "have" : "has"
-  var tryWord = character.name == "You" ? "try" : "tries"
-
-  var itemArgIndex = 0
-  if (isNaN(arg0)) {
-    if (allSynonyms.indexOf(arg0.toLowerCase()) > -1) {
-      arg0 = Number.MAX_SAFE_INTEGER
-      itemArgIndex++
-    } else {
-      arg0 = 1
+  // Check the quantity (optional|all|every|number)
+  let itemName = getArgument(command, 1) // Potential item_name
+  if (isNaN(quantity)) { // quantity might be (all|every) or the itemName
+    if (allSynonyms.indexOf(quantity.toLowerCase()) > -1) { // quantity is (all|every)
+      quantity = Number.MAX_SAFE_INTEGER
+    } else { // quantity might be the itemName
+      if (articleSysnonyms.indexOf(quantity.toLowerCase()) < 0) { // check if quantity is (a|an|the)
+        if (itemName != null) { // Two strings have been given (this is wrong)
+          state.show = "none"
+          return "\n[Error: Invalid quantity. See #help]\n"
+        } else { // quantity must of been the item name
+          itemName = quantity
+        }
+      }
+      quantity = 1
     }
-  } else {
-    itemArgIndex++
+  } else { // else quantity was a number
+    quantity = parseInt(quantity, 10)
+    if (quantity < 1) {
+      quantity = 1
+    }
   }
-
-  const item = {
-    quantity: arg0,
-    name: pluralize(getArgumentRemainder(command, itemArgIndex).replace(/^((the)|(a)|(an))\s/, ""), true)
-  }
-
-  var displayItemName = pluralize(item.name, item.quantity == 1)
   
-  if (item.quantity < 0) item.quantity = 1
+  // Get the item name, and try to remove them
+  if (itemName == null) {
+    state.show = "none"
+    return "\n[Error: Invalid item_name. See #help]\n"
+  }
+  itemName = itemName.replace(/^((the)|(a)|(an))\s/, "")
+  const [remainingQty, removedQty] = removeItemFromInventory(character, itemName, quantity)
+  const displayItemName = singularize(itemName, quantity === 1)
+  const displayHowMany =  (quantity === 1) ? `the` : 
+                          (quantity === Number.MAX_SAFE_INTEGER) ? `all of the` : 
+                          (remainingQty === 0) ? `all ${removedQty} of the` : `${quantity}`;
 
-  var text = "\n"
-  var index = character.inventory.findIndex((element) => element.name.toLowerCase() == item.name.toLowerCase())
-  if (index == -1) {
-    if (item.quantity == 1) text += `${character.name} ${tryWord} to ${commandName} the ${displayItemName}, but ${character.name} ${dontWord} have any.`
-    else text += `${character.name} ${tryWord} to ${commandName} ${item.quantity == Number.MAX_SAFE_INTEGER ? arg0 : item.quantity} ${displayItemName}, but ${characterNameAdjustedCase} ${dontWord} have any.`
-  } else {
-    var existingItem = character.inventory[index]
-  
-    if (existingItem.quantity == 1) text = `\n${character.name} ${pluralize(commandName, character.name == "You")} the ${pluralize(displayItemName, true)}.\n`
-    else if (parseInt(item.quantity) >= parseInt(existingItem.quantity)) text = `${character.name} ${pluralize(commandName, character.name == "You")} all ${existingItem.quantity} of the ${displayItemName}.`
-    else text =  `\n${character.name} ${pluralize(commandName, character.name == "You")} ${item.quantity} ${displayItemName}. \n`
-
-    existingItem.quantity -= item.quantity
-    if (existingItem.quantity <= 0) {
-      existingItem.quantity = 0
-      character.inventory.splice(index, 1)
-    }
-    if (existingItem.quantity > 0) {
-      displayItemName = pluralize(existingItem.name, existingItem.quantity == 1)
-      text += `${character.name} now ${haveWord} ${existingItem.quantity} ${displayItemName}.\n`
-    }
+  // Invalid drop text
+  const commandName = getCommandName(command) // "drop"
+  const displayCommandName = singularize(commandName, character.name == "You")
+  if (remainingQty == -1) { // Not found, cannot drop
+    const dontWord = character.name == "You" ? "don't" : "doesn't"
+    return `\n${character.name} tried to ${commandName} ${displayHowMany} ${displayItemName}, but ${dontWord} have any.\n`
   }
 
-  return text
+  // Drop text & Remaining text
+  text += `${character.name} ${displayCommandName} ${displayHowMany} ${displayItemName}.`
+  if (remainingQty > 0) { // Only displays if not all X item was dropped
+    text += ` ${character.name} now ${character.name == "You" ? "have" : "has"} ${remainingQty} ${singularize(itemName, remainingQty === 1)}.`
+  }
+
+  return text+'\n'
+}
+
+/**********| This function removes an item from the character's inventory
+* @function
+* @param {character} [character] The character whose inventory is being manipulated
+* @param {string} [itemName] The name of the item to be removed
+* @param {number} [quantity] The quantity of the item attempting to remove
+* @returns {[number, number]} [quantity of the item remaining, quantity of the item removed] or [-1,quantity] on failed removal
+***********/
+function removeItemFromInventory(character, itemName, quantity) {
+  const invIndex = character.inventory.findIndex((element) => compareWithoutPlural(itemName, element.itemName))
+  if (invIndex === -1) {
+    return [-1, quantity] // Cannot find index of itemName in inventory
+  }
+  const invItemQty = character.inventory[invIndex]?.quantity
+  if (quantity >= invItemQty) {
+    character.inventory.splice(invIndex, 1) // Remove item completely
+    return [0, invItemQty] // Remaining will be exactly 0
+  }
+  character.inventory[invIndex].quantity -= quantity
+  return [character.inventory[invIndex].quantity, quantity]
 }
 
 function doGive(command) {
@@ -2685,7 +2796,7 @@ function doGive(command) {
 
   const item = {
     quantity: !isNaN(arg1) ? arg1 : foundAll ? Number.MAX_SAFE_INTEGER : 1,
-    name: pluralize(getArgumentRemainder(command, isNaN(arg1) && !foundAll ? 1 : 2).replace(/^((the)|(a)|(an)|(of the))\s/, ""), true)
+    name: singularize(getArgumentRemainder(command, isNaN(arg1) && !foundAll ? 1 : 2).replace(/^((the)|(a)|(an)|(of the))\s/, ""), true)
   }
 
   var otherCharacter = getCharacter(arg0)
@@ -2700,7 +2811,7 @@ function doGive(command) {
   var tryWord = character.name == "You" ? "try" : "tries"
   var otherHaveWord = otherCharacter.name == "You" ? "have" : "has"
   var otherNameAdjustedCase = otherCharacter.name == "You" ? "you" : otherCharacter.name
-  var displayItemName = pluralize(item.name, item.quantity == 1)
+  var displayItemName = singularize(item.name, item.quantity == 1)
   var characterQuantityText = ""
 
   if (item.quantity < 0) item.quantity = 1
@@ -2709,8 +2820,8 @@ function doGive(command) {
 
   var index = character.inventory.findIndex((element) => element.name.toLowerCase() == item.name.toLowerCase())
   if (index == -1) {
-    if (item.quantity == 1) text += `${character.name} ${tryWord} to ${pluralize(commandName, true)} the ${displayItemName}, but ${characterNameAdjustedCase} ${dontWord} have any.`
-    else text += `${character.name} ${tryWord} to ${pluralize(commandName, true)} ${item.quantity == Number.MAX_SAFE_INTEGER ? arg0 : item.quantity} ${displayItemName}, but ${characterNameAdjustedCase} ${dontWord} have any.`
+    if (item.quantity == 1) text += `${character.name} ${tryWord} to ${singularize(commandName, true)} the ${displayItemName}, but ${characterNameAdjustedCase} ${dontWord} have any.`
+    else text += `${character.name} ${tryWord} to ${singularize(commandName, true)} ${item.quantity == Number.MAX_SAFE_INTEGER ? arg0 : item.quantity} ${displayItemName}, but ${characterNameAdjustedCase} ${dontWord} have any.`
     return text + "\n\n"
   } else {
     var existingItem = character.inventory[index]
@@ -2724,14 +2835,14 @@ function doGive(command) {
     }
 
     if (existingItem.quantity > 0) {
-      characterQuantityText = ` ${character.name} now ${haveWord} ${existingItem.quantity} ${pluralize(existingItem.name, existingItem.quantity == 1)}.`
+      characterQuantityText = ` ${character.name} now ${haveWord} ${existingItem.quantity} ${singularize(existingItem.name, existingItem.quantity == 1)}.`
     } else if (item.quantity > 1) {
       characterQuantityText = ` ${character.name} ${dontWord} have any more.`
     }
   }
 
-  if (item.quantity == 1) text += `${character.name} ${pluralize(commandName, character.name == "You")} ${otherNameAdjustedCase} the ${displayItemName}.`
-  else text += `${character.name} ${pluralize(commandName, character.name == "You")} ${otherNameAdjustedCase} ${item.quantity} ${displayItemName}.`
+  if (item.quantity == 1) text += `${character.name} ${singularize(commandName, character.name == "You")} ${otherNameAdjustedCase} the ${displayItemName}.`
+  else text += `${character.name} ${singularize(commandName, character.name == "You")} ${otherNameAdjustedCase} ${item.quantity} ${displayItemName}.`
 
   var otherIndex = otherCharacter.inventory.findIndex((element) => element.name.toLowerCase() == item.name.toLowerCase())
   if (otherIndex == -1) {
@@ -2740,7 +2851,7 @@ function doGive(command) {
     var existingItem = otherCharacter.inventory[otherIndex]
     existingItem.quantity = parseInt(existingItem.quantity) + parseInt(item.quantity)
 
-    displayItemName = pluralize(existingItem.name, existingItem.quantity == 1)
+    displayItemName = singularize(existingItem.name, existingItem.quantity == 1)
     text += ` ${otherCharacter.name} now ${otherHaveWord} ${existingItem.quantity} ${displayItemName}.`
   }
 
@@ -2775,7 +2886,7 @@ function doBuy(command) {
   }
 
   var buyName
-  buyName = pluralize(args[0], true)
+  buyName = singularize(args[0], true)
 
   var sellQuantity
   if (isNaN(args[1])) {
@@ -2785,7 +2896,7 @@ function doBuy(command) {
     args.splice(1, 1)
   }
 
-  var sellName = pluralize(args[1], true)
+  var sellName = singularize(args[1], true)
 
   var characterNameAdjustedCase = character.name == "You" ? "you" : character.name
   var dontWord = character.name == "You" ? "don't" : "doesn't"
@@ -2793,7 +2904,7 @@ function doBuy(command) {
   var tryWord = character.name == "You" ? "try" : "tries"
   var tradeWord = character.name == "You" ? "trade" : "trades"
   var buyWord = character.name == "You" ? "buy" : "buys"
-  var displayItemName = pluralize(sellName, sellQuantity == 1)
+  var displayItemName = singularize(sellName, sellQuantity == 1)
   var buyItemTotal = 0;
   var sellItemTotal = 0;
 
@@ -2820,8 +2931,8 @@ function doBuy(command) {
     sellItemTotal = existingItem.quantity
   }
 
-  var suffix = `${buyQuantity} ${pluralize(buyName)}`
-  if (buyQuantity == 1) suffix = `the ${pluralize(buyName, true)}`
+  var suffix = `${buyQuantity} ${singularize(buyName, false)}`
+  if (buyQuantity == 1) suffix = `the ${singularize(buyName, true)}`
 
   if (sellQuantity == 1) text += `${character.name} ${tradeWord} the ${displayItemName} for ${suffix}.`
   else text += `${character.name} ${tradeWord} ${sellQuantity} ${displayItemName} for ${suffix}.`
@@ -2837,7 +2948,7 @@ function doBuy(command) {
     buyItemTotal = existingItem.quantity
   }
 
-  text += ` ${character.name} now ${haveWord} ${sellItemTotal} ${pluralize(sellName, sellItemTotal == 1)} and ${buyItemTotal} ${pluralize(buyName, buyItemTotal == 1)}.`
+  text += ` ${character.name} now ${haveWord} ${sellItemTotal} ${singularize(sellName, sellItemTotal == 1)} and ${buyItemTotal} ${singularize(buyName, buyItemTotal == 1)}.`
   return text + "\n\n"
 }
 
@@ -3073,7 +3184,7 @@ function doCastSpell(command) {
 
   var enemyString = ""
   var allyString = ""
-  if (targetText != null && state.initiativeOrder.length > 0) {
+  if (targetText != null) {
     var foundEnemy
 
     for (var enemy of state.enemies) {
@@ -3321,7 +3432,6 @@ function doReset(command) {
   state.characters = []
   state.enemies = null
   state.allies = null
-  state.initiativeOrder = []
   state.defaultDifficulty = null
   state.autoXp = null
   state.day = null
@@ -3337,5 +3447,13 @@ function doHelp(command) {
   return " "
 }
 
-// Don't modify this part
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+// If you want to develop; Replace with DEVELOPER TEST ZONE from TestZone.js
+function doTest(command) {
+  state.show = "none" // Hide output in AI Dungeon GUI
+  return "You have no test cases! :P Did you forget to replace this with TestZone.js?"
+}
+
+// AI DUNGEON -- Don't modify this part
 modifier(text)
