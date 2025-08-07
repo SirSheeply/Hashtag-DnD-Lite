@@ -192,8 +192,8 @@ function calculateRoll(rolltext) {
   return Math.max(0, score)
 }
 
-function getCharacter(characterName) {
-  if (characterName == null) characterName = state.characterName
+function getCharacter(characterName, allowFallback = true) {
+  if (characterName == null && allowFallback) characterName = state.characterName
   if (characterName == null) return null
   return state.characters.find(element => element.name.toLowerCase() == characterName.toLowerCase())
 }

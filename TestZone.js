@@ -11,8 +11,8 @@ function doTest(command) {
   character.inventory = [] // Reset inventory
   const doTake_TestCases = [
     { command: "#take",         expected: "\n[Error: Not enough parameters. See #help]\n" },
-    { command: "#take 1",       expected: "\n[Error: Invalid item_name. See #help]\n" },
-    { command: "#take my item", expected: "\n[Error: Invalid quantity. See #help]\n" },
+    { command: "#take 1",       expected: "\n[Error: Invalid quantity or item_name. See #help]\n" },
+    { command: "#take my item", expected: "\n[Error: Invalid quantity or item_name. See #help]\n" },
 
     { command: "#take item",    expected: "\nYou take the item. You now have 1 item.\n" },
     { command: "#take 1 item",  expected: "\nYou take the item. You now have 2 items.\n" },
@@ -29,20 +29,45 @@ function doTest(command) {
   // character.inventory = [] // No reste, use items from last test
   const doDrop_TestCases = [
     { command: "#drop",           expected: "\n[Error: Not enough parameters. See #help]\n" },
-    { command: "#drop 1",         expected: "\n[Error: Invalid item_name. See #help]\n" },
-    { command: "#drop my item",   expected: "\n[Error: Invalid quantity. See #help]\n" },
+    { command: "#drop 1",         expected: "\n[Error: Invalid quantity or item_name. See #help]\n" },
+    { command: "#drop my item",   expected: "\n[Error: Invalid quantity or item_name. See #help]\n" },
 
     { command: "#drop item",      expected: "\nYou drop the item. You now have 4 items.\n" },
     { command: "#drop 1 item",    expected: "\nYou drop the item. You now have 3 items.\n" },
     { command: "#drop 2 item",    expected: "\nYou drop 2 items. You now have 1 item.\n" },
     { command: "#drop all items", expected: "\nYou drop all of the items.\n" },
-    { command: "#drop item",      expected: "\nYou tried to drop the item, but don't have any.\n" }
-    
+    { command: "#drop item",      expected: "\nYou tried to drop the item, but don't have any.\n" } 
   ]
   const doDrop_testResult = testerFunction(doDrop, doDrop_TestCases)
   if (doDrop_testResult != null) {
     state.show = "none" // Hide output in AI Dungeon GUI
     return doDrop_testResult
+  }
+
+  // --- Testing the Give Command ---
+  // Create another character
+  if(getCharacter("Sheep", false) == null)
+    createCharacter("Sheep"); // create one
+  // Add some items to our character
+  character.inventory = [] // Reset inventory
+  putItemIntoInventory(character, {itemName:"item"}, 5)
+  
+  const doGive_TestCases = [
+    { command: `#give`,                   expected: "\n[Error: Target character does not exist. See #characters]\n" },
+    { command: `#give 1`,                 expected: "\n[Error: Target character does not exist. See #characters]\n" },
+    { command: `#give "sheep"`,           expected: "\n[Error: Not enough parameters. See #help]\n" },
+    { command: `#give "sheep" my item`,   expected: "\n[Error: Invalid quantity or item_name. See #help]\n" }, 
+
+    { command: `#give "sheep" item`,      expected: "\nYou give Sheep the item. You now have 4 items.\n" }, 
+    { command: `#give "sheep" 1 item`,    expected: "\nYou give Sheep the item. You now have 3 items.\n" }, 
+    { command: `#give "sheep" 2 items`,   expected: "\nYou give Sheep 2 items. You now have 1 item.\n" }, 
+    { command: `#give "sheep" all items`, expected: "\nYou give Sheep all of the items.\n" },
+    { command: `#give "sheep" item`,      expected: "\nYou tried to give Sheep the item, but don't have any.\n" } 
+  ]
+  const doGive_testResult = testerFunction(doGive, doGive_TestCases)
+  if (doGive_testResult != null) {
+    state.show = "none" // Hide output in AI Dungeon GUI
+    return doGive_testResult
   }
 
   // --- Testing Result PASSED ---
@@ -74,8 +99,7 @@ function extractCommand(text) {
   let command = text.substring(text.search(/#/) + 1)
   let commandName = getCommandName(command)?.toLowerCase().replaceAll(/[^a-z0-9\s]*/gi, "").trim()
   if (!commandName) {
-    text = "\n[Error: Invalid or missing command.]\n"
-    return text
+    return "\n[Error: Invalid or missing command.]\n"
   }
   return command
 }

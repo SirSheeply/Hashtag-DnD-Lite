@@ -153,7 +153,7 @@ function findCommandHandler(commandName) {
   return null
 }
 
-const articleSysnonyms = ["a", "an", "the"]
+const articleSynonyms = ["a", "an", "the"]
 const allSynonyms = ["all", "every", "each", "every one", "everyone"]
 const turnSynonyms = ["turn", "doturn", "taketurn"]
 const createSynonyms = ["create", "generate", "start", "begin", "setup", "party", "member", "new"]
@@ -2300,7 +2300,7 @@ function doCreateItem(command) {
 
   // Set the item name from the itemIndex
   const argRemainder = getArgumentRemainder(command, itemIndex) // +1 is added to the index inside
-  const replacedArg = argRemainder.replace(/^((the)|(a)|(an))\s/, "")
+  const replacedArg = argRemainder.replace(/^((the)|(a)|(an))\s/i, "")
   newItem.itemName = singularize(replacedArg, true) // Name assignment
   if (!newItem.quantity || isNaN(newItem.quantity) || newItem.quantity < 1) {
     newItem.quantity = 1
@@ -2332,37 +2332,18 @@ To create your own item cards, type: #help "create item"
 function doTake(command) {
   let text = "\n"
   const character = getCharacter()
-  let quantity = getArgument(command, 0)
-  if (quantity == null) {
+  const argQuantity = getArgument(command, 0)
+  const argItemName = getArgument(command, 1) // Potential item_name
+  if (argQuantity == null) {
     state.show = "none"
     return "\n[Error: Not enough parameters. See #help]\n"
   }
 
-  // Check the quantity (optional)
-  let itemName = getArgument(command, 1) // Potential item_name
-  if (isNaN(quantity)) { // quantity might be (a|an|the) or the itemName
-    if (articleSysnonyms.indexOf(quantity.toLowerCase()) < 0) {
-      if (itemName != null) { // Two strings have been given (this is wrong)
-        state.show = "none"
-        return "\n[Error: Invalid quantity. See #help]\n"
-      } else { // quantity must of been the item name
-        itemName = quantity
-      }
-    } // else quantity is (a|an|the) and should = 1
-    quantity = 1
-  } else { // else quantity was a number
-    quantity = parseInt(quantity, 10)
-    if (quantity < 1) {
-      quantity = 1
-    }
-  }
-  
-  // Check the item name, and add it to the inventory
-  if (itemName == null) {
+  // Handle non-numeric quantity input
+  let [quantity, itemName] = parseQuantityAndItemName(argQuantity, argItemName, false)
+  if (quantity == null || itemName == null) {
     state.show = "none"
-    return "\n[Error: Invalid item_name. See #help]\n"
-  } else {
-    itemName = itemName.replace(/^((the)|(a)|(an))\s/, "")
+    return "\n[Error: Invalid quantity or item_name. See #help]\n"
   }
 
   const invItem = putItemIntoInventory(character, {itemName:itemName}, quantity)
@@ -2504,6 +2485,7 @@ function doReward(command) {
   let text = "\n"
   const character = getCharacter()
   let rewardQuantity = getArgument(command, 0)
+
   // Check the rewardQuantity argument, and get the rewardTheme
   let rewardTheme = "Item -" // Defaults to all items later
   if (isNaN(rewardQuantity)) { // rewardQuantity arg was the theme
@@ -2698,164 +2680,170 @@ const HelpDialog_doDrop = `
 function doDrop(command) {
   let text = "\n"
   const character = getCharacter()
-  let quantity = getArgument(command, 0)
-  if (quantity == null) {
+  const argQuantity = getArgument(command, 0)
+  const argItemName = getArgument(command, 1)
+  if (argQuantity == null) {
     state.show = "none"
     return "\n[Error: Not enough parameters. See #help]\n"
   }
 
-  // Check the quantity (optional|all|every|number)
-  let itemName = getArgument(command, 1) // Potential item_name
-  if (isNaN(quantity)) { // quantity might be (all|every) or the itemName
-    if (allSynonyms.indexOf(quantity.toLowerCase()) > -1) { // quantity is (all|every)
-      quantity = Number.MAX_SAFE_INTEGER
-    } else { // quantity might be the itemName
-      if (articleSysnonyms.indexOf(quantity.toLowerCase()) < 0) { // check if quantity is (a|an|the)
-        if (itemName != null) { // Two strings have been given (this is wrong)
-          state.show = "none"
-          return "\n[Error: Invalid quantity. See #help]\n"
-        } else { // quantity must of been the item name
-          itemName = quantity
-        }
-      }
-      quantity = 1
-    }
-  } else { // else quantity was a number
-    quantity = parseInt(quantity, 10)
-    if (quantity < 1) {
-      quantity = 1
-    }
-  }
-  
-  // Get the item name, and try to remove them
-  if (itemName == null) {
+  // Handle non-numeric quantity input
+  let [quantity, itemName] = parseQuantityAndItemName(argQuantity, argItemName)
+  if (quantity == null || itemName == null) {
     state.show = "none"
-    return "\n[Error: Invalid item_name. See #help]\n"
+    return "\n[Error: Invalid quantity or item_name. See #help]\n"
   }
-  itemName = itemName.replace(/^((the)|(a)|(an))\s/, "")
-  const [remainingQty, removedQty] = removeItemFromInventory(character, itemName, quantity)
+
+  // Remov the item and determine printing text
+  const [invItem, removedQty] = removeItemFromInventory(character, itemName, quantity)
   const displayItemName = singularize(itemName, quantity === 1)
   const displayHowMany =  (quantity === 1) ? `the` : 
                           (quantity === Number.MAX_SAFE_INTEGER) ? `all of the` : 
-                          (remainingQty === 0) ? `all ${removedQty} of the` : `${quantity}`;
+                          (invItem?.quantity === 0) ? `all ${removedQty} of the` : `${quantity}`;
 
   // Invalid drop text
   const commandName = getCommandName(command) // "drop"
   const displayCommandName = singularize(commandName, character.name == "You")
-  if (remainingQty == -1) { // Not found, cannot drop
+  if (invItem == null) { // Not found, cannot drop
     const dontWord = character.name == "You" ? "don't" : "doesn't"
     return `\n${character.name} tried to ${commandName} ${displayHowMany} ${displayItemName}, but ${dontWord} have any.\n`
   }
 
   // Drop text & Remaining text
   text += `${character.name} ${displayCommandName} ${displayHowMany} ${displayItemName}.`
-  if (remainingQty > 0) { // Only displays if not all X item was dropped
-    text += ` ${character.name} now ${character.name == "You" ? "have" : "has"} ${remainingQty} ${singularize(itemName, remainingQty === 1)}.`
+  if (invItem.quantity > 0) { // Only displays if not all X item was dropped
+    text += ` ${character.name} now ${character.name == "You" ? "have" : "has"} ${invItem.quantity} ${singularize(itemName, invItem.quantity === 1)}.`
   }
 
   return text+'\n'
 }
 
-/**********| This function removes an item from the character's inventory
+/**********| This function removes/reduces items in the character's inventory
 * @function
 * @param {character} [character] The character whose inventory is being manipulated
 * @param {string} [itemName] The name of the item to be removed
 * @param {number} [quantity] The quantity of the item attempting to remove
-* @returns {[number, number]} [quantity of the item remaining, quantity of the item removed] or [-1,quantity] on failed removal
+* @returns {[item, number]} [Item removed (or null), quantity removed]
 ***********/
 function removeItemFromInventory(character, itemName, quantity) {
   const invIndex = character.inventory.findIndex((element) => compareWithoutPlural(itemName, element.itemName))
   if (invIndex === -1) {
-    return [-1, quantity] // Cannot find index of itemName in inventory
+    return [null, quantity] // Cannot find index of itemName in inventory
   }
-  const invItemQty = character.inventory[invIndex]?.quantity
+  const invItem = character.inventory[invIndex]
+  const invItemQty = invItem.quantity
   if (quantity >= invItemQty) {
+    invItem.quantity = 0 // Remaining will be exactly 0
     character.inventory.splice(invIndex, 1) // Remove item completely
-    return [0, invItemQty] // Remaining will be exactly 0
+    return [invItem, invItemQty]
   }
-  character.inventory[invIndex].quantity -= quantity
-  return [character.inventory[invIndex].quantity, quantity]
+  invItem.quantity -= quantity
+  return [invItem, quantity]
 }
 
+const HelpDialog_doGive = `
+#give other_character (quantity or all|every) item
+-- Removes the quantity of item from the character's inventory and adds it to the other_character's inventory.
+-- The words the, a, and an are ignored. Quotes are not necessary.
+-- If a quantity is omitted, it's assumed to be 1.
+-- Equipped items are unequipped.
+`
+/**********| Removes the quantity of item from the character's inventory and adds it to the other_character's inventory.
+* @function
+* @param {string} [command] (you|character) #give other_character (quantity or all|every) item
+* @returns {string} Text containing the result fo the action, or an error with (state.show = "none")
+***********/
 function doGive(command) {
-  var character = getCharacter()
-  var commandName = getCommandName(command)
-
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
-  }
-  var arg1 = getArgument(command, 1)
-  if (arg1 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
-  }
-
-  var foundAll = allSynonyms.indexOf(arg1) > -1
-
-  const item = {
-    quantity: !isNaN(arg1) ? arg1 : foundAll ? Number.MAX_SAFE_INTEGER : 1,
-    name: singularize(getArgumentRemainder(command, isNaN(arg1) && !foundAll ? 1 : 2).replace(/^((the)|(a)|(an)|(of the))\s/, ""), true)
-  }
-
-  var otherCharacter = getCharacter(arg0)
-  if (otherCharacter == null || otherCharacter.name == "You" && arg0.toLowerCase() != "you") {
+  let text = "\n"
+  const character = getCharacter()
+  const otherCharacter = getCharacter(getArgument(command, 0), false) // no fallback!
+  if (otherCharacter == null) {
     state.show = "none"
     return "\n[Error: Target character does not exist. See #characters]\n"
   }
 
-  var characterNameAdjustedCase = character.name == "You" ? "you" : character.name
-  var dontWord = character.name == "You" ? "don't" : "doesn't"
-  var haveWord = character.name == "You" ? "have" : "has"
-  var tryWord = character.name == "You" ? "try" : "tries"
-  var otherHaveWord = otherCharacter.name == "You" ? "have" : "has"
-  var otherNameAdjustedCase = otherCharacter.name == "You" ? "you" : otherCharacter.name
-  var displayItemName = singularize(item.name, item.quantity == 1)
-  var characterQuantityText = ""
+  const argQuantity = getArgument(command, 1)
+  const argItemName = getArgument(command, 2)
+  if (argQuantity == null) {
+    state.show = "none"
+    return "\n[Error: Not enough parameters. See #help]\n"
+  }
 
-  if (item.quantity < 0) item.quantity = 1
+  // Handle non-numeric quantity input
+  let [quantity, itemName] = parseQuantityAndItemName(argQuantity, argItemName)
+  if (quantity == null || itemName == null) {
+    state.show = "none"
+    return "\n[Error: Invalid quantity or item_name. See #help]\n"
+  }
 
-  var text = "\n\n"
+  // Remove the item from the main character first
+  const [removedItem, removedQty] = removeItemFromInventory(character, itemName, quantity)
+  const displayItemName = singularize(itemName, quantity === 1)
+  const displayHowMany =  (quantity === 1) ? `the` : 
+                          (quantity === Number.MAX_SAFE_INTEGER) ? `all of the` : 
+                          (removedItem.quantity === 0) ? `all ${removedQty} of the` : `${quantity}`;
 
-  var index = character.inventory.findIndex((element) => element.name.toLowerCase() == item.name.toLowerCase())
-  if (index == -1) {
-    if (item.quantity == 1) text += `${character.name} ${tryWord} to ${singularize(commandName, true)} the ${displayItemName}, but ${characterNameAdjustedCase} ${dontWord} have any.`
-    else text += `${character.name} ${tryWord} to ${singularize(commandName, true)} ${item.quantity == Number.MAX_SAFE_INTEGER ? arg0 : item.quantity} ${displayItemName}, but ${characterNameAdjustedCase} ${dontWord} have any.`
-    return text + "\n\n"
-  } else {
-    var existingItem = character.inventory[index]
+  // Invalid drop text
+  const commandName = getCommandName(command) // "drop"
+  const displayCommandName = singularize(commandName, character.name == "You")
+  if (removedItem == null) { // Not found, cannot drop
+    const dontWord = character.name == "You" ? "don't" : "doesn't"
+    return `\n${character.name} tried to ${commandName} ${otherCharacter.name} ${displayHowMany} ${displayItemName}, but ${dontWord} have any.\n`
+  }
 
-    if (item.quantity >= existingItem.quantity) {
-      item.quantity = existingItem.quantity
-      existingItem.quantity = 0
-      character.inventory.splice(index, 1)
+  // Now try to add the item to the other character's inventory, then printout
+  const addedItem = putItemIntoInventory(otherCharacter, {... removedItem}, removedQty)
+
+  // Take text & Now have text
+  text += `${character.name} ${displayCommandName} ${otherCharacter.name} ${displayHowMany} ${displayItemName}.`
+  if (removedItem.quantity > 0) { // Only displays if not all X item was dropped
+    text += ` ${character.name} now ${character.name == "You" ? "have" : "has"} ${removedItem.quantity} ${singularize(itemName, removedItem.quantity === 1)}.`
+  }
+  return text+`\n`
+}
+
+/**********| parseQuantityAndItemName - 
+ * Handles optional quantity + item name inputs.
+ * - Accepts non-numeric quantity inputs like "all", "a", "an", or misordered item names.
+ * - Supports commands like: #give Bob all swords, #drop a potion, #take sword
+ *
+ * @param {string} argQuantity - First argument after target (can be number, "all", "a", "the", or item name).
+ * @param {string|null} argItemName - Second argument, assumed to be item name (optional).
+ * @param {boolean} handleAll - Determines if cases like "all" or "every" need to be check in the argQuantity.
+ * @returns {[number, string|null]|[null, null]} A tuple of [quantity, itemName] or [null, null] on error.
+ ***********/
+function parseQuantityAndItemName(argQuantity, argItemName, handleAll=true) {
+  let quantity = 1
+  // First: handle non-numeric quantity
+  if (isNaN(argQuantity)) {
+    const nanQuantity = argQuantity.toLowerCase();
+    // Case: "all" or "every"
+    if (allSynonyms.includes(nanQuantity) && handleAll) {
+      quantity = Number.MAX_SAFE_INTEGER;
+      // Allow argItemName like "items", "swords", etc.
+      
+    // Case: quantity is an article like "a", "an", "the" --> ignore and fallback to default quantity = 1
+    } else if (articleSynonyms.includes(nanQuantity)) {
+      // -- quantity remains 1
+      // -- itemName remains unchanged (getArgument(2))
+      
+    // Case: quantity is actually the itemName
     } else {
-      existingItem.quantity -= item.quantity
+      // But check if an itemName was already given (invalid command: too many arguments)
+      if (argItemName != null) {
+        state.show = "none";
+        return [null, null];
+      }
+      // Use quantity as itemName, fallback to quantity = 1
+      argItemName = argQuantity;
     }
-
-    if (existingItem.quantity > 0) {
-      characterQuantityText = ` ${character.name} now ${haveWord} ${existingItem.quantity} ${singularize(existingItem.name, existingItem.quantity == 1)}.`
-    } else if (item.quantity > 1) {
-      characterQuantityText = ` ${character.name} ${dontWord} have any more.`
-    }
+  } else { // Numeric quantity
+    quantity = Math.max(parseInt(argQuantity, 10), 1);
   }
-
-  if (item.quantity == 1) text += `${character.name} ${singularize(commandName, character.name == "You")} ${otherNameAdjustedCase} the ${displayItemName}.`
-  else text += `${character.name} ${singularize(commandName, character.name == "You")} ${otherNameAdjustedCase} ${item.quantity} ${displayItemName}.`
-
-  var otherIndex = otherCharacter.inventory.findIndex((element) => element.name.toLowerCase() == item.name.toLowerCase())
-  if (otherIndex == -1) {
-    otherCharacter.inventory.push(item)
-  } else {
-    var existingItem = otherCharacter.inventory[otherIndex]
-    existingItem.quantity = parseInt(existingItem.quantity) + parseInt(item.quantity)
-
-    displayItemName = singularize(existingItem.name, existingItem.quantity == 1)
-    text += ` ${otherCharacter.name} now ${otherHaveWord} ${existingItem.quantity} ${displayItemName}.`
+  if (argItemName != null) {
+    argItemName = argItemName.replace(/^((the|a|an))\s/i, "");
   }
-
-  return text + characterQuantityText + "\n\n"
+  return [quantity, argItemName];
 }
 
 function doBuy(command) {

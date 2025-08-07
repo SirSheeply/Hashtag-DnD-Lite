@@ -485,12 +485,6 @@ const helpTextInventory = `
 #take (quantity) item
 -- Adds the specified quantity of item to the character's inventory. If a quantity is omitted, it's assumed to be 1. The words the, a, and an are ignored. Quotes are not necessary.
 
-#takeweapon damage_dice hit_bonus ability weapon_name
--- Allows a character to manually add a weapon to their inventory that is compatible with the #equip command. It is highly recommended to use #itemstore instead. damage_dice is the dice roll (e.g. 1d12+2) used to calculate the damage of the weapon. hit_bonus is a positive or negative number that modifies how accurate the weapon is. Ability is the base ability that is used in conjunction with the weapon. Typically, melee weapons use strength and ranged weapons use dexterity.
-
-#takearmor ac weapon_name
--- Allows a character to manually add armor to their inventory that is compatible with the #equip command. It is highly recommended to use #itemstore instead. ac is the armor class or how hard the character is to hit. If you have an item that adds to the current armor class, precede the number with a plus sign (e.g. +2).
-
 #equip weapon_or_armor_name
 -- Equips a weapon or armor and automatically changes the character's damage/weapon proficiency or armor class respectively. Shields should be equipped after equipping armor because shield AC is added to the total.
 
