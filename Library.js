@@ -65,6 +65,12 @@ function getPossessiveName(name) {
   return possesiveName
 }
 
+/**
+ * Returns the command keyword in a command string
+ * -- Assumes we have removed the '#' from the command keyword
+ * @param {string} [command] A command string with a command keyword
+ * @returns {array} Returns the command keyword in the command string
+*/
 function getCommandName(command) {
   var args = getArguments(command)
   if (args.length == 0) return null
@@ -73,16 +79,34 @@ function getCommandName(command) {
 
 const argumentPattern = /("[^"\\]*(?:\\[\S\s][^"\\]*)*"|'[^'\\]*(?:\\[\S\s][^'\\]*)*'|\/[^\/\\]*(?:\\[\S\s][^\/\\]*)*\/[gimy]*(?=\s|$)|(?:\\\s|\S)+)/g
 
-function getArguments(command) {
+/**
+ * Returns command split into array
+ * -- Watch out for passing in commands with a command keyword if you onyl want the arguments
+ * -- Will treat "quotated" sections as one argument.
+ * @param {string} [command] A command string e.g. "1 item" or "take 1 item"
+ * @param {boolean} [with_command] returns args with or without first element (command keyword)
+ * @returns {array} Array containing command string split into arguments e.g. ["1", "item"] or ["take", "1", "item]"
+*/
+function getArguments(command, with_command=true) {
   var matches = command.match(new RegExp(argumentPattern))
   var returnValue = []
   matches.forEach(match => {
     match = match.replaceAll(/(^")|("$)/g, "").replaceAll(/\\"/g, '"')
     returnValue.push(match)
   })
-  return returnValue
+  if (with_command) return returnValue
+  return returnValue.slice(1, returnValue.length)
 }
 
+/**
+ * Returns argument at the index, after the command keyword.
+ * -- Watch out for passing in commands without command keyword
+ * -- Will treat "quotated" sections as one argument.
+ * @function
+ * @param {string} [command] A command string with command keyword e.g. "take 1 item"
+ * @param {number} [index] Index of the argument (after the command keyword), e.g. index 0 = "1"
+ * @returns {string} Argument at the index in the command (after the command keyword)
+*/
 function getArgument(command, index) {
   var args = getArguments(command)
   index++
@@ -90,6 +114,17 @@ function getArgument(command, index) {
   return args[index]
 }
 
+/**
+ * Returns argument at the index + all text after
+ * -- I have no idea how this function works?
+ * -- Does it matter if the command keyword is included?
+ * -- I can see quotes treated as one argument.
+ * -- Do quotes impact the 'remainder' if another quoted term comes after the index?
+ * @function
+ * @param {string} [command] A command string
+ * @param {number} [index] Index of the argument
+ * @returns {string} Argument at index in the command + all text after
+*/
 function getArgumentRemainder(command, index) {
   var counter = 0
   const pattern = new RegExp(argumentPattern)

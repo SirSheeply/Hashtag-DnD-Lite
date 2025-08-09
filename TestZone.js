@@ -35,6 +35,7 @@ function doTest(command) {
     { command: "#drop item",      expected: "\nYou drop the item. You now have 4 items.\n" },
     { command: "#drop 1 item",    expected: "\nYou drop the item. You now have 3 items.\n" },
     { command: "#drop 2 item",    expected: "\nYou drop 2 items. You now have 1 item.\n" },
+    // { command: "#drop 100 items", expected: "\nYou drop all 1 of the items.\n" },
     { command: "#drop all items", expected: "\nYou drop all of the items.\n" },
     { command: "#drop item",      expected: "\nYou tried to drop the item, but don't have any.\n" } 
   ]
@@ -59,8 +60,9 @@ function doTest(command) {
     { command: `#give "sheep" my item`,   expected: "\n[Error: Invalid quantity or item_name. See #help]\n" }, 
 
     { command: `#give "sheep" item`,      expected: "\nYou give Sheep the item. You now have 4 items.\n" }, 
-    { command: `#give "sheep" 1 item`,    expected: "\nYou give Sheep the item. You now have 3 items.\n" }, 
+    { command: `#give "sheep" 1 item`,    expected: "\nYou give Sheep the item. You now have 3 items.\n" },
     { command: `#give "sheep" 2 items`,   expected: "\nYou give Sheep 2 items. You now have 1 item.\n" }, 
+    // { command: `#give "sheep" 100 items`, expected: "\nYou give Sheep all 3 of the items.\n" }, 
     { command: `#give "sheep" all items`, expected: "\nYou give Sheep all of the items.\n" },
     { command: `#give "sheep" item`,      expected: "\nYou tried to give Sheep the item, but don't have any.\n" } 
   ]
@@ -68,6 +70,55 @@ function doTest(command) {
   if (doGive_testResult != null) {
     state.show = "none" // Hide output in AI Dungeon GUI
     return doGive_testResult
+  }
+
+  // --- Testing the Give Command ---
+  // Add some gold to our character
+  character.inventory = [] // Reset inventory
+  putItemIntoInventory(character, {itemName:"gold"}, 4)
+  
+  const doBuy_TestCases = [
+    //<>> Invlaid <<>
+    { command: "#buy",                      expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy 5",                    expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy item",                 expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy 5 item",               expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy item 1",               expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy 5 2 3",                expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy 5 2 item",             expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy 5 item 3",             expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy item 2 3",             expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy item gold 3",          expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy item gold fish",       expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy 5 2 3 4",              expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy 5 2 3 item",           expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy 5 2 item 4",           expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy 5 2 item gold",        expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy 5 item 2 4",           expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy 5 item gold 4",        expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy 5 item gold fish",     expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy item 2 3 4",           expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy item 2 3 gold",        expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy item 2 gold 4",        expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy item 2 gold fish",     expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy item gold 3 4",        expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy item gold 3 fish",     expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy item gold fish 4",     expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy item gold fish bowl",  expected: "\n[Error: Invalid parameters. See #help]\n" },
+    // <>> No longer valid - no optional sell quantity <<>
+    { command: "#buy item gold",            expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#buy 5 item gold",          expected: "\n[Error: Invalid parameters. See #help]\n" },
+    // <>> Valid commands <<>
+    { command: "#buy item 2 gold",          expected: "\nYou buy one item for 2 gold. You now have 1 item, and now have 2 gold remaining.\n" },
+    { command: "#buy item 5 gold",          expected: "\nYou tried to buy one item for 5 gold, but don't have enough gold.\n" },
+    { command: "#buy 5 item 2 gold",        expected: "\nYou buy 5 items for all 2 of your gold. You now have 6 items, and now have no more gold.\n" },
+    // No Gold
+    { command: "#buy an item for 1 gold",   expected: "\nYou tried to buy one item for one gold, but don't have any gold.\n" }
+  ]
+  const doBuy_testResult = testerFunction(doBuy, doBuy_TestCases)
+  if (doBuy_testResult != null) {
+    state.show = "none" // Hide output in AI Dungeon GUI
+    return doBuy_testResult
   }
 
   // --- Testing Result PASSED ---
