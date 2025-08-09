@@ -166,19 +166,19 @@ function doTest(command) {
   ]
   const doSell_testResult = testerFunction(doSell, doSell_TestCases)
   if (doSell_testResult != null) {
-    state.show = "none" // Hide output in AI Dungeon GUI
-    return doSell_testResult
+    return [doSell_testResult, false]
   }
 
   // --- Testing Result PASSED ---
   state.show = "none" // Hide output in AI Dungeon GUI
-  return "\nALL Test Cases Passed!\n"
+  return ["\nALL Test Cases Passed!\n", true]
 }
 
 function testerFunction (func, testCases) {
   for (const test_case of testCases) {
     try {
-      let test_result = func(extractCommand(test_case.command))
+      let test_result, test_flag = null;
+      [test_result, test_flag] = func(extractCommand(test_case.command))
       if (test_result !== test_case.expected) {
         return (
           `FAILED Test Case: ${test_case.command}\n` +

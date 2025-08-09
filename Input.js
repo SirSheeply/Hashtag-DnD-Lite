@@ -202,13 +202,14 @@ function DNDHash_input (text) {
   // Extracts "flavor text" after a newline.
   // Keeps the #command separated from the rest of the input.
   // This is later appended back after processing the command.
-  var lineBreakIndex = text.indexOf("\n")
+  let lineBreakIndex = text.indexOf("\n")
+  let flavorText = null
   if (lineBreakIndex > -1) {
-    state.flavorText = text.substring(lineBreakIndex + 1)
-    if (!state.flavorText.startsWith(" ")) state.flavorText = " " + state.flavorText
+    flavorText = text.substring(lineBreakIndex + 1)
+    if (!flavorText.startsWith(" ")) flavorText = " " + flavorText
     text = text.substring(0, lineBreakIndex)
   } else {
-    state.flavorText = null
+    flavorText = null
   }
 
   // Extract the command portion of the input after #
@@ -243,30 +244,17 @@ function DNDHash_input (text) {
   // ------
   
   // Command Processing Block
-  let commandResult = null
+  let commandResult, commandSuccess = null;
   for (const { synonyms, handler } of commandRegistry) {
-    commandResult = processCommandSynonyms(command, commandName, synonyms, handler);
+    [commandResult, commandSuccess] = processCommandSynonyms(command, commandName, synonyms, handler);
     if (commandResult != null) break;
   }
-  text = commandResult;
+  if (!commandSuccess) state.show = "none"; // If a command fails, do not show output
+  text = commandResult
 
-  // If text is still null, we try one last fallback:
-  // If the command isn't a standard one, but it matches a known stat or skill, treat it like a flipped check/try command.
-  if (text == null) {
-    var character = getCharacter()
-    var statNames = []
-    character.stats.forEach(x => {
-      statNames.push(x.name.toLowerCase())
-    })
-    character.skills.forEach(x => {
-      statNames.push(x.name.toLowerCase())
-    })
-    text = processCommandSynonyms(command, commandName, statNames, doFlipCommandAbility)
-  }
-
-  if (state.flavorText != null) text += state.flavorText
-
-  return text
+  // Return with falavor added back in
+  if (flavorText != null) text += flavorText;
+  return text;
 }
 
 function handleCreateStep(text) {
@@ -805,13 +793,13 @@ function resetTempCharacterSkills() {
 }
 
 function processCommandSynonyms(command, commandName, synonyms, func) {
-  text = null
+  let result, success = null
   synonyms.forEach(x => {
     if (commandName == x || commandName == x + "s") {
-      text = func(command)
+      [result, success] = func(command)
     }
   })
-  return text
+  return [result, success]
 }
 
 function init() {
@@ -879,7 +867,7 @@ function doRoll(command) {
   else if (addition < 0) text += ` - ${Math.abs(addition)} = ${roll + addition}`
 
   text += "]\n"
-  return text
+  return [text, true]
 }
 
 function doCreate(command) {
@@ -900,34 +888,33 @@ function doCreate(command) {
   state.tempCharacter.proficiency = 2
   
   state.show = "create"
-  return " "
+  return [" ", true]
 }
 
 function doSetupEnemy(command) {
   state.setupEnemyStep = 0
   state.tempEnemy = createEnemy("enemy", 20, 10, 0, "2d6", 10)
   state.show = "setupEnemy"
-  return " "
+  return [" ", true]
 }
 
 function doSetupAlly(command) {
   state.setupAllyStep = 0
   state.tempAlly = createAlly("ally", 20, 10, 0, "2d6", 10)
   state.show = "setupAlly"
-  return " "
+  return [" ", true]
 }
 
 function doBio(command) {
   state.show = "bio"
-  return " "
+  return [" ", true]
 }
 
 function doRenameCharacter(command) {
   var character = getCharacter()
   var arg0 = getArgumentRemainder(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
   var possessiveName = getPossessiveName(character.name)
 
@@ -936,7 +923,7 @@ function doRenameCharacter(command) {
 
   character.name = arg0
 
-  return text
+  return [text, true]
 }
 
 function doCloneCharacter(command) {
@@ -945,8 +932,7 @@ function doCloneCharacter(command) {
 
   var arg0 = getArgumentRemainder(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   if (!hasCharacter(arg0)) createCharacter(arg0)
@@ -956,15 +942,14 @@ function doCloneCharacter(command) {
   state.show = "none"
   var text = `\n[${character.name} has been cloned to a new character called ${newCharacter.name}]\n`
 
-  return text
+  return [text, true]
 }
 
 function doSetStat(command) {
   var character = getCharacter()
   var arg0 = getArgument(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
   var arg1 = clamp(parseInt(getArgument(command, 1)), 1, 100)
   var possessiveName = getPossessiveName(character.name)
@@ -983,71 +968,66 @@ function doSetStat(command) {
   }
 
   state.show = "none"
-  return `\n[${possessiveName} ${toTitleCase(arg0)} ability is now ${arg1}]\n`
+  return [`\n[${possessiveName} ${toTitleCase(arg0)} ability is now ${arg1}]\n`, true]
 }
 
 function doSetSpellStat(command) {
   var character = getCharacter()
   var arg0 = getArgument(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   character.spellStat = arg0
 
   state.show = "none"
-  return `\nSpellcasting Ability is set to ${arg0}\n`
+  return [`\nSpellcasting Ability is set to ${arg0}\n`, true]
 }
 
 function doSetMeleeStat(command) {
   var character = getCharacter()
   var arg0 = getArgument(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   character.meleeStat = arg0
 
   state.show = "none"
-  return `\nMelee Ability is set to ${arg0}\n`
+  return [`\nMelee Ability is set to ${arg0}\n`, true]
 }
 
 function doSetRangedStat(command) {
   var character = getCharacter()
   var arg0 = getArgument(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   character.rangedStat = arg0
 
   state.show = "none"
-  return `\nRanged Ability is set to ${arg0}\n`
+  return [`\nRanged Ability is set to ${arg0}\n`, true]
 }
 
 function doSetAutoXp(command) {
   var arg0 = getArgument(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
   if (isNaN(arg0)) {
-    state.show = "none"
-    return "\n[Error: Expected a number. See #help]\n"
+    return ["\n[Error: Expected a number. See #help]\n", false]
   }
 
   state.autoXp = Math.max(0, arg0)
 
   state.show = "none"
-  return state.autoXp <= 0 ? `\n[Auto XP is disabled]\n` : `\n[Auto XP is set to ${state.autoXp}]\n`
+  return [state.autoXp <= 0 ? `\n[Auto XP is disabled]\n` : `\n[Auto XP is set to ${state.autoXp}]\n`, true]
 }
 
 function doShowAutoXp(command) {
   state.show = "none"
-  return state.autoXp <= 0 ? `\n[Auto XP is disabled]\n` : `\n[Auto XP is set to ${state.autoXp}]\n`
+  return [state.autoXp <= 0 ? `\n[Auto XP is disabled]\n` : `\n[Auto XP is set to ${state.autoXp}]\n`, true]
 }
 
 function doSetDefaultDifficulty(command) {
@@ -1067,26 +1047,24 @@ function doSetDefaultDifficulty(command) {
   state.defaultDifficulty = Math.max(0, difficulty)
 
   state.show = "none"
-  return `\n[The default difficulty is set to ${state.defaultDifficulty}]\n`
+  return [`\n[The default difficulty is set to ${state.defaultDifficulty}]\n`, true]
 }
 
 function doShowDefaultDifficulty(command) {
   state.show = "none"
-  return `\n[The default difficulty is set to ${state.defaultDifficulty}]\n`
+  return [`\n[The default difficulty is set to ${state.defaultDifficulty}]\n`, true]
 }
 
 function doSetSkill(command) {
   var character = getCharacter()
   var arg0 = getArgument(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   var arg1 = getArgument(command, 1)
   if (arg1 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   var arg2 = getArgument(command, 2)
@@ -1108,8 +1086,7 @@ function doSetSkill(command) {
   var index = character.skills.findIndex((element) => element.name.toLowerCase() == skill.name.toLowerCase())
   if (index == -1) {
     if (arg1 == null) {
-      state.show = "none"
-      return "\n[Error: New skills must have an ability specified. See #help]\n"
+      return ["\n[Error: New skills must have an ability specified. See #help]\n", false]
     }
     
     character.skills.push(skill)
@@ -1120,20 +1097,18 @@ function doSetSkill(command) {
   }
 
   state.show = "none"
-  return `\n[${possessiveName} ${toTitleCase(arg0)} skill is now ${arg2 >= 0 ? "+" + arg2 : "-" + arg2} and based on ${toTitleCase(arg1)}]\n`
+  return [`\n[${possessiveName} ${toTitleCase(arg0)} skill is now ${arg2 >= 0 ? "+" + arg2 : "-" + arg2} and based on ${toTitleCase(arg1)}]\n`, true]
 }
 
 function doSetAc(command) {
   var character = getCharacter()
   var arg0 = getArgument(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   if (isNaN(arg0)) {
-    state.show = "none"
-    return "\n[Error: Not a number. See #help]\n"
+    return ["\n[Error: Not a number. See #help]\n", false]
   }
 
   var possessiveName = getPossessiveName(character.name)
@@ -1141,20 +1116,18 @@ function doSetAc(command) {
   character.ac = parseInt(arg0)
 
   state.show = "none"
-  return `\n[${possessiveName} armor class is set to ${character.ac}]\n`
+  return [`\n[${possessiveName} armor class is set to ${character.ac}]\n`, true]
 }
 
 function doSetExperience(command) {
   var character = getCharacter()
   var arg0 = getArgument(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   if (isNaN(arg0)) {
-    state.show = "none"
-    return "\n[Error: Not a number. See #help]\n"
+    return ["\n[Error: Not a number. See #help]\n", false]
   }
 
   var possessiveName = getPossessiveName(character.name)
@@ -1162,34 +1135,30 @@ function doSetExperience(command) {
   character.experience = parseInt(arg0)
 
   state.show = "none"
-  return `\n[${possessiveName} experience is set to ${character.experience}]\n`
+  return [`\n[${possessiveName} experience is set to ${character.experience}]\n`, true]
 }
 
 function doAddExperience(command) {
   var character = getCharacter()
   var arg0 = getArgument(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   arg0 = searchArgument(command, /\d+/gi)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Expected a number. See #help]\n"
+    return ["\n[Error: Expected a number. See #help]\n", false]
   }
   arg0 = parseInt(arg0)
 
   var arg1 = searchArgument(command, /party/gi)
 
   if (arg1 == null && character == null) {
-    state.show = "none"
-    return `\n[Error: Character name not specified. Use the "do" or "say" modes. Alternatively, use "story" mode in the following format without quotes: "charactername #hashtag"]\n`
+    return [`\n[Error: Character name not specified. Use the "do" or "say" modes. Alternatively, use "story" mode in the following format without quotes: "charactername #hashtag"]\n`, false]
   }
 
   if (state.characters.length == 0) {
-    state.show = "none"
-    return `\n[Error: There are no characters. Type #setup to create a character]\n`
+    return [`\n[Error: There are no characters. Type #setup to create a character]\n`, false]
   }
 
   state.prefix = "\n"
@@ -1206,7 +1175,7 @@ function doAddExperience(command) {
   }
 
   state.show = "prefixOnly"
-  return " "
+  return [" ", true]
 }
 
 function doLevelUp(command) {
@@ -1220,8 +1189,7 @@ function doSetClass(command) {
   var character = getCharacter()
   var arg0 = getArgumentRemainder(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   var possessiveName = getPossessiveName(character.name)
@@ -1229,15 +1197,14 @@ function doSetClass(command) {
   character.className = arg0
 
   state.show = "none"
-  return `\n[${possessiveName} class is set to "${character.className}"]\n`
+  return [`\n[${possessiveName} class is set to "${character.className}"]\n`, true]
 }
 
 function doSetSummary(command) {
   var character = getCharacter()
   var arg0 = getArgumentRemainder(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   var possessiveName = getPossessiveName(character.name)
@@ -1245,15 +1212,14 @@ function doSetSummary(command) {
   character.summary = arg0
 
   state.show = "none"
-  return `\n[${possessiveName} summary is set]\n`
+  return [`\n[${possessiveName} summary is set]\n`, true]
 }
 
 function doSetHealth(command) {
   var character = getCharacter()
   var arg0 = getArgument(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   var possessiveName = getPossessiveName(character.name)
@@ -1262,23 +1228,21 @@ function doSetHealth(command) {
   character.health = clamp(character.health, 0, getHealthMax())
 
   state.show = "none"
-  return `\n[${possessiveName} health is set to ${character.health} health]\n`
+  return [`\n[${possessiveName} health is set to ${character.health} health]\n`, true]
 }
 
 function doHeal(command) {
   var character = getCharacter()
   var arg0 = getArgument(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   var arg1 = getArgumentRemainder(command, 1)
   
   if (arg1 == null) {
     if (character == null) {
-      state.show = "none"
-      return "\n[Error: Character must be specified. See #help]\n"
+      return ["\n[Error: Character must be specified. See #help]\n", false]
     }
 
     var healing
@@ -1291,8 +1255,7 @@ function doHeal(command) {
     }
 
     if (healing == null) {
-      state.show = "none"
-      return "\n[Error: Expected a number. See #help]\n"
+      return ["\n[Error: Expected a number. See #help]\n", false]
     }
 
     var haveWord = character.name == "You" ? "have" : "has"
@@ -1301,7 +1264,7 @@ function doHeal(command) {
     character.health = clamp(character.health, 0, getHealthMax())
 
     state.show = "none"
-    return `\n[${character.name} ${haveWord} been healed for ${healing} hp to a total of ${character.health}]\n`
+    return [`\n[${character.name} ${haveWord} been healed for ${healing} hp to a total of ${character.health}]\n`, true]
   } else {
     var healing
 
@@ -1313,15 +1276,14 @@ function doHeal(command) {
     }
 
     if (healing == null) {
-      state.show = "none"
-      return "\n[Error: Expected a number. See #help]\n"
+      return ["\n[Error: Expected a number. See #help]\n", false]
     }
 
     for (var enemy of state.enemies) {
       if (enemy.name.toLowerCase() == arg1.toLowerCase()) {
         enemy.health = Math.max(0, enemy.health + healing)
         state.show = "none"
-        return `\n[${toTitleCase(enemy.name)} has been healed for ${healing} hp to a total of ${enemy.health}]\n`
+        return [`\n[${toTitleCase(enemy.name)} has been healed for ${healing} hp to a total of ${enemy.health}]\n`, true]
       }
     }
 
@@ -1329,7 +1291,7 @@ function doHeal(command) {
       if (ally.name.toLowerCase() == arg1.toLowerCase()) {
         ally.health = Math.max(0, ally.health + healing)
         state.show = "none"
-        return `\n[${toTitleCase(ally.name)} has been healed for ${healing} hp to a total of ${ally.health}]\n`
+        return [`\n[${toTitleCase(ally.name)} has been healed for ${healing} hp to a total of ${ally.health}]\n`, true]
       }
     }
 
@@ -1338,12 +1300,11 @@ function doHeal(command) {
         character.health += healing
         character.health = clamp(character.health, 0, getHealthMax(character))
         state.show = "none"
-        return `\n[${toTitleCase(character.name)} has been healed for ${healing} hp to a total of ${character.health}]\n`
+        return [`\n[${toTitleCase(character.name)} has been healed for ${healing} hp to a total of ${character.health}]\n`, true]
       }
     }
 
-    state.show = "none"
-    return `\n[Error: Could not find an enemy, ally, or character matching the name ${arg1}. Type #enemies, #allies, or #characters to see a list]`
+    return [`\n[Error: Could not find an enemy, ally, or character matching the name ${arg1}. Type #enemies, #allies, or #characters to see a list]`, false]
   }
 }
 
@@ -1351,16 +1312,14 @@ function doDamage(command) {
   var character = getCharacter()
   var arg0 = getArgument(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   var arg1 = getArgumentRemainder(command, 1)
   
   if (arg1 == null) {
     if (character == null) {
-      state.show = "none"
-      return "\n[Error: Character must be specified. See #help]\n"
+      return ["\n[Error: Character must be specified. See #help]\n", false]
     }
 
     var damage
@@ -1373,8 +1332,7 @@ function doDamage(command) {
     }
 
     if (damage == null) {
-      state.show = "none"
-      return "\n[Error: Expected a number. See #help]\n"
+      return ["\n[Error: Expected a number. See #help]\n", false]
     }
 
     var haveWord = character.name == "You" ? "have" : "has"
@@ -1383,7 +1341,7 @@ function doDamage(command) {
     character.health = clamp(character.health, 0, getHealthMax())
 
     state.show = "none"
-    return `\n[${character.name} ${haveWord} been damaged for ${damage} hp with ${character.health} remaining] ${character.health == 0 ? " You are unconscious" : ""}\n`
+    return [`\n[${character.name} ${haveWord} been damaged for ${damage} hp with ${character.health} remaining] ${character.health == 0 ? " You are unconscious" : ""}\n`, true]
   } else {
     var damage
 
@@ -1395,15 +1353,14 @@ function doDamage(command) {
     }
 
     if (damage == null) {
-      state.show = "none"
-      return "\n[Error: Expected a number. See #help]\n"
+      return ["\n[Error: Expected a number. See #help]\n", false]
     }
 
     for (var enemy of state.enemies) {
       if (enemy.name.toLowerCase() == arg1.toLowerCase()) {
         enemy.health = Math.max(0, enemy.health - damage)
         state.show = "none"
-        return `\n[${toTitleCase(enemy.name)} has been damaged for ${damage} hp with ${enemy.health} remaining] ${enemy.health == 0 ? " " + toTitleCase(enemy.name) + " has been defeated!" : ""}\n`
+        return [`\n[${toTitleCase(enemy.name)} has been damaged for ${damage} hp with ${enemy.health} remaining] ${enemy.health == 0 ? " " + toTitleCase(enemy.name) + " has been defeated!" : ""}\n`, true]
       }
     }
 
@@ -1411,7 +1368,7 @@ function doDamage(command) {
       if (ally.name.toLowerCase() == arg1.toLowerCase()) {
         ally.health = Math.max(0, ally.health - damage)
         state.show = "none"
-        return `\n[${toTitleCase(ally.name)} has been damaged for ${damage} hp with ${ally.health} remaining] ${ally.health == 0 ? " " + toTitleCase(ally.name) + " has been defeated!" : ""}\n`
+        return [`\n[${toTitleCase(ally.name)} has been damaged for ${damage} hp with ${ally.health} remaining] ${ally.health == 0 ? " " + toTitleCase(ally.name) + " has been defeated!" : ""}\n`, true]
       }
     }
 
@@ -1419,12 +1376,11 @@ function doDamage(command) {
       if (character.name.toLowerCase() == arg1.toLowerCase()) {
         character.health = Math.max(0, character.health - damage)
         state.show = "none"
-        return `\n[${toTitleCase(character.name)} has been damaged for ${damage} hp with ${character.health} remaining] ${character.health == 0 ? " " + toTitleCase(character.name) + " is unconcious!" : ""}\n`
+        return [`\n[${toTitleCase(character.name)} has been damaged for ${damage} hp with ${character.health} remaining] ${character.health == 0 ? " " + toTitleCase(character.name) + " is unconcious!" : ""}\n`, true]
       }
     }
-
-    state.show = "none"
-    return `\n[Error: Could not find an enemy, ally, or character matching the name ${arg1}. Type #enemies, #allies, or #characters to see a list]`
+    
+    return [`\n[Error: Could not find an enemy, ally, or character matching the name ${arg1}. Type #enemies, #allies, or #characters to see a list]`, false]
   }
 }
 
@@ -1449,14 +1405,13 @@ function doRest(command) {
     if (character.health > max) character.health = max
   })
   state.show = "none"
-  return text
+  return [text, true]
 }
 
 function doHealParty(command) {
   var arg0 = getArgument(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   var healing
@@ -1468,8 +1423,7 @@ function doHealParty(command) {
   }
 
   if (healing == null) {
-    state.show = "none"
-    return "\n[Error: Expected a number. See #help]\n"
+    return ["\n[Error: Expected a number. See #help]\n", false]
   }
 
   var text = `\n[All characters have been healed by ${healing}.]\n`
@@ -1480,7 +1434,7 @@ function doHealParty(command) {
     text += `[${toTitleCase(character.name)}: ${character.health} / ${max} health]\n`
   })
   state.show = "none"
-  return text
+  return [text, true]
 }
 
 function doFlipCommandAbility(command) {
@@ -1548,13 +1502,12 @@ function doCheck(command) {
   else if (score == 1) text = `\n[${arg0} check DC: ${target} roll: ${dieText}. Critical Failure!]\n`
   else if (modifier != 0) text = `\n[${arg0} check DC: ${target} roll: ${dieText}${modifier > 0 ? "+" + modifier : modifier}=${score + modifier}. ${score + modifier >= target ? "Success!" : "Failure!"}]\n`
   else text = `\n[${arg0} check DC: ${target} roll: ${dieText}. ${score >= target ? "Success!" : "Failure!"}]\n`
-  return text
+  return [text, true]
 }
 
 function doTry(command) {
   if (getArguments(command).length <= 1) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   const advantageNames = ["normal", "advantage", "disadvantage"]
@@ -1628,7 +1581,7 @@ function doTry(command) {
   else if (score == 1) text += " Critical failure! There are dire consequences for this action."
   
   if (score + modifier >= target || score == 20) text += addXpToAll(Math.floor(state.autoXp * clamp(target, 1, 20) / 20)) + "\n"
-  return text
+  return [text, true]
 }
 
 function doAttack(command) {
@@ -1668,8 +1621,7 @@ function doAttack(command) {
 
   var targetText = getArgumentRemainder(command, textIndex)
   if (targetText == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
   var toMatches = targetText.match(/^to\s+/gi)
   if (toMatches != null) targetText = targetText.substring(toMatches[0].length)
@@ -1792,7 +1744,7 @@ function doAttack(command) {
   if (allyString != null) text += allyString
 
   if (targetRoll > 0 && (score + modifier >= targetRoll || score == 20)) text += addXpToAll(Math.floor(state.autoXp * clamp(targetRoll, 1, 20) / 20))
-  return text + "\n"
+  return [text + "\n", true]
 }
 
 function doNote(command) {
@@ -1801,35 +1753,33 @@ function doNote(command) {
   if (arg0 != null && arg0.length > 0) {
     state.notes.push(arg0)
     state.show = "none"
-    return "\n[Note added successfully]\n"
-  } else {
-    state.notes.push(history[history.length - 1].text)
-    state.show = "none"
-    return "\n[The last action was successfully added to the notes]\n"
+    return ["\n[Note added successfully]\n", true]
   }
+  state.notes.push(history[history.length - 1].text)
+  state.show = "none"
+  return ["\n[The last action was successfully added to the notes]\n", true]
 }
 
 function doShowDay(command) {
   state.show = "none"
-  return `\n[It is day ${state.day}]\n`
+  return [`\n[It is day ${state.day}]\n`, true]
 }
 
 function doSetDay(command) {
   var arg0 = getArgument(command, 0)
   if (arg0 == null || isNaN(arg0)) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   state.day = parseInt(arg0)
 
   state.show = "none"
-  return `\n[The day has been set to day ${state.day}]\n`
+  return [`\n[The day has been set to day ${state.day}]\n`, true]
 }
 
 function doShowNotes(command) {
   state.show = "showNotes"
-  return " "
+  return [" ", true]
 }
 
 function doEncounter(command) {
@@ -1853,24 +1803,23 @@ function doEncounter(command) {
   state.prefix += encounter.enemies.length > 0 ? "[Type #initiative to begin the battle]\n" : ""
 
   state.show = "prefix"
-  return text
+  return [text, true]
 }
 
 function doShowEnemies(command) {
   state.show = "showEnemies"
-  return " "
+  return [" ", true]
 }
 
 function doShowAllies(command) {
   state.show = "showAllies"
-  return " "
+  return [" ", true]
 }
 
 function doRemoveEnemy(command) {
   var arg0 = getArgumentRemainder(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   if (/\d+\D+(\d+\D*)+/gi.test(arg0)) {
@@ -1884,8 +1833,7 @@ function doRemoveEnemy(command) {
     list.forEach(x => {
       var num = parseInt(x) - 1
       if (num >= state.enemies.length) {
-        state.show = "none"
-        return `\n[Error: Enemy ${x} does not exist. See #showenemies]\n`
+        return [`\n[Error: Enemy ${x} does not exist. See #showenemies]\n`, false]
       }
 
       var enemy = state.enemies[num]
@@ -1894,7 +1842,7 @@ function doRemoveEnemy(command) {
     })
 
     state.show = "none"
-    return text
+    return [text, true]
   }
 
   var enemy
@@ -1902,25 +1850,22 @@ function doRemoveEnemy(command) {
   else arg0--
 
   if (arg0 == -1) {
-    state.show = "none"
-    return "\n[Error: Enemy not found. See #showenemies]\n"
+    return ["\n[Error: Enemy not found. See #showenemies]\n", false]
   } else if (arg0 >= state.enemies.length || arg0 < 0) {
-    state.show = "none"
-    return "\n[Error: Index number out of bounds. See #showenemies]\n"
+    return ["\n[Error: Index number out of bounds. See #showenemies]\n", false]
   } else {
     enemy = state.enemies[arg0]
     state.enemies.splice(arg0, 1)
   }
 
   state.show = "none"
-  return `\n[The enemy ${toTitleCase(enemy.name)} has been removed]\n`
+  return [`\n[The enemy ${toTitleCase(enemy.name)} has been removed]\n`, true]
 }
 
 function doRemoveAlly(command) {
   var arg0 = getArgumentRemainder(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   if (/\d+\D+(\d+\D*)+/gi.test(arg0)) {
@@ -1934,8 +1879,7 @@ function doRemoveAlly(command) {
     list.forEach(x => {
       var num = parseInt(x) - 1
       if (num >= state.allies.length) {
-        state.show = "none"
-        return `\n[Error: Ally ${x} does not exist. See #showallies]\n`
+        return [`\n[Error: Ally ${x} does not exist. See #showallies]\n`, false]
       }
 
       var ally = state.allies[num]
@@ -1944,7 +1888,7 @@ function doRemoveAlly(command) {
     })
 
     state.show = "none"
-    return text
+    return [text, true]
   }
 
   var ally
@@ -1952,18 +1896,16 @@ function doRemoveAlly(command) {
   else arg0--
 
   if (arg0 == -1) {
-    state.show = "none"
-    return "\n[Error: Ally not found. See #showallies]\n"
+    return ["\n[Error: Ally not found. See #showallies]\n", false]
   } else if (arg0 >= state.allies.length || arg0 < 0) {
-    state.show = "none"
-    return "\n[Error: Index number out of bounds. See #showallies]\n"
+    return ["\n[Error: Index number out of bounds. See #showallies]\n", false]
   } else {
     ally = state.allies[arg0]
     state.allies.splice(arg0, 1)
   }
 
   state.show = "none"
-  return `\n[The ally ${toTitleCase(ally.name)} has been removed]\n`
+  return [`\n[The ally ${toTitleCase(ally.name)} has been removed]\n`, true]
 }
 
 function doClearEnemies(command) {
@@ -1975,7 +1917,7 @@ function doClearEnemies(command) {
   state.enemies = []
 
   state.show = "none"
-  return "\n[The enemies have been cleared]\n"
+  return ["\n[The enemies have been cleared]\n", true]
 }
 
 function doClearAllies(command) {
@@ -1987,14 +1929,13 @@ function doClearAllies(command) {
   state.allies = []
 
   state.show = "none"
-  return "\n[The allies have been cleared]\n"
+  return ["\n[The allies have been cleared]\n", true]
 }
 
 function doAddEnemy(command) {
   var name = getArgument(command, 0)
   if (name == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   var health = getArgument(command, 1)
@@ -2004,52 +1945,43 @@ function doAddEnemy(command) {
   } else if (/^\d*d\d+((\+|-)\d+)?$/gi.test(health)) {
     health = calculateRoll(health)
   } else if (isNaN(health)) {
-    state.show = "none"
-    return "\n[Error: Expected a number. See #help]\n"
+    return ["\n[Error: Expected a number. See #help]\n", false]
   }
   health = parseInt(health)
 
   var ac = getArgument(command, 2)
   if (ac == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   } else if (/^\d*d\d+((\+|-)\d+)?$/gi.test(ac)) {
     ac = calculateRoll(ac)
   } else if (isNaN(ac)) {
-    state.show = "none"
-    return "\n[Error: Expected a number. See #help]\n"
+    return ["\n[Error: Expected a number. See #help]\n", false]
   }
   ac = parseInt(ac)
 
   var hitModifier = getArgument(command, 3)
   if (hitModifier == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   } else if (/^\d*d\d+((\+|-)\d+)?$/gi.test(hitModifier)) {
     hitModifier = calculateRoll(hitModifier)
   }  else if (isNaN(hitModifier)) {
-    state.show = "none"
-    return "\n[Error: Expected a number. See #help]\n"
+    return ["\n[Error: Expected a number. See #help]\n", false]
   }
 
   var damage = getArgument(command, 4)
   if (damage == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   } else if (isNaN(damage) && !/^\d*d\d+((\+|-)\d+)?$/gi.test(damage)) {
-    state.show = "none"
-    return "\n[Error: Expected a number. See #help]\n"
+    return ["\n[Error: Expected a number. See #help]\n", false]
   }
 
   var initiative = getArgument(command, 5)
   if (initiative == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   } else if (/^\d*d\d+((\+|-)\d+)?$/gi.test(initiative)) {
     initiative = calculateRoll(initiative)
   } else if (isNaN(initiative)) {
-    state.show = "none"
-    return "\n[Error: Expected a number. See #help]\n"
+    return ["\n[Error: Expected a number. See #help]\n", false]
   }
   initiative = parseInt(initiative)
 
@@ -2076,69 +2008,58 @@ function doAddEnemy(command) {
   state.enemies.push(enemy)
 
   state.show = "none"
-  return `[Enemy ${toTitleCase(enemy.name)} has been created]`
+  return [`[Enemy ${toTitleCase(enemy.name)} has been created]`, true]
 }
 
 function doAddAlly(command) {
   var name = getArgument(command, 0)
   if (name == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   var health = getArgument(command, 1)
   if (health == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   } else if (/^\d*d\d+((\+|-)\d+)?$/gi.test(health)) {
     health = calculateRoll(health)
   } else if (isNaN(health)) {
-    state.show = "none"
-    return "\n[Error: Expected a number. See #help]\n"
+    return ["\n[Error: Expected a number. See #help]\n", false]
   }
   health = parseInt(health)
 
   var ac = getArgument(command, 2)
   if (ac == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   } else if (/^\d*d\d+((\+|-)\d+)?$/gi.test(ac)) {
     ac = calculateRoll(ac)
   } else if (isNaN(ac)) {
-    state.show = "none"
-    return "\n[Error: Expected a number. See #help]\n"
+    return ["\n[Error: Expected a number. See #help]\n", false]
   }
   ac = parseInt(ac)
 
   var hitModifier = getArgument(command, 3)
   if (hitModifier == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   } else if (/^\d*d\d+((\+|-)\d+)?$/gi.test(hitModifier)) {
     hitModifier = calculateRoll(hitModifier)
   }  else if (isNaN(hitModifier)) {
-    state.show = "none"
-    return "\n[Error: Expected a number. See #help]\n"
+    return ["\n[Error: Expected a number. See #help]\n", false]
   }
 
   var damage = getArgument(command, 4)
   if (damage == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   } else if (isNaN(damage) && !/^\d*d\d+((\+|-)\d+)?$/gi.test(damage)) {
-    state.show = "none"
-    return "\n[Error: Expected a number. See #help]\n"
+    return ["\n[Error: Expected a number. See #help]\n", false]
   }
 
   var initiative = getArgument(command, 5)
   if (initiative == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   } else if (/^\d*d\d+((\+|-)\d+)?$/gi.test(initiative)) {
     initiative = calculateRoll(initiative)
   } else if (isNaN(initiative)) {
-    state.show = "none"
-    return "\n[Error: Expected a number. See #help]\n"
+    return ["\n[Error: Expected a number. See #help]\n", false]
   }
   initiative = parseInt(initiative)
 
@@ -2165,21 +2086,19 @@ function doAddAlly(command) {
   state.allies.push(ally)
 
   state.show = "none"
-  return `[Ally ${toTitleCase(ally.name)} has been created]`
+  return [`[Ally ${toTitleCase(ally.name)} has been created]`, true]
 }
 
 function doBlock(command) {
   if (state.blockCharacter == null) {
-    state.show = "none"
-    return "\n[Error: No attack to block. See #help]\n"
+    return ["\n[Error: No attack to block. See #help]\n", false]
   }
 
   var character = state.characters.find(x => x.name.toLowerCase() == state.blockCharacter.name.toLowerCase())
   if (character == null) character = state.enemies.find(x => x.name.toLowerCase() == state.blockCharacter.name.toLowerCase())
   if (character == null) character = state.allies.find(x => x.name.toLowerCase() == state.blockCharacter.name.toLowerCase())
   if (character == null) {
-    state.show = "none"
-    return "\n[Error: Character no longer exists. See #help]\n"
+    return ["\n[Error: Character no longer exists. See #help]\n", false]
   }
 
   character.health = state.blockPreviousHealth
@@ -2187,7 +2106,7 @@ function doBlock(command) {
   var properName = toTitleCase(character.name)
   state.show = "prefix"
   state.prefix = `[${properName} has ${character.health} health]`
-  return `\nHowever, the damage to ${properName} was blocked!\n`
+  return [`\nHowever, the damage to ${properName} was blocked!\n`, true]
 }
 
 const helpDialog_itemStoryCards = `
@@ -2255,7 +2174,7 @@ function doCreateItem(command) {
   let itemIndex = -1
   state.show = "none" // Never display output after this input
   if (!args.length) {
-    return "\n[Error: No arguments provided. See #help]\n"
+    return ["\n[Error: No arguments provided. See #help]\n", false]
   }
 
   // New Item with default values!
@@ -2308,8 +2227,8 @@ function doCreateItem(command) {
   // Check and build item
   newItem = checkItemCards(newItem) // Returns an updated item (and builds story card if needed)
   // TODO: Some kind of repsonse to the player
-  if (newItem) return `${item.itemName} was succesfully created!`
-  else return `ERROR: ${item.itemName} was not created: A story card with that name already exists!`
+  if (newItem) return [`${item.itemName} was succesfully created!`, true]
+  else return [`ERROR: ${item.itemName} was not created: A story card with that name already exists!`, false]
 }
 
 const HelpDialog_takeCommand = `
@@ -2334,15 +2253,13 @@ function doTake(command) {
   const argQuantity = getArgument(command, 0)
   const argItemName = getArgument(command, 1) // Potential item_name
   if (argQuantity == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   // Handle non-numeric quantity input
   let [quantity, itemName] = parseQuantityAndName(argQuantity, argItemName, false)
   if (quantity == null || itemName == null || (itemName == argQuantity && argItemName)) {
-    state.show = "none"
-    return "\n[Error: Invalid quantity or item_name. See #help]\n"
+    return ["\n[Error: Invalid quantity or item_name. See #help]\n", false]
   }
 
   const invItem = putItemIntoInventory(character, {itemName:itemName}, quantity)
@@ -2355,7 +2272,7 @@ function doTake(command) {
   text += `${character.name} ${displayCommandName} ${displayHowMany} ${displayItemName}. `
   text += `${character.name} now ${character.name == "You" ? "have" : "has"} ${invItem.quantity} ${singularize(itemName, invItem.quantity === 1)}.`
 
-  return text+`\n`
+  return [text+`\n`, true]
 }
 
 /**********| This function adds, or increases, an item in the character's inventory
@@ -2505,15 +2422,13 @@ function doReward(command) {
   } else {
     const lootCard = getStoryCardListByType("loot table - " + rewardTheme, true)[0];
     if (!lootCard) {
-      state.show = "none";
-      return `\n[Error: No loot tables found in the story cards with that theme.]\n`;
+      return [`\n[Error: No loot tables found in the story cards with that theme.]\n`, false]
     }
     lootTable = JSON.parse(lootCard.description);
   }
 
   if (lootTable.length < 1) {
-    state.show = "none";
-    return `\n[Error: There is no loot in the loot table.]\n`;
+    return [`\n[Error: There is no loot in the loot table.]\n`, false]
   }
 
   // Time to roll the ~Loot!
@@ -2545,7 +2460,7 @@ function doReward(command) {
     }
     text += `${index < rewardEntries.length-1 ? "," : "."}`
   })
-  return text;
+  return [text, true]
 }
 
 const HelpDialog_doEquip = `
@@ -2568,15 +2483,14 @@ function doEquip(command) {
   const itemName = getArgument(command, 0)
   const slotType = getArgument(command, 1)
   if (itemName == null || slotType == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
   // At this point we assume that every item in the character's inventory has gone through putItemIntoInventory()
   // Thus, there is no need to check all the various properties or story cards for it
   const invItem = character.inventory.find((element) => element.name.toLowerCase() === itemName.toLowerCase())
 
   const dontWord = character.name == "You" ? "don't" : "doesn't"
-  if (invItem == null) return `${character.name} tried to equip ${toTitleCase(itemName)}, but ${dontWord} possess it.`
+  if (invItem == null) return [`${character.name} tried to equip ${toTitleCase(itemName)}, but ${dontWord} possess it.`, true]
 
   // Recalculate the character's equipment bonuses (based on D&D 5e logic)
 
@@ -2661,7 +2575,7 @@ function doEquip(command) {
   }
   
   text += "\n"
-  return text
+  return [text, true]
 }
 
 const HelpDialog_doDrop = `
@@ -2682,15 +2596,13 @@ function doDrop(command) {
   const argQuantity = getArgument(command, 0)
   const argItemName = getArgument(command, 1)
   if (argQuantity == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   // Handle non-numeric quantity input
   let [quantity, itemName] = parseQuantityAndName(argQuantity, argItemName)
   if (quantity == null || itemName == null || (itemName == argQuantity && argItemName)) {
-    state.show = "none"
-    return "\n[Error: Invalid quantity or item_name. See #help]\n"
+    return ["\n[Error: Invalid quantity or item_name. See #help]\n", false]
   }
 
   // Remov the item and determine printing text
@@ -2705,7 +2617,7 @@ function doDrop(command) {
   const displayCommandName = singularize(commandName, character.name == "You")
   if (invItem == null) { // Not found, cannot drop
     const dontWord = character.name == "You" ? "don't" : "doesn't"
-    return `\n${character.name} tried to ${commandName} ${displayHowMany} ${displayItemName}, but ${dontWord} have any.\n`
+    return [`\n${character.name} tried to ${commandName} ${displayHowMany} ${displayItemName}, but ${dontWord} have any.\n`, true]
   }
 
   // Drop text & Remaining text
@@ -2714,7 +2626,7 @@ function doDrop(command) {
     text += ` ${character.name} now ${character.name == "You" ? "have" : "has"} ${invItem.quantity} ${singularize(itemName, invItem.quantity === 1)}.`
   }
 
-  return text+'\n'
+  return [text+'\n', true]
 }
 
 /**********| This function removes/reduces items in the character's inventory
@@ -2757,22 +2669,19 @@ function doGive(command) {
   const character = getCharacter()
   const otherCharacter = getCharacter(getArgument(command, 0), false) // no fallback!
   if (otherCharacter == null) {
-    state.show = "none"
-    return "\n[Error: Target character does not exist. See #characters]\n"
+    return ["\n[Error: Target character does not exist. See #characters]\n", false]
   }
 
   const argQuantity = getArgument(command, 1)
   const argItemName = getArgument(command, 2)
   if (argQuantity == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   // Handle non-numeric quantity input
   let [quantity, itemName] = parseQuantityAndName(argQuantity, argItemName)
   if (quantity == null || itemName == null || (itemName == argQuantity && argItemName)) {
-    state.show = "none"
-    return "\n[Error: Invalid quantity or item_name. See #help]\n"
+    return ["\n[Error: Invalid quantity or item_name. See #help]\n", false]
   }
 
   // Remove the item from the main character first
@@ -2787,7 +2696,7 @@ function doGive(command) {
   const displayCommandName = singularize(commandName, character.name == "You")
   if (removedItem == null) { // Not found, cannot drop
     const dontWord = character.name == "You" ? "don't" : "doesn't"
-    return `\n${character.name} tried to ${commandName} ${otherCharacter.name} ${displayHowMany} ${displayItemName}, but ${dontWord} have any.\n`
+    return [`\n${character.name} tried to ${commandName} ${otherCharacter.name} ${displayHowMany} ${displayItemName}, but ${dontWord} have any.\n`, true]
   }
 
   // Now try to add the item to the other character's inventory, then printout
@@ -2798,7 +2707,7 @@ function doGive(command) {
   if (removedItem.quantity > 0) { // Only displays if not all X item was dropped
     text += ` ${character.name} now ${character.name == "You" ? "have" : "has"} ${removedItem.quantity} ${singularize(itemName, removedItem.quantity === 1)}.`
   }
-  return text+`\n`
+  return [text+`\n`, true]
 }
 
 /**********| parseQuantityAndName - 
@@ -2872,8 +2781,7 @@ function doBuy(command) {
   sellItemName = isNaN(args[index+1]) ? args[index+1] ?? null : null
   sellItemName = index == 1 ? (args[index+2] == null ? sellItemName : null) : sellItemName
   if ([buyItemName, sellQuantity, sellItemName].includes(null)) {
-    state.show = "none"
-    return "\n[Error: Invalid parameters. See #help]\n"
+    return ["\n[Error: Invalid parameters. See #help]\n", false]
   }
 
   buyItemName = singularize(buyItemName, true)
@@ -2889,7 +2797,7 @@ function doBuy(command) {
   const invItem = character.inventory.find((element) => element.itemName.toLowerCase() === sellItemName.toLowerCase())
   if (invItem?.quantity < sellQuantity) {
     const dontWord = character.name == "You" ? "don't" : "doesn't"
-    return `\n${character.name} tried to ${commandName} ${displayHowManyBuy} ${displayBuyItemName} for ${sellQuantity} ${displaySellItemName}, but ${dontWord} have enough ${displaySellItemName}.\n`
+    return [`\n${character.name} tried to ${commandName} ${displayHowManyBuy} ${displayBuyItemName} for ${sellQuantity} ${displaySellItemName}, but ${dontWord} have enough ${displaySellItemName}.\n`, true]
   }
 
   // Attemopt to remove the sell item from inventory
@@ -2904,7 +2812,7 @@ function doBuy(command) {
   // Invalid drop text
   if (removedItem == null) { // Not found, cannot drop
     const dontWord = character.name == "You" ? "don't" : "doesn't"
-    return `\n${character.name} tried to ${commandName} ${displayHowManyBuy} ${displayBuyItemName} for ${displayHowManySell} ${displaySellItemName}, but ${dontWord} have any ${singularize(sellItemName, false)}.\n`
+    return [`\n${character.name} tried to ${commandName} ${displayHowManyBuy} ${displayBuyItemName} for ${displayHowManySell} ${displaySellItemName}, but ${dontWord} have any ${singularize(sellItemName, false)}.\n`, true]
   }
 
   // Now try to add the item to the other character's inventory, then printout
@@ -2919,7 +2827,7 @@ function doBuy(command) {
   } else {
     text += ` now ${character.name == "You" ? "have" : "has"} no more ${singularize(sellItemName, false)}.`
   }
-  return text+`\n`
+  return [text+`\n`, true]
 }
 
 const HelpDialog_doSell = `
@@ -2952,30 +2860,28 @@ function doSell(command) {
   buyItemName = isNaN(args[index+1]) ? args[index+1] ?? null : null
   buyItemName = index == 1 ? (args[index+2] == null ? buyItemName : null) : buyItemName
   if ([buyItemName, sellQuantity, sellItemName].includes(null)) {
-    state.show = "none"
-    return "\n[Error: Invalid parameters. See #help]\n"
+    return ["\n[Error: Invalid parameters. See #help]\n", false]
   }
   // just call buy command to do the trade
-  let text = doBuy(`${singularize("aquire", character.name == "You")} ${buyQuantity} ${buyItemName} ${sellQuantity} ${sellItemName}`)
-  if (!text.includes("#help") && !text.includes("Error:")) {
+  let text, success = null
+  [text, success] = doBuy(`${singularize("aquire", character.name == "You")} ${buyQuantity} ${buyItemName} ${sellQuantity} ${sellItemName}`)
+  if (!success) {
     text = text.slice(1,text.length) // slice off the newline prepended
     text = text.slice(character.name.length+1, text.length) // slice off the name prepended + space
     text = `\n${character.name} ${singularize(getCommandName(command), character.name == "You")}, and ` + text
   }
-  return text
+  return [text, success]
 }
 
 function doRenameItem(command) {
   var arg0 = getArgument(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   var arg1 = getArgument(command, 1)
   if (arg1 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   var commandName = getCommandName(command)
@@ -2992,39 +2898,37 @@ function doRenameItem(command) {
     existingItem.name = arg1
   }
 
-  return text
+  return [text, true]
 }
 
 function doInventory(command) {
   state.show = "inventory"
-  return " "
+  return [" ", true]
 }
 
 function doLearnSpell(command) {
   var arg0 = getArgumentRemainder(command, 0)
   if (arg0 == "") {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   var character = getCharacter()
   var tryWord = character.name == "You" ? "try" : "tries"
 
   var found = character.spells.find((element) => element == arg0)
-  if (found != null) return `\n[${character.name} ${tryWord} to learn the spell ${arg0}, but already knows it]\n`
+  if (found != null) return [`\n[${character.name} ${tryWord} to learn the spell ${arg0}, but already knows it]\n`, true]
 
   character.spells.push(arg0)
   addStoryCard(arg0, "", "spell")
 
-  return `\n${character.name} learned the spell ${toTitleCase(arg0)}.\n`
+  return [`\n${character.name} learned the spell ${toTitleCase(arg0)}.\n`, true]
 }
 
 function doForgetSpell(command) {
   var character = getCharacter()
   var arg0 = getArgumentRemainder(command, 0)
   if (arg0 == "") {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
   var dontWord = character.name == "You" ? "don't" : "doesn't"
   var tryWord = character.name == "You" ? "try" : "tries"
@@ -3032,52 +2936,50 @@ function doForgetSpell(command) {
   var found = character.spells.find(x => x.toLowerCase() == arg0.toLowerCase())
   if (found == null) {
     state.show = "none"
-    return `\n[${character.name} ${tryWord} to forget the spell ${arg0}, but ${character.name} ${dontWord} even know it]\n`
+    return [`\n[${character.name} ${tryWord} to forget the spell ${arg0}, but ${character.name} ${dontWord} even know it]\n`, true]
   }
   
   var index = character.spells.findIndex(x => x.toLowerCase() == arg0.toLowerCase())
   character.spells.splice(index, 1)
 
   state.show = "none"
-  return `\n[${character.name} forgot the spell ${arg0}]\n`
+  return [`\n[${character.name} forgot the spell ${arg0}]\n`, true]
 }
 
 function doRemoveStat(command) {
   var character = getCharacter()
   var arg0 = getArgumentRemainder(command, 0)
   if (arg0 == "") {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
   var dontWord = character.name == "You" ? "don't" : "doesn't"
   var tryWord = character.name == "You" ? "try" : "tries"
 
   var found = character.stats.find((element) => element == arg0)
-  if (found == null) return `\n[${character.name} ${tryWord} to remove the ability ${arg0}, but ${character.name} ${dontWord} even know it]\n`
+  if (found == null) return [`\n[${character.name} ${tryWord} to remove the ability ${arg0}, but ${character.name} ${dontWord} even know it]\n`, true]
   
   var index = character.stats.findIndex((element) => element.toLowerCase() == arg0.toLowerCase())
   character.stats.splice(index, 1)
 
-  return `\n[${character.name} removed the ability ${arg0}]\n`
+  return [`\n[${character.name} removed the ability ${arg0}]\n`, true]
 }
 
 function doRemoveSkill(command) {
   var character = getCharacter()
   var arg0 = getArgumentRemainder(command, 0)
   if (arg0 == "") {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
   var dontWord = character.name == "You" ? "don't" : "doesn't"
   var tryWord = character.name == "You" ? "try" : "tries"
 
   var found = character.skills.find((element) => element == arg0)
-  if (found == null) return `\n[${character.name} ${tryWord} to remove the skill ${arg0}, but ${character.name} ${dontWord} even know it]\n`
+  if (found == null) return [`\n[${character.name} ${tryWord} to remove the skill ${arg0}, but ${character.name} ${dontWord} even know it]\n`, true]
   
   var index = character.skills.findIndex((element) => element.toLowerCase() == arg0.toLowerCase())
   character.skills.splice(index, 1)
 
-  return `\n[${character.name} removed the skill ${arg0}]\n`
+  return [`\n[${character.name} removed the skill ${arg0}]\n`, true]
 }
 
 function doCastSpell(command) {
@@ -3112,8 +3014,7 @@ function doCastSpell(command) {
 
   var spell = getArgument(command, spellIndex)
   if (spell == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
   var targetText = null
   var atWord = null
@@ -3139,7 +3040,7 @@ function doCastSpell(command) {
 
   if (found == null) {
     state.show = "none"
-    return `\n[${toTitleCase(character.name)} ${tryWord} to cast the spell ${spell}, but ${character.name == "You" ? "you" : toTitleCase(character.name)} ${dontWord} know it]\n`
+    return [`\n[${toTitleCase(character.name)} ${tryWord} to cast the spell ${spell}, but ${character.name == "You" ? "you" : toTitleCase(character.name)} ${dontWord} know it]\n`, true]
   }
 
   var text = `${character.name} cast the spell ${spell}${advantage != "normal" ? " with " + advantage : ""}${targetText == null ? "" : " " + targetText}.`
@@ -3247,40 +3148,40 @@ function doCastSpell(command) {
   if (allyString != null) text += allyString
 
   if (difficulty > 0 && (roll + modifier >= difficulty || roll == 20)) text += addXpToAll(Math.floor(state.autoXp * clamp(difficulty, 1, 20) / 20))
-  return `\n${text}\n`
+  return [`\n${text}\n`, true]
 }
 
 function doShowCharacters(command) {
   state.show = "characters"
-  return " "
+  return [" ", true]
 }
 
 function doSpellbook(command) {
   state.show = "spellbook"
-  return " "
+  return [" ", true]
 }
 
 function doShowSkills(command) {
   state.show = "skills"
-  return " "
+  return [" ", true]
 }
 function doShowStats(command) {
   state.show = "stats"
-  return " "
+  return [" ", true]
 }
 
 function doClearNotes(command) {
   state.notes = []
   
   state.show = "clearNotes"
-  return " "
+  return [" ", true]
 }
 
 function doClearInventory(command) {
   var character = getCharacter()
   character.inventory = []
   state.show = "clearInventory"
-  return " "
+  return [" ", true]
 }
 
 function doEraseNote(command) {
@@ -3289,15 +3190,14 @@ function doEraseNote(command) {
 
   var list = arg0.split(/\D+/)
   list.sort(function(a, b) {
-    return b - a;
+    return b - a, true
   });
 
   var text = "\n"
   list.forEach(x => {
     var num = parseInt(x) - 1
     if (num >= state.notes.length) {
-      state.show = "none"
-      return `\n[Error: Note ${x} does not exist. Type #shownotes]\n`
+      return [`\n[Error: Note ${x} does not exist. Type #shownotes]\n`, false]
     }
 
     state.notes.splice(num, 1)
@@ -3305,14 +3205,13 @@ function doEraseNote(command) {
   })
   
   state.show = "none"
-  return text
+  return [text, true]
 }
 
 function doRemoveCharacter(command) {
   var arg0 = getArgumentRemainder(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   for (var i = 0; i < state.characters.length; i++) {
@@ -3320,45 +3219,44 @@ function doRemoveCharacter(command) {
     if (character.name.toLowerCase() == arg0.toLowerCase()) {
       state.characters.splice(i, 1)
       state.show = "none"
-      return `[Character ${character.name} removed]`
+      return [`[Character ${character.name} removed]`, true]
     }
   }
 
-  return `[Character ${arg0} was not found]`
+  return [`[Character ${arg0} was not found]`, true]
 }
 
 function doClearSpells(command) {
   var character = getCharacter()
   character.spells = []
   state.show = "clearSpells"
-  return " "
+  return [" ", true]
 }
 
 function doClearStats(command) {
   var character = getCharacter()
   character.stats = []
   state.show = "clearStats"
-  return " "
+  return [" ", true]
 }
 
 function doClearSkills(command) {
   var character = getCharacter()
   character.skills = []
   state.show = "clearSkills"
-  return " "
+  return [" ", true]
 }
 
 function doVersion(command) {
   state.show = "none"
-  return `[${version}]`
+  return [`[${version}]`, true]
 }
 
 function doSetDamage(command) {
   var character = getCharacter()
   var arg0 = getArgument(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   if (/^\d*d\d+((\+|-)\d+)?$/gi.test(arg0)) {
@@ -3366,22 +3264,20 @@ function doSetDamage(command) {
   } else if (!isNaN(arg0)) {
     character.damage = parseInt(arg0)
   } else {
-    state.show = "none"
-    return "\n[Error: Not a number. See #help]\n"
+    return ["\n[Error: Not a number. See #help]\n", false]
   }
 
   var possessiveName = getPossessiveName(character.name)
 
   state.show = "none"
-  return `\n[${possessiveName} attack damage is set to ${character.damage}]\n`
+  return [`\n[${possessiveName} attack damage is set to ${character.damage}]\n`, true]
 }
 
 function doSetProficiency(command) {
   var character = getCharacter()
   var arg0 = getArgument(command, 0)
   if (arg0 == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   if (/^\d*d\d+((\+|-)\d+)?$/gi.test(arg0)) {
@@ -3389,14 +3285,13 @@ function doSetProficiency(command) {
   } else if (!isNaN(arg0)) {
     character.hitModifier = parseInt(arg0)
   } else {
-    state.show = "none"
-    return "\n[Error: Not a number. See #help]\n"
+    return ["\n[Error: Not a number. See #help]\n", false]
   }
 
   var possessiveName = getPossessiveName(character.name)
 
   state.show = "none"
-  return `\n[${possessiveName} proficiency is set to ${character.hitModifier}]\n`
+  return [`\n[${possessiveName} proficiency is set to ${character.hitModifier}]\n`, true]
 }
 
 function doReset(command) {
@@ -3409,14 +3304,14 @@ function doReset(command) {
   state.day = null
 
   state.show = "reset"
-  return " "
+  return [" ", true]
 }
 
 function doHelp(command) {
   const helpType = getArgument(command, 0)
   if (helpType) state.show = "help "+helpType
   else state.show = "help"
-  return " "
+  return [" ", true]
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -3424,7 +3319,7 @@ function doHelp(command) {
 // If you want to develop; Replace with DEVELOPER TEST ZONE from TestZone.js
 function doTest(command) {
   state.show = "none" // Hide output in AI Dungeon GUI
-  return "You have no test cases! :P Did you forget to replace this with TestZone.js?"
+  return ["You have no test cases! :P Did you forget to replace this with TestZone.js?", true]
 }
 
 // AI DUNGEON -- Don't modify this part
