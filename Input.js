@@ -2866,6 +2866,7 @@ function doBuy(command) {
   // Get the arguments from the command string
   let sellQuantity, sellItemName, buyQuantity, buyItemName
   [buyQuantity, buyItemName] = parseQuantityAndName(args[0], args[1], false)
+  //TODO: Does this handle: #buy an item for all gold
   const index = buyItemName == args[0] ? 1 : 2
   sellQuantity = isNaN(args[index]) ? null : Number(args[index])
   sellItemName = isNaN(args[index+1]) ? args[index+1] ?? null : null
@@ -2903,7 +2904,7 @@ function doBuy(command) {
   // Invalid drop text
   if (removedItem == null) { // Not found, cannot drop
     const dontWord = character.name == "You" ? "don't" : "doesn't"
-    return `\n${character.name} tried to ${commandName} ${displayHowManyBuy} ${displayBuyItemName} for ${displayHowManySell} ${displaySellItemName}, but ${dontWord} have any ${displaySellItemName}.\n`
+    return `\n${character.name} tried to ${commandName} ${displayHowManyBuy} ${displayBuyItemName} for ${displayHowManySell} ${displaySellItemName}, but ${dontWord} have any ${singularize(sellItemName, false)}.\n`
   }
 
   // Now try to add the item to the other character's inventory, then printout
@@ -2916,50 +2917,52 @@ function doBuy(command) {
   if (removedItem.quantity > 0) { // Only displays if not all X item was dropped
     text += ` now ${character.name == "You" ? "have" : "has"} ${removedItem.quantity} ${singularize(removedItem.itemName, removedItem.quantity === 1)} remaining.`
   } else {
-    text += ` now ${character.name == "You" ? "have" : "has"} no more ${sellItemName}.`
+    text += ` now ${character.name == "You" ? "have" : "has"} no more ${singularize(sellItemName, false)}.`
   }
   return text+`\n`
 }
 
+const HelpDialog_doSell = `
+#sell (sell_quantity) sell_item (for|with) buy_quantity buy_item
+-- Adds the specified buy_quantity of the buy_item to the character's inventory and also removes the sell_quantity of sell_item.
+-- sell_quantity is optional, but buy_quantity cannot be omitted!
+-- Quotes are necessary for items with spaces in the name.
+-- "my", "with", "for", "your" will be ignored.
+-- sell_quantity can be "all", "every", "a", "an", "the", or number.
+-- buy_quantity can only "a", "an", "the", or number.
+`
+/**********| doSell - 
+* Adds the specified sell_quantity of the sell_item to the character's inventory and also removes the buy_quantity of buy_item.
+* @function
+* @param {string} [command] (you|character) #sell sell_quantity sell_item buy_quantity buy_item
+* @returns {string} Text containing the result fo the action, or an error with (state.show = "none")
+***********/
 function doSell(command) {
-  command = command.replace(/\s+((for)|(with))\s+/, " ")
+  const character = getCharacter()
+  command = command.replaceAll(/\s+((for)|(with)|(my)|(your)|(their)|(his)|(her))\s+/g, " ")
+  const args = getArguments(command, false)
+  
+  // Get the arguments from the command string - reverse of buy command
+  let sellQuantity, sellItemName, buyQuantity, buyItemName
+  [sellQuantity, sellItemName] = parseQuantityAndName(args[0], args[1])
+  const index = sellItemName == args[0] ? 1 : 2
 
-  var args = []
-  args.push(getArgument(command, 0))
-  if (args[0] == null) {
+  //TODO: Does this handle: #sell all items for a gold
+  buyQuantity = isNaN(args[index]) ? null : Number(args[index])
+  buyItemName = isNaN(args[index+1]) ? args[index+1] ?? null : null
+  buyItemName = index == 1 ? (args[index+2] == null ? buyItemName : null) : buyItemName
+  if ([buyItemName, sellQuantity, sellItemName].includes(null)) {
     state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+    return "\n[Error: Invalid parameters. See #help]\n"
   }
-  args.push(getArgument(command, 1))
-  if (args[1] == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
+  // just call buy command to do the trade
+  let text = doBuy(`${singularize("aquire", character.name == "You")} ${buyQuantity} ${buyItemName} ${sellQuantity} ${sellItemName}`)
+  if (!text.includes("#help") && !text.includes("Error:")) {
+    text = text.slice(1,text.length) // slice off the newline prepended
+    text = text.slice(character.name.length+1, text.length) // slice off the name prepended + space
+    text = `\n${character.name} ${singularize(getCommandName(command), character.name == "You")}, and ` + text
   }
-  args.push(getArgument(command, 2))
-  args.push(getArgument(command, 3))
-
-  var sellQuantity
-  if (isNaN(args[0])) {
-    sellQuantity = 1
-  } else {
-    sellQuantity = args[0]
-    args.splice(0, 1)
-  }
-
-  var sellName
-  sellName = args[0]
-
-  var buyQuantity
-  if (isNaN(args[1])) {
-    buyQuantity = 1
-  } else {
-    buyQuantity = args[1]
-    args.splice(1, 1)
-  }
-
-  var buyName = args[1]
-
-  return doBuy(`buy ${buyQuantity} ${buyName} ${sellQuantity} ${sellName}`)
+  return text
 }
 
 function doRenameItem(command) {

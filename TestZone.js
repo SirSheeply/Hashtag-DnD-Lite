@@ -72,7 +72,7 @@ function doTest(command) {
     return doGive_testResult
   }
 
-  // --- Testing the Give Command ---
+  // --- Testing the Buy Command ---
   // Add some gold to our character
   character.inventory = [] // Reset inventory
   putItemIntoInventory(character, {itemName:"gold"}, 4)
@@ -119,6 +119,55 @@ function doTest(command) {
   if (doBuy_testResult != null) {
     state.show = "none" // Hide output in AI Dungeon GUI
     return doBuy_testResult
+  }
+
+  // --- Testing the Sell Command ---
+  // Add some gold to our character
+  character.inventory = [] // Reset inventory
+  putItemIntoInventory(character, {itemName:"item"}, 3)
+  
+  const doSell_TestCases = [
+    //<>> Invlaid <<>
+    { command: "#sell",                      expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell 5",                    expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell item",                 expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell 5 item",               expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell item 1",               expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell 5 2 3",                expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell 5 2 item",             expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell 5 item 3",             expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell item 2 3",             expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell item gold 3",          expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell item gold fish",       expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell 5 2 3 4",              expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell 5 2 3 item",           expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell 5 2 item 4",           expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell 5 2 item gold",        expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell 5 item 2 4",           expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell 5 item gold 4",        expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell 5 item gold fish",     expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell item 2 3 4",           expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell item 2 3 gold",        expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell item 2 gold 4",        expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell item 2 gold fish",     expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell item gold 3 4",        expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell item gold 3 fish",     expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell item gold fish 4",     expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell item gold fish bowl",  expected: "\n[Error: Invalid parameters. See #help]\n" },
+    // <>> No longer valid - no optional sell quantity <<>
+    { command: "#sell item gold",            expected: "\n[Error: Invalid parameters. See #help]\n" },
+    { command: "#sell 5 item gold",          expected: "\n[Error: Invalid parameters. See #help]\n" },
+    // <>> Valid commands <<>
+    { command: "#sell item 2 gold",          expected: "\nYou sell, and aquire 2 gold for one item. You now have 2 gold, and now have 2 items remaining.\n" },
+    { command: "#sell 5 item 2 gold",        expected: "\nYou sell, and tried to aquire 2 gold for 5 items, but don't have enough items.\n" },
+    { command: "#sell 2 item 2 gold",        expected: "\nYou sell, and aquire 2 gold for all 2 of your items. You now have 4 gold, and now have no more items.\n" },
+    // No Gold
+    { command: "#sell an item for 1 gold",   expected: "\nYou sell, and tried to aquire one gold for one item, but don't have any items.\n" }
+  ]
+  const doSell_testResult = testerFunction(doSell, doSell_TestCases)
+  if (doSell_testResult != null) {
+    state.show = "none" // Hide output in AI Dungeon GUI
+    return doSell_testResult
   }
 
   // --- Testing Result PASSED ---
