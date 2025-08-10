@@ -62,112 +62,6 @@ function DNDHash_output(text) {
           break
       }
       break
-    case "setupEnemy":
-      switch (state.setupEnemyStep) {
-        case 0:
-          text += `***ENEMY CREATION***\nWould you like to use a preset enemy? (y/n/q to quit)\n`
-          break
-        case 1:
-          text += `What is the enemy's name? This must be a unique name that has no duplicates in the current encounter. Type q to quit.\n`
-          break
-        case 2:
-          text += `What is the enemy's health? This can be any positive integer or a dice roll (ie. 3d6+5). Type q to quit.\n`
-          break
-        case 3:
-          text += `What is the enemy's armor class (AC)? This can be any positive integer with 10 being easy and 20 being incredibly difficult. It can also be a dice roll (ie. 2d4+5). Type q to quit\n`
-          break
-        case 4:
-          text += `What is the enemy's hit modifier? This affects how accurate their attacks are. This can be any integer. 0 is normal accuracy. Type q to quit\n`
-          break
-        case 5:
-          text += `What is the enemy's damage? This can be any positive integer or a dice roll (ie. 2d6+5). The dice roll is calculated at the time of each attack. Type q to quit.\n`
-          break
-        case 6:
-          text += `What is the enemy's initiative? Initiative controls turn order. This can be any positive integer with higher numbers going first in battle. This can also be a dice roll (ie. 1d20+3). Type q to quit.\n`
-          break
-        case 7:
-          text += "Enter the name of a spell that the enemy knows. If it can target this spell at a player character, add a dice roll for the damage calculation after it (ie. Ray of Frost3d6+2). Type s to stop entering spells or type q to quit.\n"
-          break
-        case 8:
-          text += "Enter the name of another spell that the enemy knows. If it can target this spell at a player character, add a dice roll for the damage calculation after it (ie. Ray of Frost3d6+2). Type s to stop entering spells or type q to quit.\n"
-          break
-        case 100:
-          // The rework here is to have all the enemies inside story cards, from which we can pull.
-          // This means players can curate the enemies prefabs, and we're not limited to X amount.
-          // We pass the enemy subtype as "enemy - " to find all enemy cards regardless of subtype
-          const enemyIndexes = getStoryCardListByType("enemy - ")
-          text += `What enemy preset will you choose?\n`
-          for (let index = 0; index < enemyIndexes.length; index++) {
-            text += `${index}. ${enemyIndexes[index].title}\n`
-          }
-          text += `\n\nEnter the number or q to quit. If you want to rename the enemy, add a space and type the name\n(ie. 25 Thuggish Zombie B)\n`
-          break
-        case 500:
-          var hashtag = `#addenemy "${state.tempEnemy.name}" ${state.tempEnemy.health} ${state.tempEnemy.ac} ${state.tempEnemy.hitModifier} ${state.tempEnemy.damage} ${state.tempEnemy.initiative}`
-          for (var spell of state.tempEnemy.spells) {
-            hashtag += ` "${spell}"`
-          }
-
-          text += `${state.tempEnemy.name} has been created.\nType #initiative to start the battle.\nCopy and paste the following hashtag to create another identical enemy like this:\n${hashtag}\n***********\n`
-          break;
-        case null:
-          text += `[Enemy creation has been aborted!]\n`
-          break
-      }
-      break
-    case "setupAlly":
-      switch (state.setupAllyStep) {
-        case 0:
-          text += `***ALLY CREATION***\nWould you like to use a preset ally? (y/n/q to quit)\n`
-          break
-        case 1:
-          text += `What is the ally's name? This must be a unique name that has no duplicates in the current encounter. Typing the name of an existing ally will modify that ally's properties. Type q to quit.\n`
-          break
-        case 2:
-          text += `${!state.newAlly ? "Ally name already exists. You are now modifying the existing ally " + state.tempAlly.name + ". " : ""}What is the ally's health? This can be any positive integer or a dice roll (ie. 3d6+5). Type q to quit.${!state.newAlly ? " Type default to leave as current value " + state.tempAlly.health : ""}\n`
-          break
-        case 3:
-          text += `What is the ally's armor class (AC)? This can be any positive integer with 10 being easy and 20 being incredibly difficult. It can also be a dice roll (ie. 2d4+5). Type q to quit.${!state.newAlly ? " Type default to leave as current value " + state.tempAlly.ac : ""}\n`
-          break
-        case 4:
-          text += `What is the ally's hit modifier? This affects how accurate their attacks are. This can be any integer. 0 is normal accuracy. Type q to quit.${!state.newAlly ? " Type default to leave as current value " + state.tempAlly.hitModifier : ""}\n`
-          break
-        case 5:
-          text += `What is the ally's damage? This can be any positive integer or a dice roll (ie. 2d6+5). The dice roll is calculated at the time of each attack. Type q to quit.${!state.newAlly ? " Type default to leave as current value " + state.tempAlly.damage : ""}\n`
-          break
-        case 6:
-          text += `What is the ally's initiative? Initiative controls turn order. This can be any positive integer with higher numbers going first in battle. This can also be a dice roll (ie. 1d20+3). Type q to quit.${!state.newAlly ? " Type default to leave as current value " + state.tempAlly.initiative : ""}\n`
-          break
-        case 7:
-          text += `Enter the name of a spell that the ally knows. If it can target this spell at an enemy character, add a dice roll for the damage calculation after it (ie. Ray of Frost3d6+2). Type s to stop entering spells or type q to quit.${!state.newAlly ? " Type e to erase all current spells." : ""}\n`
-          break
-        case 8:
-          text += `Enter the name of another spell that the ally knows. If it can target this spell at an enemy character, add a dice roll for the damage calculation after it (ie. Ray of Frost3d6+2). Type s to stop entering spells or type q to quit.\n`
-          break
-        case 100:
-          // The rework here is to have all the allies inside story cards, from which we can pull.
-          // This means players can curate the ally prefabs, and we're not limited to X amount.
-          // We pass the ally subtype as "" to find all ally cards regardless of subtype
-          const allyIndexes = listAllyCards("")
-          text += `What ally preset will you choose?\n`
-          for (let index = 0; index < allyIndexes.length; index++) {
-            text += `${index}. ${allyIndexes[index].title}\n`
-          }
-          text += `\n\nEnter the number or q to quit. If you want to rename the ally, add a space and type the name\n(ie. 25 Thuggish Friend B)\n`
-          break
-        case 500:
-          var hashtag = `#addally "${state.tempAlly.name}" ${state.tempAlly.health} ${state.tempAlly.ac} ${state.tempAlly.hitModifier} ${state.tempAlly.damage} ${state.tempAlly.initiative}`
-          for (var spell of state.tempAlly.spells) {
-            hashtag += ` "${spell}"`
-          }
-
-          text += `${state.tempAlly.name} has been created.\nType #showallies to show the list of all allies.\nCopy and paste the following hashtag to create another identical ally like this:\n${hashtag}\n***********\n`
-          break;
-        case null:
-          text += `[Ally creation has been aborted!]\n`
-          break
-      }
-      break
     case "bio":
       text += `*** ${possessiveName.toUpperCase()} BIO ***\n`
       text += `Class: ${character.className}\n`
@@ -220,11 +114,7 @@ function DNDHash_output(text) {
       }
 
       text += `-INVENTORY-\n`
-      
-      character.inventory.forEach(function(x) {
-        text += `* ${x.quantity} ${toTitleCase(pluralize(x.name, x.quantity == 1))}\n`
-      })
-
+      text += showInventory(character, "-")
       text += `----\n\n`
 
       text += `Summary: ${character.summary}\n\n`
@@ -244,15 +134,9 @@ function DNDHash_output(text) {
       text += "[Notes cleared successfully]\n"
       break
     case "inventory":
-      text += `*** ${possessiveName.toUpperCase()} INVENTORY ***`
-      if (character.inventory.length > 0) {
-        character.inventory.forEach(function(x) {
-          text += `\n* ${x.quantity} ${toTitleCase(pluralize(x.name, x.quantity == 1))}`
-        })
-      } else {
-        text += `\n${possessiveName} inventory is empty!`
-      }
-      text += "\n******************\n\n"
+      text += `*** ${possessiveName.toUpperCase()} INVENTORY ***\n`
+      text += showInventory(character, "*")
+      text += "******************\n\n"
       break
     case "characters":
       text += `*** CHARACTERS ***`
@@ -308,38 +192,20 @@ function DNDHash_output(text) {
       }
       text += "******************\n\n"
       break
-    case "showAllies":
-      text += "*** ALLIES ***\n"
-
-      if (state.allies.length == 0) {
-        text += "There are no allies present here. Type #encounter to generate a scripted set or #addally to add your own\n"
-      } else {
-        var index = 0
-        for (var ally of state.allies) {
-          text += `${++index}. ${toTitleCase(ally.name)} (Health: ${ally.health} AC: ${ally.ac} Initiative: ${ally.initiative})\n`
-        }
-      }
-
-      text += "******************\n\n"
+    case "none":
+      text += " "
       break
-    case "initiative":
-      text += "*** INITIATIVE ORDER ***\n"
-
-      if (state.initiativeOrder.length == 0) {
-        text += "There is no one in the battle. This makes no sense!"
-      } else {
-        var index = 0
-        for (var character of state.initiativeOrder) {
-          text += `${++index}. ${toTitleCase(character.name)} (Initiative: ${character.calculatedInitiative})\n`
-        }
-      }
-
-      text += "******************\n\n"
-      
-      if (state.initiativeOrder.length > 0) {
-        state.initiativeOrder = []
-        text += `[Type #turn]\n`
-      }
+    case "prefix":
+      text = state.prefix + originalText
+      break
+    case "prefixOnly":
+      text = state.prefix
+      break
+    case "clearInventory":
+      text += `[${possessiveName} inventory has been emptied]\n`
+      break
+    case "clearSpells":
+      text += `[${possessiveName} spells have been cleared]\n`
       break
     case "reset":
       text += "[All settings have been reset]\n"
@@ -347,36 +213,31 @@ function DNDHash_output(text) {
     case "help":
       text = helpText
       break
-    case "help characters":
-      text = helpTextCharacters
-      break
-    case "help checks":
-      text = helpTextChecks
-      break
-    case "help allies":
-      text = helpTextAllies
-      break
-    case "help combat":
-      text = helpTextCombat
-      break
-    case "help abilities":
-      text = helpTextAbilities
-      break
-    case "help skills":
-      text = helpTextSkills
-      break
-    case "help spells":
-      text = helpTextSpells
-      break
-    case "help inventory":
-      text = helpTextInventory
-      break
     default:
       text = " "
       break
   }
 
   state.show = null
+  return text
+}
+
+/**********| showInventory - 
+* Returns a textual representation/list of the character's inventory.
+* @function
+* @param {character} [character] Character whose inventory to display.
+* @param {string} [dotPointChar] Style of dot point for listing items, defaults to double-space.
+* @returns {string} A textual representation/list of the character's inventory.
+***********/
+function showInventory(character, dotPointChar=" ") {
+  text = ""
+  if (character.inventory.length > 0) {
+    character.inventory.forEach(item => {
+      text += `${dotPointChar} ${item.quantity}x ${toTitleCase(item.itemName)}\n`
+    });
+  } else {
+    text += `* Inventory is empty!\n`
+  }
   return text
 }
 
@@ -447,14 +308,6 @@ const helpTextChecks = `
 #try (ability|skill) (advantage|disadvantage) (difficulty_class or automatic|effortless|easy|medium|hard|impossible) task
 -- Attempts to do the task based on the character's ability/skill against the specified difficulty. Quotes are not necessary.
 
-#attack (ranged) (advantage|disadvantage) (ac or effortless|easy|medium|hard|impossible) target
--- Attacks the specified target with a melee (the default) or ranged attack. The roll is compared against the specified AC which will determine if the attack succeeds or misses. If the AC is not specified, the default AC or the AC of the opponent in combat will be used. The parameters can be listed in any order, except the target must be listed last. The target can include the name of the enemy or the word "enemy" and the number of the enemy as listed in #enemies. The target can also include a damage amount. If the damage is not specified, the character's default damage is used. Quotes are not necessary.
--- Example: Astri #attack advantage The Evil Knight for 2d12+2 damage
-
-#cast (advantage|disadvantage) (difficulty_class or effortless|easy|medium|hard|impossible) spell(target)
--- Character will cast the indicated spell if the spell is in their spellbook. It will be a targeted spell if a target is indicated. The roll is modified by the spell casting ability of the character. You may type a phrase without quotes for spell such as "cast fire bolt at the giant chicken". If the difficulty is not specified, the default difficulty or the AC of the opponent in combat will be used. The parameters can be listed in any order, except the target must be listed last. The target can include the name of the enemy or the word "enemy" and the number of the enemy as listed in #enemies. The target can also include a damage amount. If the damage is not specified, the character's default damage is used. Quotes are not necessary.
--- Example: Astri #attack advantage The Evil Knight for 2d12+2 damage
-
 <><> Check Difficulty <><>
 #setdefaultdifficulty (difficulty_class or automatic|effortless|easy|medium|hard|impossible)
 -- Sets the default difficulty for #check, #try, #attack, and #cast when a difficulty is not specified. The normal default is 10 (easy). If you do not pass any parameters, the default will be set to 10 (easy).
@@ -483,12 +336,6 @@ const helpTextInventory = `
 <><> Inventory <><>
 #take (quantity) item
 -- Adds the specified quantity of item to the character's inventory. If a quantity is omitted, it's assumed to be 1. The words the, a, and an are ignored. Quotes are not necessary.
-
-#takeweapon damage_dice hit_bonus ability weapon_name
--- Allows a character to manually add a weapon to their inventory that is compatible with the #equip command. It is highly recommended to use #itemstore instead. damage_dice is the dice roll (e.g. 1d12+2) used to calculate the damage of the weapon. hit_bonus is a positive or negative number that modifies how accurate the weapon is. Ability is the base ability that is used in conjunction with the weapon. Typically, melee weapons use strength and ranged weapons use dexterity.
-
-#takearmor ac weapon_name
--- Allows a character to manually add armor to their inventory that is compatible with the #equip command. It is highly recommended to use #itemstore instead. ac is the armor class or how hard the character is to hit. If you have an item that adds to the current armor class, precede the number with a plus sign (e.g. +2).
 
 #equip weapon_or_armor_name
 -- Equips a weapon or armor and automatically changes the character's damage/weapon proficiency or armor class respectively. Shields should be equipped after equipping armor because shield AC is added to the total.
@@ -538,22 +385,24 @@ const helpTextCombat = `
 #repeatTurn -- Repeats the turn. If it is currently an enemy's turn, it will attack or cast another spell again.
 #block -- Reverses the damage that has been inflicted in the last turn. This applies to damage on characters and enemies.
 #flee (difficulty_class or automatic|effortless|easy|medium|hard|impossible) -- Attempt to flee from combat. If the difficulty is not specified, the default difficulty will be used instead.
+#attack (ranged) (advantage|disadvantage) (ac or effortless|easy|medium|hard|impossible) target
+-- Attacks the specified target with a melee (the default) or ranged attack. The roll is compared against the specified AC which will determine if the attack succeeds or misses. If the AC is not specified, the default AC or the AC of the opponent in combat will be used. The parameters can be listed in any order, except the target must be listed last. The target can include the name of the enemy or the word "enemy" and the number of the enemy as listed in #enemies. The target can also include a damage amount. If the damage is not specified, the character's default damage is used. Quotes are not necessary.
+-- Example: Astri #attack advantage The Evil Knight for 2d12+2 damage
+#cast (advantage|disadvantage) (difficulty_class or effortless|easy|medium|hard|impossible) spell(target)
+-- Character will cast the indicated spell if the spell is in their spellbook. It will be a targeted spell if a target is indicated. The roll is modified by the spell casting ability of the character. You may type a phrase without quotes for spell such as "cast fire bolt at the giant chicken". If the difficulty is not specified, the default difficulty or the AC of the opponent in combat will be used. The parameters can be listed in any order, except the target must be listed last. The target can include the name of the enemy or the word "enemy" and the number of the enemy as listed in #enemies. The target can also include a damage amount. If the damage is not specified, the character's default damage is used. Quotes are not necessary.
+-- Example: Astri #attack advantage The Evil Knight for 2d12+2 damage
 `
 const helpTextAllies = `
 <><> Allies <><>
 #setupally 
 -- Follow prompts to create an ally from a template or completely from scratch. It will be added to the existing encounter if there is one already specified.
-
 #showallies -- Shows the list of current allies.
-
 #clearallies -- Removes all allies.
-
 #addally name health ac hitModifier damage initiative spells
 -- Adds the specified ally to the list of allies. health, ac, hitModifier, damage, and initiative can be numbers or dice rolls such as 3d6+5. Type the name in quotes if the name contains a space. The rest of the parameters can be a list of spells. Each spell must be typed in quotes if it has a space. If the spell does damage, write the name and damage roll in the following format: "Ray of Frost5d10"
-
 #removeally name or index
 -- Removes the ally as specified by the name or index. To delete multiple allies, type the numbers with spaces or commas between them. This is safer than calling #removeally multiple times because the numbers shift as allies are deleted. Quotes are not necessary.
 `
 
-// Don't modify this part
+// AI DUNGEON -- Don't modify this part
 modifier(text)

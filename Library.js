@@ -1,5 +1,5 @@
 // Based on version "Hashtag DnD v0.7.0" by Raeleus
-// const version = "Hashtag DnD v0.7.0 by Raeleus / Lite Edition by SirSheeply"
+const version = "Hashtag DnD v0.7.0 by Raeleus / Lite Edition by SirSheeply"
 
 // Your "Library" tab should look like this
 
@@ -15,11 +15,6 @@ function getRandomInteger(min, max) {
 
 function getRandomFloat(min, max) {
   return Math.random() * (max - min + 1) + min;
-}
-
-function getRandomBoolean(chance) {
-  if (chance == null) chance = .5
-  return Math.random() <= chance
 }
 
 function getRandom(seed) {
@@ -65,6 +60,12 @@ function getPossessiveName(name) {
   return possesiveName
 }
 
+/**
+ * Returns the command keyword in a command string
+ * -- Assumes we have removed the '#' from the command keyword
+ * @param {string} [command] A command string with a command keyword
+ * @returns {array} Returns the command keyword in the command string
+*/
 function getCommandName(command) {
   var args = getArguments(command)
   if (args.length == 0) return null
@@ -73,16 +74,34 @@ function getCommandName(command) {
 
 const argumentPattern = /("[^"\\]*(?:\\[\S\s][^"\\]*)*"|'[^'\\]*(?:\\[\S\s][^'\\]*)*'|\/[^\/\\]*(?:\\[\S\s][^\/\\]*)*\/[gimy]*(?=\s|$)|(?:\\\s|\S)+)/g
 
-function getArguments(command) {
+/**
+ * Returns command split into array
+ * -- Watch out for passing in commands with a command keyword if you onyl want the arguments
+ * -- Will treat "quotated" sections as one argument.
+ * @param {string} [command] A command string e.g. "1 item" or "take 1 item"
+ * @param {boolean} [with_command] returns args with or without first element (command keyword)
+ * @returns {array} Array containing command string split into arguments e.g. ["1", "item"] or ["take", "1", "item]"
+*/
+function getArguments(command, with_command=true) {
   var matches = command.match(new RegExp(argumentPattern))
   var returnValue = []
   matches.forEach(match => {
     match = match.replaceAll(/(^")|("$)/g, "").replaceAll(/\\"/g, '"')
     returnValue.push(match)
   })
-  return returnValue
+  if (with_command) return returnValue
+  return returnValue.slice(1, returnValue.length)
 }
 
+/**
+ * Returns argument at the index, after the command keyword.
+ * -- Watch out for passing in commands without command keyword
+ * -- Will treat "quotated" sections as one argument.
+ * @function
+ * @param {string} [command] A command string with command keyword e.g. "take 1 item"
+ * @param {number} [index] Index of the argument (after the command keyword), e.g. index 0 = "1"
+ * @returns {string} Argument at the index in the command (after the command keyword)
+*/
 function getArgument(command, index) {
   var args = getArguments(command)
   index++
@@ -90,9 +109,19 @@ function getArgument(command, index) {
   return args[index]
 }
 
+/**
+ * Returns argument at the index + all text after
+ * -- I have no idea how this function works?
+ * -- Does it matter if the command keyword is included?
+ * -- I can see quotes treated as one argument.
+ * -- Do quotes impact the 'remainder' if another quoted term comes after the index?
+ * @function
+ * @param {string} [command] A command string
+ * @param {number} [index] Index of the argument
+ * @returns {string} Argument at index in the command + all text after
+*/
 function getArgumentRemainder(command, index) {
   var counter = 0
-
   const pattern = new RegExp(argumentPattern)
   while ((match = pattern.exec(command)) != null) {
     if (counter++ == index + 1) {
@@ -193,8 +222,8 @@ function calculateRoll(rolltext) {
   return Math.max(0, score)
 }
 
-function getCharacter(characterName) {
-  if (characterName == null) characterName = state.characterName
+function getCharacter(characterName, allowFallback = true) {
+  if (characterName == null && allowFallback) characterName = state.characterName
   if (characterName == null) return null
   return state.characters.find(element => element.name.toLowerCase() == characterName.toLowerCase())
 }
@@ -264,111 +293,11 @@ function deleteCharacter(name) {
   state.characters.splice(index, 1)
 }
 
-function executeTurn(activeCharacter) {
-  var activeCharacterName = toTitleCase(activeCharacter.name)
-  var possessiveName = getPossessiveName(activeCharacter.name)
-  if (possessiveName == "Your") possessiveName = "your"
-
-  if (activeCharacter.className != null) {
-    //player
-    state.show = "none"
-    return `\n[It is ${possessiveName} turn]\n`
-  } else if (activeCharacter.ally == false) {
-    //enemy
-    var characters = state.characters.filter(x => x.health > 0)
-    characters.push(...state.allies.filter(x => x.health > 0))
-    var target = characters[getRandomInteger(0, characters.length - 1)]
-    var areWord = target.name == "You" ? "are" : "is"
-    var targetNameAdjustedCase = target.name == "You" ? "you" : toTitleCase(target.name)
-    var attack = calculateRoll(`1d20${activeCharacter.hitModifier > 0 ? "+" + activeCharacter.hitModifier : activeCharacter.hitModifier < 0 ? activeCharacter.hitModifier : ""}`)
-    var hit = attack >= target.ac
-
-    var text = `\n[It is ${possessiveName} turn]\n`
-    if (getRandomBoolean() || activeCharacter.spells.length == 0) {
-      if (hit) {
-        state.blockCharacter = target
-        state.blockPreviousHealth = target.health
-        var damage = isNaN(activeCharacter.damage) ? calculateRoll(activeCharacter.damage) : activeCharacter.damage
-        target.health = Math.max(target.health - damage, 0)
-
-        text += `\n[Character AC: ${target.ac} Attack roll: ${attack}]\n`
-
-        text += `${activeCharacterName} attacks ${targetNameAdjustedCase} for ${damage} damage!\n`
-        if (target.health == 0) text += ` ${toTitleCase(target.name)} ${areWord} unconscious! \n`
-        else text += ` ${toTitleCase(target.name)} ${areWord} at ${target.health} health.\n`
-      } else text += `${activeCharacterName} attacks ${targetNameAdjustedCase} but misses!\n`
-    } else {
-      var spell = activeCharacter.spells[getRandomInteger(0, activeCharacter.spells.length - 1)]
-      var diceMatches = spell.match(/(?<=^.*)\d*d\d+((\+|-)\d+)?$/gi)
-      if (diceMatches == null) text += `${activeCharacterName} casts spell ${spell}!`
-      else {
-        var spell = spell.substring(0, spell.length - diceMatches[0].length)
-        if (hit) {
-          var damage = calculateRoll(diceMatches[0])
-          target.health = Math.max(target.health - damage, 0)
-
-          text += `\n[Character AC: ${target.ac} Attack roll: ${attack}]\n`
-
-          text += `${activeCharacterName} casts spell ${spell} at ${targetNameAdjustedCase} for ${damage} damage!`
-          
-          if (target.health == 0) text += ` ${toTitleCase(target.name)} ${areWord} unconscious!\n`
-          else text += ` ${toTitleCase(target.name)} ${areWord} at ${target.health} health.\n`
-        } else text += `${activeCharacterName} casts spell ${spell} at ${targetNameAdjustedCase} but misses!\n`
-      }
-    }
-    return text
-  } else {
-    //ally
-    var enemies = state.enemies.filter(x => x.health > 0)
-    var target = enemies[getRandomInteger(0, enemies.length - 1)]
-    var areWord = target.name == "You" ? "are" : "is"
-    var targetNameAdjustedCase = target.name == "You" ? "you" : toTitleCase(target.name)
-    var attack = calculateRoll(`1d20${activeCharacter.hitModifier > 0 ? "+" + activeCharacter.hitModifier : activeCharacter.hitModifier < 0 ? activeCharacter.hitModifier : ""}`)
-    var hit = attack >= target.ac
-
-    var text = `\n[It is ${possessiveName} turn]\n`
-    if (getRandomBoolean() || activeCharacter.spells.length == 0) {
-      if (hit) {
-        state.blockCharacter = target
-        state.blockPreviousHealth = target.health
-        var damage = isNaN(activeCharacter.damage) ? calculateRoll(activeCharacter.damage) : activeCharacter.damage
-        target.health = Math.max(target.health - damage, 0)
-
-        text += `\n[Enemy AC: ${target.ac} Attack roll: ${attack}]\n`
-
-        text += `${activeCharacterName} attacks ${targetNameAdjustedCase} for ${damage} damage!\n`
-        if (target.health == 0) text += ` ${toTitleCase(target.name)} ${areWord} unconscious! \n`
-        else text += ` ${toTitleCase(target.name)} ${areWord} at ${target.health} health.\n`
-      } else text += `${activeCharacterName} attacks ${targetNameAdjustedCase} but misses!\n`
-    } else {
-      var spell = activeCharacter.spells[getRandomInteger(0, activeCharacter.spells.length - 1)]
-      var diceMatches = spell.match(/(?<=^.*)\d*d\d+((\+|-)\d+)?$/gi)
-      if (diceMatches == null) text += `${activeCharacterName} casts spell ${spell}!`
-      else {
-        var spell = spell.substring(0, spell.length - diceMatches[0].length)
-        if (hit) {
-          var damage = calculateRoll(diceMatches[0])
-          target.health = Math.max(target.health - damage, 0)
-
-          text += `\n[Character AC: ${target.ac} Attack roll: ${attack}]\n`
-
-          text += `${activeCharacterName} casts spell ${spell} at ${targetNameAdjustedCase} for ${damage} damage!`
-          
-          if (target.health == 0) text += ` ${toTitleCase(target.name)} ${areWord} unconscious!\n`
-          else text += ` ${toTitleCase(target.name)} ${areWord} at ${target.health} health.\n`
-        } else text += `${activeCharacterName} casts spell ${spell} at ${targetNameAdjustedCase} but misses!\n`
-      }
-    }
-    return text
-  }
-}
-
 function createEncounter(listName) {
   // Defualt Encounter
   var encounter = {
     text: "It's just a plesent day! Nothing happens.",
-    cr: 1,
-    enemies: []
+    cr: 1
   }
   var multiplier = 1
 
@@ -424,14 +353,6 @@ function createEncounter(listName) {
   const randomEncounter = encounterIndexes[randomIndex]
   encounter.text = randomEncounter.entry
 
-  // Convert description into createEnemy()
-  // "description": "[\n    {\n        \"ally\": false,\n        \"name\": \"Turkey Prime\",\n        \"health\": \"5d10+10\",\n        \"ac\": 14,\n        \"hitMod\": 0,\n        \"damage\": \"2d6+3\",\n        \"initiative\": \"d20+2\",\n        \"spells\": []\n    },\n    {\n        \"ally\": false,\n        \"name\": \"Turkey Mage\",\n        \"health\": \"2d10+10\",\n        \"ac\": 14,\n        \"hitMod\": 0,\n        \"damage\": \"2d6+3\",\n        \"initiative\": \"d20+2\",\n        \"spells\": [\"Web\", \"Ray of Frost\"]\n    }\n]",
-  // Eample: createEnemy("Turkey Prime", calculateRoll("5d10+10"), 14, 0, "2d6+3", "d20+2", false, [])
-  const entities = JSON.parse(randomEncounter.description)
-  entities.forEach(element => {
-    encounter.enemies.push( createEntity(element.name, calculateRoll(element.health), element.ac, element.hitMod, element.damage, element.initiative, element.ally, element.spells) )
-  });
-
   //-----
 
   var characterName = toTitleCase(state.characters[getRandomInteger(0, state.characters.length-1)].name)
@@ -442,107 +363,7 @@ function createEncounter(listName) {
   encounter.text = encounter.text.replaceAll("character's", possessiveName)
   encounter.text = encounter.text.replaceAll("Character's", toTitleCase(possessiveName))
 
-  for (var enemy of encounter.enemies) {
-    enemy.health = Math.floor(enemy.health * multiplier)
-    enemy.ac = Math.floor(enemy.ac * multiplier)
-
-    damagePrefix = enemy.damage.match(/^\d*d\d*/gi)[0]
-    damageSuffix = enemy.damage.match(/(?<=^\d*d\d*)(\+|-).*$/gi)
-    damageSuffix = damageSuffix != null ? parseInt(damageSuffix[0]) : 0
-    damageSuffix += Math.floor(3 * (multiplier - 1))
-    damageSuffix = `${damageSuffix > 0 ? "+" : ""}${damageSuffix}`
-    enemy.damage = `${damagePrefix}${damageSuffix == 0 ? "" : damageSuffix}`
-
-    initiativePrefix = enemy.initiative.match(/^\d*d\d*/gi)[0]
-    initiativeSuffix = enemy.initiative.match(/(?<=^\d*d\d*)(\+|-).*$/gi)
-    initiativeSuffix = initiativeSuffix != null ? parseInt(initiativeSuffix[0]) : 0
-    initiativeSuffix += Math.floor(3 * (multiplier - 1))
-    initiativeSuffix = `${initiativeSuffix > 0 ? "+" : ""}${initiativeSuffix}`
-    enemy.initiative = `${initiativePrefix}${initiativeSuffix == 0 ? "" : initiativeSuffix}`
-  }
-
   return encounter
-}
-
-function createEntity(name, health, ac, hitModifier, damage, initiative, ally, ...spells) {
-  var entity = {
-    name: name,
-    health: health,
-    ac: ac,
-    hitModifier: hitModifier,
-    damage: damage,
-    initiative: initiative,
-    spells: spells,
-    ally: ally
-  }
-  return entity
-}
-
-// NOTE: createEnemy and createAlly can depreciated
-function createEnemy(name, health, ac, hitModifier, damage, initiative, ...spells) {
-  var enemy = {
-    name: name,
-    health: health,
-    ac: ac,
-    hitModifier: hitModifier,
-    damage: damage,
-    initiative: initiative,
-    spells: spells,
-    ally: false
-  }
-  return enemy
-}
-
-// NOTE: createEnemy and createAlly can depreciated
-function createAlly(name, health, ac, hitModifier, damage, initiative, ...spells) {
-  var ally = {
-    name: name,
-    health: health,
-    ac: ac,
-    hitModifier: hitModifier,
-    damage: damage,
-    initiative: initiative,
-    spells: spells,
-    ally: true
-  }
-  return ally
-}
-
-function getUniqueName(name) {
-  const letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
-  var letterIndex = 0
-
-  var newName
-  var enemyMatches
-  do {
-    newName = `${name} ${letters[letterIndex++]}`
-    enemyMatches = state.enemies.filter(x => x.name.toLowerCase() == newName.toLowerCase())
-  } while (enemyMatches.length > 0 && letterIndex < letters.length)
-
-  return newName
-}
-
-function createInitiativeOrder() {
-  state.initiativeOrder = []
-
-  for (var character of state.characters) {
-    if (character.health <= 0) continue
-    state.initiativeOrder.push(character)
-  }
-
-  for (var enemy of state.enemies) {
-    if (enemy.health <= 0) continue
-    state.initiativeOrder.push(enemy)
-  }
-
-  for (var ally of state.allies) {
-    if (ally.health <= 0) continue
-    state.initiativeOrder.push(ally)
-  }
-
-  state.initiativeOrder.sort(function(a, b) {
-    return b.calculatedInitiative - a.calculatedInitiative;
-  });
 }
 
 const levelSplits = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000]
@@ -604,16 +425,18 @@ function getStoryCardListByType(listType, exactType=true) {
   return storyCards.filter((element) => (element.type.toLowerCase().includes(listType.toLowerCase())));
 }
 
-// The ultimate story cards retrieval for any cards of X title
-// exactType parameter allows us to choose whether to match the title exactly or just includes type as a substring
-function getStoryCardListByTitle(listTitle, exactTitle=true) {
+// The ultimate story card retrieval for any cards of X title
+// exactTitle parameter allows us to choose whether to match the title exactly or by inclusion
+function getStoryCardListByTitle(listTitle, exactTitle = true) {
+  const normalizedTitle = singularize(listTitle, true).toLowerCase()
   if (exactTitle) {
-    return storyCards.filter((element) => (element.type.toLowerCase() == listTitle.toLowerCase()));
+    return storyCards.filter((element) => singularize(element.title, true).toLowerCase() === normalizedTitle )
   }
-  return storyCards.filter((element) => (element.type.toLowerCase().includes(listTitle.toLowerCase())));
+  return storyCards.filter((element) => singularize(element.title, true).toLowerCase().includes(normalizedTitle) )
 }
 
-function pluralize(word, revert = false) {
+
+function singularize(word, makeSingle = true) { //TODO: Changed to default true from false, need to check all usage
   const pluralRules = {
     '(quiz)$': "$1zes",
     '^(ox)$': "$1en",
@@ -710,16 +533,16 @@ function pluralize(word, revert = false) {
   if (uncountable.has(lower)) return word;
 
   for (let key in irregular) {
-    const pattern = revert
+    const pattern = makeSingle
       ? new RegExp(`^${irregular[key]}$`, 'i')
       : new RegExp(`^${key}$`, 'i');
 
     if (pattern.test(word)) {
-      return word.replace(pattern, revert ? key : irregular[key]);
+      return word.replace(pattern, makeSingle ? key : irregular[key]);
     }
   }
 
-  const rules = revert ? singularRules : pluralRules;
+  const rules = makeSingle ? singularRules : pluralRules;
   for (let rule in rules) {
     const pattern = new RegExp(rule, 'i');
     if (pattern.test(word)) {
@@ -728,6 +551,13 @@ function pluralize(word, revert = false) {
   }
 
   return word;
+}
+
+function compareWithoutPlural(searchForThis, searchInThis, exactMatch=true) {
+  if (exactMatch) {
+    return singularize(searchInThis.toLowerCase()) === singularize(searchForThis.toLowerCase())
+  }
+  return singularize(searchInThis.toLowerCase()).includes(singularize(searchForThis.toLowerCase()))
 }
 
 function clamp(num, min, max) {
@@ -747,4 +577,31 @@ function toTitleCase(str) {
 
 function stripPunctuation(str) {
   return str.replaceAll(/((\.)|(!))\s*$/g, "")
+}
+
+/// STORY CARD CODE
+
+function buildStoryCard(title, entry = "", type = "", keys = "", description = "", insertionIndex = storyCards.length) {
+  // If passing an object, destructure values
+  if (typeof title === "object" && title !== null && "title" in title) {
+    ({ title, entry = entry, type = type, keys = keys, description = description } = title);
+  }
+
+  // Default key builder — keep only if you need it
+  if (!keys) keys = buildKeys("", title);
+
+  const card = { type, title, keys, entry, description };
+
+  // Clamp insertion index
+  insertionIndex = Math.max(0, Math.min(insertionIndex, storyCards.length));
+
+  // Insert card
+  storyCards.splice(insertionIndex, 0, card);
+
+  return card;
+}
+
+function buildKeys(keys, key) {
+  // Super simple version — just return cleaned key string
+  return (keys || key || "").trim();
 }
