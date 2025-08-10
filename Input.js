@@ -17,26 +17,32 @@ const modifier = (text) => {
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////// COMMAND REGISTRY ///////////////////////////////////////////////////////
 
 const commandRegistry = [
     // <><> General
     { handler: doRoll,                  synonyms: ["roll"] },
     { handler: doTry,                   synonyms: ["try", "tryto", "tries", "triesto", "attempt", "attemptto", "attemptsto", "do"] },
-    { handler: doSetDefaultDifficulty,  synonyms: ["setdefaultdifficulty", "defaultdifficulty", "setdefaultdc", "defaultdc", "setdefaultac", "defaultac", "setdifficulty", "difficulty", "dc"] },
-    { handler: doShowDefaultDifficulty, synonyms: ["showdefaultdifficulty", "showdefaultdc", "showdefaultac"] },
+    { handler: doCheck,                 synonyms: ["check", "checkstat", "checkstatistic", "checkattribute", "checkability", "checkskill", "skillcheck", "abilitycheck"] },
     
     // <><> Time
     { handler: doShowDay,               synonyms: ["showday", "showdate", "day", "date"] },
     { handler: doSetDay,                synonyms: ["setday", "setdate"] },
+    { handler: doRest,                  synonyms: ["rest", "longrest", "shortrest", "sleep", "nap"] },
     
     // System
+    { handler: doSetDefaultDifficulty,  synonyms: ["setdefaultdifficulty", "defaultdifficulty", "setdefaultdc", "defaultdc", "setdefaultac", "defaultac", "setdifficulty", "difficulty", "dc"] },
+    { handler: doShowDefaultDifficulty, synonyms: ["showdefaultdifficulty", "showdefaultdc", "showdefaultac"] },
     { handler: doReset,                 synonyms: ["reset", "cleandata", "cleardata", "resetdata", "resetsettings", "clearsettings", "profile"] },
     { handler: doVersion,               synonyms: ["version", "ver", "showversion"] },
-    { handler: doTest,                  synonyms: ["testcode", "debug"]},
     { handler: doHelp,                  synonyms: ["help"] },
+    { handler: doTest,                  synonyms: ["testcode", "debug"]},
     
     // <><> Character
     { handler: doCreate,                synonyms: ["create", "generate", "start", "begin", "setup", "party", "member", "new"] },
@@ -60,12 +66,10 @@ const commandRegistry = [
     { handler: doShowStats,             synonyms: ["showstats", "stats", "viewstats", "showabilities", "abilities", "viewabilities", "showstatistics", "statistics", "viewstatistics", "showattributes", "attributes", "viewattributes"] },
     { handler: doRemoveStat,            synonyms: ["removestat", "deletestat", "cancelstat", "removeability", "deleteability", "cancelAbility", "removestatistic", "deletestatistic", "cancelstatistic", "removeattribute", "deleteattribute", "cancelattribute"] },
     { handler: doClearStats,            synonyms: ["clearstats", "clearabilities", "clearstatistics", "clearattributes"] },
-    { handler: doSetSpellStat,          synonyms: ["setspellstat", "setspellstatistic", "setspellability", "setspellcastingability", "changespellstat", "changespellstatistic", "changespellability", "changespellcastingability"] },
     { handler: doSetSkill,              synonyms: ["setskill", "changeskill", "updateskill", "skill"] },
     { handler: doShowSkills,            synonyms: ["showskills", "skills"] },
     { handler: doRemoveSkill,           synonyms: ["removeskill", "deleteskill", "cancelskill"] },
     { handler: doClearSkills,           synonyms: ["clearskills"] },
-    { handler: doCheck,                 synonyms: ["check", "checkstat", "checkstatistic", "checkattribute", "checkability", "checkskill", "skillcheck", "abilitycheck"] },
     
     // <><> Notes
     { handler: doShowNotes,             synonyms: ["notes", "shownotes", "viewnotes"] },
@@ -75,17 +79,18 @@ const commandRegistry = [
     
     // <><> Inventory
     { handler: doTake,                  synonyms: ["take", "steal", "get", "grab", "receive", "loot"] },
-    { handler: doBuy,                   synonyms: ["buy", "purchase", "barter", "trade", "swap", "exchange"] },
-    { handler: doSell,                  synonyms: ["sell"] },
+    { handler: doReward,                synonyms: ["reward"] },
     { handler: doDrop,                  synonyms: ["remove", "discard", "drop", "leave", "dispose", "toss", "throw", "throwaway", "trash", "donate", "eat", "consume", "use", "drink", "pay", "lose"] },
     { handler: doGive,                  synonyms: ["give", "handover", "hand", "gift"] },
+    { handler: doBuy,                   synonyms: ["buy", "purchase", "barter", "trade", "swap", "exchange"] },
+    { handler: doSell,                  synonyms: ["sell"] },
 
     { handler: doRenameItem,            synonyms: ["rename", "renameitem", "renameobject", "renamegear", "renameequipment"] },
     { handler: doInventory,             synonyms: ["inv", "inventory", "backpack", "gear", "showinv", "showinventory", "viewinventory", "viewinv"] },
     { handler: doClearInventory,        synonyms: ["clearinventory", "clearinv", "emptyinventory", "emptybackpack", "clearbackpack", "emptygear", "cleargear"] },
-    { handler: doReward,                synonyms: ["reward"] },
     
     // <><> Spells
+    { handler: doSetSpellStat,          synonyms: ["setspellstat", "setspellstatistic", "setspellability", "setspellcastingability", "changespellstat", "changespellstatistic", "changespellability", "changespellcastingability"] },
     { handler: doLearnSpell,            synonyms: ["learnspell", "learnmagic", "learnincantation", "learnritual", "memorizespell", "memorizemagic", "memorizeincantation", "memorizeritual", "learnsspell", "learnsmagic", "learnsincantation", "learnsritual", "memorizesspell", "memorizesmagic", "memorizesincantation", "memorizesritual", "learn"] },
     { handler: doForgetSpell,           synonyms: ["forgetspell", "forgetmagic", "forgetincantation", "forgetritual", "forgetsspell", "forgetsmagic", "forgetsincantation", "forgetsritual", "deletespell", "deletemagic", "deleteincantation", "deleteritual", "deletesspell", "deletesmagic", "deletesincantation", "deletesritual", "cancelspell", "cancelmagic", "cancelincantation", "cancelritual", "cancelsspell", "cancelsmagic", "cancelsincantation", "cancelsritual", "removespell", "removemagic", "removeincantation", "removeritual", "removesspell", "removesmagic", "removesincantation", "removesritual", "forget"] },
     { handler: doCastSpell,             synonyms: ["cast", "castspell", "castmagic", "castincantation", "castritual", "castsspell", "castsmagic", "castsincantation", "castsritual"] },
@@ -93,6 +98,8 @@ const commandRegistry = [
     { handler: doSpellbook,             synonyms: ["spellbook", "spells", "listspells", "showspells", "spelllist", "spellcatalog", "spellinventory"] },
     
     // <><> Combat
+    { handler: doEncounter,             synonyms: ["encounter", "startencounter"] } //TODO: Make like thematic loot tables (no need for entity creation anymore)
+    
     // PLAN: Replace health/damage/ac system with injury system
     // Wepaons have injury types which source from injury tables, armor has injury resistance
     // This will allow us to introduce damage types (something not present)
@@ -100,26 +107,16 @@ const commandRegistry = [
     // This removes the need for players to book-keep encounters, memorize command sequences, and allow free-form combat
 
     // As I am in the middle of overhauling equip, items, and inventory; the injury mechanic will have to wait
-    // However, to preapre for it, and to avoid needless overhauling, I'll be striping the following commands:
-    // doTurn, doInitiative, doRepeatTurn, doFlee
-    // 
-    // What can be done after the removals?
-    // Allies and Enemies may still be created, viewed, edited, and such
-    // Health & Damage commands should work just fine (for manual combat)
-    // doAttack and doBlock, may be broken in the meantime
+    // However, to preapre for it, and to avoid needless overhauling, I'll be striping the combat commands.
 
     // <><> Character Actions in Combat
     // { handler: doAttack,                synonyms: ["attack", "strike", "ambush", "assault", "fireat", "fireon"] },
     // { handler: doBlock,                 synonyms: ["block", "parry", "nullify", "invalidate"] },
 
-    // <><> TTRPG Mechanics
-    { handler: doEncounter,             synonyms: ["encounter", "startencounter"] }, //TODO: Make like thematic loot tables (no need for entity creation anymore)
-
     // <><> Health & Damage
     // { handler: doHeal,                  synonyms: ["heal", "mend", "restore"] },
     // { handler: doDamage,                synonyms: ["damage", "hurt", "harm", "injure"] },
     // { handler: doHealParty,             synonyms: ["healparty", "healcharacters"] },
-    { handler: doRest,                  synonyms: ["rest", "longrest", "shortrest", "sleep", "nap"] },
 
     // <><> Character Combat Values
     // { handler: doSetHealth,             synonyms: ["sethealth"] },
@@ -128,7 +125,7 @@ const commandRegistry = [
     // { handler: doSetAc,                 synonyms: ["setac", "setarmorclass", "ac", "armorclass"] },
     // { handler: doSetDamage,             synonyms: ["setdamage"] },
     // { handler: doSetProficiency,        synonyms: ["setproficiency", "setweaponproficiency"] },
-    { handler: doEquip,                 synonyms: ["equip", "arm", "wear"] }
+    // { handler: doEquip,                 synonyms: ["equip", "arm", "wear"] }
 ];
 
 // Helper: Look up command handler from registry
@@ -141,6 +138,17 @@ function findCommandHandler(commandName) {
   return null
 }
 
+// Helper: Calls commands via synonyms in registry
+function processCommandSynonyms(command, commandName, synonyms, func) {
+  let result, success = null
+  synonyms.forEach(x => {
+    if (commandName == x || commandName == x + "s") {
+      [result, success] = func(command)
+    }
+  })
+  return [result, success]
+}
+
 const articleSynonyms = ["a", "an", "the"]
 const allSynonyms = ["all", "every", "each", "every one", "everyone"]
 const turnSynonyms = ["turn", "doturn", "taketurn"]
@@ -149,9 +157,13 @@ const checkSynonyms = ["check", "checkstat", "checkstatistic", "checkattribute",
 const trySynonyms = ["try", "tryto", "tries", "triesto", "attempt", "attemptto", "attemptsto", "do"]
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////// DND HASH INPUT FUNCTION ////////////////////////////////////////////////////
 
 function DNDHash_input (text) {
   init() // Creates templates and inital values in state
@@ -232,6 +244,52 @@ function DNDHash_input (text) {
   if (flavorText != null) text += flavorText;
   return text;
 }
+
+function init() {
+  if (state.tempCharacter == null) {
+    state.tempCharacter = {
+      name: "template",
+      className: "adventurer",
+      summary: "Template character not meant to be used.",
+      inventory: [],
+      spells: [],
+      stats: [],
+      spellStat: null,
+      meleeStat: null,
+      rangedStat: null,
+      experience: 0,
+      health: 10,
+      ac: 10,
+      damage: "1d6",
+      proficiency: 2
+    }
+  }
+  
+  if (state.characters == null) state.characters = []
+  if (state.notes == null) state.notes = []
+  if (state.autoXp == null) state.autoXp = 0
+  if (state.defaultDifficulty == null) state.defaultDifficulty = 10
+  if (state.day == null) state.day = 0
+
+  state.show = null
+  state.prefix = null
+  state.critical = null
+
+  state.characters.forEach(x => {
+    if (x.ac == null) x.ac = 10
+    if (x.damage == null) x.damage = "1d6"
+    if (x.proficiency == null) x.proficiency = 2
+  })
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////// DND HASH FORM & STEP FUNCTIONS ////////////////////////////////////////////////
 
 function handleCreateStep(text) {
   state.show = "create"
@@ -415,75 +473,14 @@ function handleCreateStep(text) {
   return text
 }
 
-function resetTempCharacterSkills() {
-  state.tempCharacter.skills = [
-    {name: "Acrobatics", stat: "Dexterity", modifier: 0},
-    {name: "Animal Handling", stat: "Wisdom", modifier: 0},
-    {name: "Arcana", stat: "Intelligence", modifier: 0},
-    {name: "Athletics", stat: "Strength", modifier: 0},
-    {name: "Deception", stat: "Charisma", modifier: 0},
-    {name: "History", stat: "Intelligence", modifier: 0},
-    {name: "Insight", stat: "Wisdom", modifier: 0},
-    {name: "Intimidation", stat: "Charisma", modifier: 0},
-    {name: "Investigation", stat: "Intelligence", modifier: 0},
-    {name: "Medicine", stat: "Wisdom", modifier: 0},
-    {name: "Nature", stat: "Intelligence", modifier: 0},
-    {name: "Perception", stat: "Wisdom", modifier: 0},
-    {name: "Performance", stat: "Charisma", modifier: 0},
-    {name: "Persuasion", stat: "Charisma", modifier: 0},
-    {name: "Religion", stat: "Intelligence", modifier: 0},
-    {name: "Sleight of Hand", stat: "Dexterity", modifier: 0},
-    {name: "Stealth", stat: "Dexterity", modifier: 0},
-    {name: "Survival", stat: "Wisdom", modifier: 0},
-  ]
-}
-
-function processCommandSynonyms(command, commandName, synonyms, func) {
-  let result, success = null
-  synonyms.forEach(x => {
-    if (commandName == x || commandName == x + "s") {
-      [result, success] = func(command)
-    }
-  })
-  return [result, success]
-}
-
-function init() {
-  if (state.tempCharacter == null) {
-    state.tempCharacter = {
-      name: "template",
-      className: "adventurer",
-      summary: "Template character not meant to be used.",
-      inventory: [],
-      spells: [],
-      stats: [],
-      spellStat: null,
-      meleeStat: null,
-      rangedStat: null,
-      experience: 0,
-      health: 10,
-      ac: 10,
-      damage: "1d6",
-      proficiency: 2
-    }
-  }
-  
-  if (state.characters == null) state.characters = []
-  if (state.notes == null) state.notes = []
-  if (state.autoXp == null) state.autoXp = 0
-  if (state.defaultDifficulty == null) state.defaultDifficulty = 10
-  if (state.day == null) state.day = 0
-
-  state.show = null
-  state.prefix = null
-  state.critical = null
-
-  state.characters.forEach(x => {
-    if (x.ac == null) x.ac = 10
-    if (x.damage == null) x.damage = "1d6"
-    if (x.proficiency == null) x.proficiency = 2
-  })
-}
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////// COMMAND FUNCTIONS - GENERAL /////////////////////////////////////////////////
 
 function doRoll(command) {
   var rollType = searchArgument(command, /^(advantage)|(disadvantage)$/gi)
@@ -510,581 +507,6 @@ function doRoll(command) {
   else if (addition < 0) text += ` - ${Math.abs(addition)} = ${roll + addition}`
 
   text += "]\n"
-  return [text, true]
-}
-
-function doCreate(command) {
-  if (!hasCharacter(state.characterName)) createCharacter(state.characterName)
-  var character = getCharacter()
-
-  state.createStep = 0
-  state.tempCharacter.name = character.name
-  resetTempCharacterSkills() // Why for skills and not for stats?
-  state.tempCharacter.stats = []
-  state.tempCharacter.spells = []
-  state.tempCharacter.inventory = [] // Anything that goes into the inventory must go through doTake()!
-  state.tempCharacter.spellStat = null
-  state.tempCharacter.meleeStat = "Strength"
-  state.tempCharacter.rangedStat = "Dexterity"
-  state.tempCharacter.ac = 10
-  state.tempCharacter.damage = "1d6"
-  state.tempCharacter.proficiency = 2
-  
-  state.show = "create"
-  return [" ", true]
-}
-
-function doBio(command) {
-  state.show = "bio"
-  return [" ", true]
-}
-
-function doRenameCharacter(command) {
-  var character = getCharacter()
-  var arg0 = getArgumentRemainder(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-  var possessiveName = getPossessiveName(character.name)
-
-  state.show = "none"
-  var text = `\n[${possessiveName} name has been changed to ${arg0}]\n`
-
-  character.name = arg0
-
-  return [text, true]
-}
-
-function doCloneCharacter(command) {
-  var character = getCharacter()
-
-  var arg0 = getArgumentRemainder(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-
-  if (!hasCharacter(arg0)) createCharacter(arg0)
-  var newCharacter = getCharacter(arg0)
-  copyCharacter(character, newCharacter)
-
-  state.show = "none"
-  var text = `\n[${character.name} has been cloned to a new character called ${newCharacter.name}]\n`
-
-  return [text, true]
-}
-
-function doSetStat(command) {
-  var character = getCharacter()
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-  var arg1 = clamp(parseInt(getArgument(command, 1)), 1, 100)
-  var possessiveName = getPossessiveName(character.name)
-
-  const stat = {
-    name: arg0,
-    value: arg1
-  }
-
-  var index = character.stats.findIndex((element) => element.name.toLowerCase() == stat.name.toLowerCase())
-  if (index == -1) {
-    character.stats.push(stat)
-  } else {
-    var existingStat = character.stats[index]
-    existingStat.value = parseInt(stat.value)
-  }
-
-  state.show = "none"
-  return [`\n[${possessiveName} ${toTitleCase(arg0)} ability is now ${arg1}]\n`, true]
-}
-
-function doSetSpellStat(command) {
-  var character = getCharacter()
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-
-  character.spellStat = arg0
-
-  state.show = "none"
-  return [`\nSpellcasting Ability is set to ${arg0}\n`, true]
-}
-
-function doSetMeleeStat(command) {
-  var character = getCharacter()
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-
-  character.meleeStat = arg0
-
-  state.show = "none"
-  return [`\nMelee Ability is set to ${arg0}\n`, true]
-}
-
-function doSetRangedStat(command) {
-  var character = getCharacter()
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-
-  character.rangedStat = arg0
-
-  state.show = "none"
-  return [`\nRanged Ability is set to ${arg0}\n`, true]
-}
-
-function doSetAutoXp(command) {
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-  if (isNaN(arg0)) {
-    return ["\n[Error: Expected a number. See #help]\n", false]
-  }
-
-  state.autoXp = Math.max(0, arg0)
-
-  state.show = "none"
-  return [state.autoXp <= 0 ? `\n[Auto XP is disabled]\n` : `\n[Auto XP is set to ${state.autoXp}]\n`, true]
-}
-
-function doShowAutoXp(command) {
-  state.show = "none"
-  return [state.autoXp <= 0 ? `\n[Auto XP is disabled]\n` : `\n[Auto XP is set to ${state.autoXp}]\n`, true]
-}
-
-function doSetDefaultDifficulty(command) {
-  const difficultyNames = ["impossible", "extreme", "hard", "medium", "easy", "effortless", "veryeasy", "very easy", "automatic", "auto"]
-  const difficultyScores = [30, 25, 20, 15, 10, 5, 5, 5, 0, 0]
-
-  const difficultyPatternNames = [...new Set(difficultyNames)]
-  difficultyPatternNames.push("\\d+")
-  var difficulty = getArgument(command, 0)
-  if (difficulty == null) difficulty = "easy"
-
-  var difficultyIndex = difficultyNames.indexOf(difficulty)
-  if (difficultyIndex >= 0 && difficultyIndex < difficultyNames.length) {
-    difficulty = difficultyScores[difficultyIndex]
-  }
-
-  state.defaultDifficulty = Math.max(0, difficulty)
-
-  state.show = "none"
-  return [`\n[The default difficulty is set to ${state.defaultDifficulty}]\n`, true]
-}
-
-function doShowDefaultDifficulty(command) {
-  state.show = "none"
-  return [`\n[The default difficulty is set to ${state.defaultDifficulty}]\n`, true]
-}
-
-function doSetSkill(command) {
-  var character = getCharacter()
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-
-  var arg1 = getArgument(command, 1)
-  if (arg1 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-
-  var arg2 = getArgument(command, 2)
-  if (arg2 == null) {
-    arg2 = (clamp(parseInt(arg1, 1, 100)))
-    arg1 = null
-  } else {
-    arg2 = clamp(parseInt(arg2), 1, 100)
-  }
-
-  var possessiveName = getPossessiveName(character.name)
-
-  const skill = {
-    name: arg0,
-    stat: arg1,
-    modifier: arg2
-  }
-
-  var index = character.skills.findIndex((element) => element.name.toLowerCase() == skill.name.toLowerCase())
-  if (index == -1) {
-    if (arg1 == null) {
-      return ["\n[Error: New skills must have an ability specified. See #help]\n", false]
-    }
-    
-    character.skills.push(skill)
-  } else {
-    var existingSkill = character.skills[index]
-    existingSkill.modifier = parseInt(skill.modifier)
-    if (arg1 != null) existingSkill.stat = skill.stat
-  }
-
-  state.show = "none"
-  return [`\n[${possessiveName} ${toTitleCase(arg0)} skill is now ${arg2 >= 0 ? "+" + arg2 : "-" + arg2} and based on ${toTitleCase(arg1)}]\n`, true]
-}
-
-function doSetAc(command) {
-  var character = getCharacter()
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-
-  if (isNaN(arg0)) {
-    return ["\n[Error: Not a number. See #help]\n", false]
-  }
-
-  var possessiveName = getPossessiveName(character.name)
-
-  character.ac = parseInt(arg0)
-
-  state.show = "none"
-  return [`\n[${possessiveName} armor class is set to ${character.ac}]\n`, true]
-}
-
-function doSetExperience(command) {
-  var character = getCharacter()
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-
-  if (isNaN(arg0)) {
-    return ["\n[Error: Not a number. See #help]\n", false]
-  }
-
-  var possessiveName = getPossessiveName(character.name)
-
-  character.experience = parseInt(arg0)
-
-  state.show = "none"
-  return [`\n[${possessiveName} experience is set to ${character.experience}]\n`, true]
-}
-
-function doAddExperience(command) {
-  var character = getCharacter()
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-
-  arg0 = searchArgument(command, /\d+/gi)
-  if (arg0 == null) {
-    return ["\n[Error: Expected a number. See #help]\n", false]
-  }
-  arg0 = parseInt(arg0)
-
-  var arg1 = searchArgument(command, /party/gi)
-
-  if (arg1 == null && character == null) {
-    return [`\n[Error: Character name not specified. Use the "do" or "say" modes. Alternatively, use "story" mode in the following format without quotes: "charactername #hashtag"]\n`, false]
-  }
-
-  if (state.characters.length == 0) {
-    return [`\n[Error: There are no characters. Type #setup to create a character]\n`, false]
-  }
-
-  state.prefix = "\n"
-  characters = arg1 == null ? [character] : state.characters
-  for (var c of characters) {
-    var possessiveName = getPossessiveName(c.name)
-
-    var level = getLevel(c.experience)
-    c.experience += arg0
-    var newLevel = getLevel(c.experience)
-
-    if (newLevel > level) state.prefix += `[${possessiveName} experience is increased to ${c.experience}. LEVEL UP! Level: ${newLevel}, Health Max: ${getHealthMax(c)}. Next level at ${getNextLevelXp(c.experience)}]\n`
-    else state.prefix += `[${possessiveName} experience is increased to ${c.experience}. Next level at ${getNextLevelXp(c.experience)}]\n`
-  }
-
-  state.show = "prefixOnly"
-  return [" ", true]
-}
-
-function doLevelUp(command) {
-  var character = getCharacter()
-  var level = getLevel(character.experience)
-  var experience = level >= levelSplits.length ? 0 : levelSplits[level] - character.experience
-  return doAddExperience(`${command} ${experience}`)
-}
-
-function doSetClass(command) {
-  var character = getCharacter()
-  var arg0 = getArgumentRemainder(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-
-  var possessiveName = getPossessiveName(character.name)
-
-  character.className = arg0
-
-  state.show = "none"
-  return [`\n[${possessiveName} class is set to "${character.className}"]\n`, true]
-}
-
-function doSetSummary(command) {
-  var character = getCharacter()
-  var arg0 = getArgumentRemainder(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-
-  var possessiveName = getPossessiveName(character.name)
-
-  character.summary = arg0
-
-  state.show = "none"
-  return [`\n[${possessiveName} summary is set]\n`, true]
-}
-
-function doSetHealth(command) {
-  var character = getCharacter()
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-
-  var possessiveName = getPossessiveName(character.name)
-
-  character.health = arg0
-  character.health = clamp(character.health, 0, getHealthMax())
-
-  state.show = "none"
-  return [`\n[${possessiveName} health is set to ${character.health} health]\n`, true]
-}
-
-function doHeal(command) {
-  var character = getCharacter()
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-
-  var arg1 = getArgumentRemainder(command, 1)
-  
-  if (arg1 == null) {
-    if (character == null) {
-      return ["\n[Error: Character must be specified. See #help]\n", false]
-    }
-
-    var healing
-
-    var healingMatches = arg0.match(/\d*d\d+((\+|-)d+)?/gi)
-    if (healingMatches != null) healing = calculateRoll(healingMatches[0])
-    else {
-      healingMatches = arg0.match(/\d+/g)
-      if (healingMatches != null) healing = parseInt(healingMatches[healingMatches.length - 1])
-    }
-
-    if (healing == null) {
-      return ["\n[Error: Expected a number. See #help]\n", false]
-    }
-
-    var haveWord = character.name == "You" ? "have" : "has"
-
-    character.health += healing
-    character.health = clamp(character.health, 0, getHealthMax())
-
-    state.show = "none"
-    return [`\n[${character.name} ${haveWord} been healed for ${healing} hp to a total of ${character.health}]\n`, true]
-  } else {
-    var healing
-
-    var healingMatches = arg0.match(/\d*d\d+((\+|-)d+)?/gi)
-    if (healingMatches != null) healing = calculateRoll(healingMatches[0])
-    else {
-      healingMatches = arg0.match(/\d+/g)
-      if (healingMatches != null) healing = parseInt(healingMatches[0])
-    }
-
-    if (healing == null) {
-      return ["\n[Error: Expected a number. See #help]\n", false]
-    }
-
-    for (var character of state.characters) {
-      if (character.name.toLowerCase() == arg1.toLowerCase()) {
-        character.health += healing
-        character.health = clamp(character.health, 0, getHealthMax(character))
-        state.show = "none"
-        return [`\n[${toTitleCase(character.name)} has been healed for ${healing} hp to a total of ${character.health}]\n`, true]
-      }
-    }
-
-    return [`\n[Error: Could not find an enemy, ally, or character matching the name ${arg1}. Type #enemies, #allies, or #characters to see a list]`, false]
-  }
-}
-
-function doDamage(command) {
-  var character = getCharacter()
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-
-  var arg1 = getArgumentRemainder(command, 1)
-  
-  if (arg1 == null) {
-    if (character == null) {
-      return ["\n[Error: Character must be specified. See #help]\n", false]
-    }
-
-    var damage
-
-    var damageMatches = arg0.match(/\d*d\d+((\+|-)d+)?/gi)
-    if (damageMatches != null) damage = calculateRoll(damageMatches[0])
-    else {
-      damageMatches = arg0.match(/\d+/g)
-      if (damageMatches != null) damage = parseInt(damageMatches[damageMatches.length - 1])
-    }
-
-    if (damage == null) {
-      return ["\n[Error: Expected a number. See #help]\n", false]
-    }
-
-    var haveWord = character.name == "You" ? "have" : "has"
-
-    character.health -= damage
-    character.health = clamp(character.health, 0, getHealthMax())
-
-    state.show = "none"
-    return [`\n[${character.name} ${haveWord} been damaged for ${damage} hp with ${character.health} remaining] ${character.health == 0 ? " You are unconscious" : ""}\n`, true]
-  } else {
-    var damage
-
-    var damageMatches = arg0.match(/\d*d\d+((\+|-)d+)?/gi)
-    if (damageMatches != null) damage = calculateRoll(damageMatches[0])
-    else {
-      damageMatches = arg0.match(/\d+/g)
-      if (damageMatches != null) damage = parseInt(damageMatches[0])
-    }
-
-    if (damage == null) {
-      return ["\n[Error: Expected a number. See #help]\n", false]
-    }
-
-    for (var character of state.characters) {
-      if (character.name.toLowerCase() == arg1.toLowerCase()) {
-        character.health = Math.max(0, character.health - damage)
-        state.show = "none"
-        return [`\n[${toTitleCase(character.name)} has been damaged for ${damage} hp with ${character.health} remaining] ${character.health == 0 ? " " + toTitleCase(character.name) + " is unconcious!" : ""}\n`, true]
-      }
-    }
-    
-    return [`\n[Error: Could not find an enemy, ally, or character matching the name ${arg1}. Type #enemies, #allies, or #characters to see a list]`, false]
-  }
-}
-
-function doRest(command) {
-  var commandName = getCommandName(command)
-  state.day++
-
-  var healingFactor = 1
-  var text
-  if (commandName.toLowerCase() == "shortrest") {
-    state.day--
-    healingFactor = .5
-    text = `\n[All characters have healed 50%]\n`
-  } else {
-    text = `\n[All characters have rested and feel rejuvinated. It's now day ${state.day}]\n`
-  }
-
-  state.characters.forEach(function(character) {
-    var max = getHealthMax(character)
-    character.health += Math.floor(max * healingFactor)
-    if (character.health > max) character.health = max
-  })
-  state.show = "none"
-  return [text, true]
-}
-
-function doHealParty(command) {
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-
-  var healing
-  var healingMatches = arg0.match(/\d*d\d+((\+|-)d+)?/gi)
-  if (healingMatches != null) healing = calculateRoll(healingMatches[0])
-  else {
-    healingMatches = arg0.match(/\d+/g)
-    if (healingMatches != null) healing = parseInt(healingMatches[healingMatches.length - 1])
-  }
-
-  if (healing == null) {
-    return ["\n[Error: Expected a number. See #help]\n", false]
-  }
-
-  var text = `\n[All characters have been healed by ${healing}.]\n`
-  state.characters.forEach(function(character) {
-    var max = getHealthMax(character)
-    character.health += healing
-    if (character.health > max) character.health = max
-    text += `[${toTitleCase(character.name)}: ${character.health} / ${max} health]\n`
-  })
-  state.show = "none"
-  return [text, true]
-}
-
-function doCheck(command) {
-  const advantageNames = ["normal", "advantage", "disadvantage"]
-  const difficultyNames = ["impossible", "extreme", "hard", "medium", "easy", "effortless", "veryeasy", "very easy", "automatic", "auto"]
-  const difficultyScores = [30, 25, 20, 15, 10, 5, 5, 5, 0, 0]
-  var character = getCharacter()
-
-  var arg0 = null
-  if (character.stats.length > 0) arg0 = searchArgument(command, statsToOrPattern(character.stats))
-  if (arg0 == null && character.skills.length > 0) arg0 = searchArgument(command, statsToOrPattern(character.skills))
-  if (arg0 == null) arg0 = "Ability"
-  arg0 = toTitleCase(arg0)
-  
-  var arg1 = searchArgument(command, arrayToOrPattern(advantageNames))
-  if (arg1 == null) arg1 = "normal"
-  else arg1 = arg1.toLowerCase()
-
-  const difficultyPatternNames = [...new Set(difficultyNames)]
-  difficultyPatternNames.push("\\d+")
-  var arg2 = searchArgument(command, arrayToOrPattern(difficultyPatternNames))
-  if (arg2 == null) arg2 = state.defaultDifficulty
-  else arg2 = arg2.toLowerCase()
-
-  var die1 = calculateRoll("1d20")
-  var die2 = calculateRoll("1d20")
-  var score = arg1 == "advantage" ? Math.max(die1, die2) : arg1 == "disadvantage" ? Math.min(die1, die2) : die1
-
-  var modifier = 0
-
-  var skill = character.skills.find(x => x.name.toLowerCase() == arg0.toLowerCase())
-  if (skill != null) {
-    var stat = character.stats.find((element) => element.name.toLowerCase() == skill.stat.toLowerCase())
-    if (stat != null) modifier = skill.modifier + getModifier(stat.value)
-  } else {
-    var stat = character.stats.find((element) => element.name.toLowerCase() == arg0.toLowerCase())
-    if (stat != null) modifier = getModifier(stat.value)
-  }
-
-  var target = 15
-  if (/^\d+$/.test(arg2)) target = arg2
-  else {
-    var targetIndex = difficultyNames.indexOf(arg2)
-    if (targetIndex >= 0 && targetIndex < difficultyNames.length) target = difficultyScores[targetIndex]
-  }
-  
-  state.show = "none"
-
-  var dieText = arg1 == "advantage" || arg1 == "disadvantage" ? `${arg1}(${die1},${die2})` : die1
-
-  var text
-  if (score == 20) text = `\n[${arg0} check DC: ${target} roll: ${dieText}. Critical Success!]\n`
-  else if (score == 1) text = `\n[${arg0} check DC: ${target} roll: ${dieText}. Critical Failure!]\n`
-  else if (modifier != 0) text = `\n[${arg0} check DC: ${target} roll: ${dieText}${modifier > 0 ? "+" + modifier : modifier}=${score + modifier}. ${score + modifier >= target ? "Success!" : "Failure!"}]\n`
-  else text = `\n[${arg0} check DC: ${target} roll: ${dieText}. ${score >= target ? "Success!" : "Failure!"}]\n`
   return [text, true]
 }
 
@@ -1167,115 +589,70 @@ function doTry(command) {
   return [text, true]
 }
 
-function doAttack(command) {
+function doCheck(command) {
   const advantageNames = ["normal", "advantage", "disadvantage"]
   const difficultyNames = ["impossible", "extreme", "hard", "medium", "easy", "effortless", "veryeasy", "very easy", "automatic", "auto"]
   const difficultyScores = [30, 25, 20, 15, 10, 5, 5, 5, 0, 0]
   var character = getCharacter()
-  var textIndex = 3
-  var missWord = character.name == "You" ? "miss" : "misses"
-  var tryWord = character.name == "You" ? "try" : "tries"
-  var usingDefaultDifficulty = false
 
-  var statText = null
-  statText = searchArgument(command, /ranged/gi, textIndex - 1)
-  if (statText == null) {
-    statText = character.meleeStat
-    textIndex--
-  } else if (statText.toLowerCase() == "ranged") statText = character.rangedStat
-  statText = toTitleCase(statText)
+  var arg0 = null
+  if (character.stats.length > 0) arg0 = searchArgument(command, statsToOrPattern(character.stats))
+  if (arg0 == null && character.skills.length > 0) arg0 = searchArgument(command, statsToOrPattern(character.skills))
+  if (arg0 == null) arg0 = "Ability"
+  arg0 = toTitleCase(arg0)
   
-  var advantageText = searchArgument(command, arrayToOrPattern(advantageNames), textIndex - 1)
-  if (advantageText == null) {
-    advantageText = "normal"
-    textIndex--
-  }
-  else advantageText = advantageText.toLowerCase()
+  var arg1 = searchArgument(command, arrayToOrPattern(advantageNames))
+  if (arg1 == null) arg1 = "normal"
+  else arg1 = arg1.toLowerCase()
 
   const difficultyPatternNames = [...new Set(difficultyNames)]
   difficultyPatternNames.push("\\d+")
-  var difficultyText = searchArgument(command, arrayToOrPattern(difficultyPatternNames), textIndex - 1)
-  if (difficultyText == null) {
-    difficultyText = state.defaultDifficulty
-    usingDefaultDifficulty = true
-    textIndex--
-  }
-  else difficultyText = difficultyText.toLowerCase()
-
-  var targetText = getArgumentRemainder(command, textIndex)
-  if (targetText == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-  var toMatches = targetText.match(/^to\s+/gi)
-  if (toMatches != null) targetText = targetText.substring(toMatches[0].length)
-  targetText = stripPunctuation(targetText)
+  var arg2 = searchArgument(command, arrayToOrPattern(difficultyPatternNames))
+  if (arg2 == null) arg2 = state.defaultDifficulty
+  else arg2 = arg2.toLowerCase()
 
   var die1 = calculateRoll("1d20")
   var die2 = calculateRoll("1d20")
-  var score = advantageText == "advantage" ? Math.max(die1, die2) : advantageText == "disadvantage" ? Math.min(die1, die2) : die1
+  var score = arg1 == "advantage" ? Math.max(die1, die2) : arg1 == "disadvantage" ? Math.min(die1, die2) : die1
 
   var modifier = 0
 
-  var stat = character.stats.find(x => x.name.toLowerCase() == statText.toLowerCase())
-  modifier = character.proficiency
-  if (stat != null) modifier += getModifier(stat.value)
-
-  var targetRoll = 15
-  if (/^\d+$/.test(difficultyText)) targetRoll = difficultyText
-  else {
-    var targetIndex = difficultyNames.indexOf(difficultyText)
-    if (targetIndex >= 0 && targetIndex < difficultyNames.length) targetRoll = difficultyScores[targetIndex]
+  var skill = character.skills.find(x => x.name.toLowerCase() == arg0.toLowerCase())
+  if (skill != null) {
+    var stat = character.stats.find((element) => element.name.toLowerCase() == skill.stat.toLowerCase())
+    if (stat != null) modifier = skill.modifier + getModifier(stat.value)
+  } else {
+    var stat = character.stats.find((element) => element.name.toLowerCase() == arg0.toLowerCase())
+    if (stat != null) modifier = getModifier(stat.value)
   }
 
-  var damage
-  if (/^\d*d\d+((\+|-)d+)?$/gi.test(character.damage)) damage = score == 20 ? calculateRoll(character.damage) + calculateRoll(character.damage) : calculateRoll(character.damage)
-  else damage = parseInt(character.damage)
-
-  var damageMatches = targetText.match(/\d*d\d+((\+|-)d+)?/gi)
-  if (damageMatches != null) damage = score == 20 ? calculateRoll(damageMatches[0]) + calculateRoll(damageMatches[0]) : calculateRoll(damageMatches[0])
+  var target = 15
+  if (/^\d+$/.test(arg2)) target = arg2
   else {
-    damageMatches = targetText.match(/\d+/g)
-    if (damageMatches != null) damage = score == 20 ? parseInt(damageMatches[damageMatches.length - 1]) * 2 : parseInt(damageMatches[damageMatches.length - 1])
+    var targetIndex = difficultyNames.indexOf(arg2)
+    if (targetIndex >= 0 && targetIndex < difficultyNames.length) target = difficultyScores[targetIndex]
   }
-
-  var dieText = advantageText == "advantage" || advantageText == "disadvantage" ? `${advantageText}(${die1},${die2})` : die1
-
-  state.show = "prefix"
   
-  if (targetRoll == 0) state.prefix = ""
-  else if (score == 20) state.prefix = `\n[Target AC: ${targetRoll} Attack roll: ${dieText}]\n`
-  else if (score == 1) state.prefix = `\n[Target AC: ${targetRoll} Attack roll: ${dieText}]\n`
-  else if (modifier != 0) state.prefix = `\n[Target AC: ${targetRoll} Attack roll: ${dieText}${modifier > 0 ? "+" + modifier : modifier}=${score + modifier}. ${score + modifier >= targetRoll ? "Success!" : "Failure!"}]\n`
-  else state.prefix = `\n[Target AC: ${targetRoll} Attack roll: ${dieText}. ${score >= targetRoll ? "Success!" : "Failure!"}]\n`
+  state.show = "none"
+
+  var dieText = arg1 == "advantage" || arg1 == "disadvantage" ? `${arg1}(${die1},${die2})` : die1
 
   var text
-  if (score + modifier >= targetRoll) text = `\n${toTitleCase(character.name)} successfully hit ${targetText}!`
-  else text = `\n${toTitleCase(character.name)} ${tryWord} to hit ${targetText}. ${toTitleCase(character.name)} ${missWord}!`
-
-  if (score == 20) text += " Critical success! The attack is exceptionally damaging!"
-  else if (score == 1) text += " Critical failure! The attack missed in a spectacular way!"
-
-  if (targetRoll > 0 && (score + modifier >= targetRoll || score == 20)) text += addXpToAll(Math.floor(state.autoXp * clamp(targetRoll, 1, 20) / 20))
-  return [text + "\n", true]
+  if (score == 20) text = `\n[${arg0} check DC: ${target} roll: ${dieText}. Critical Success!]\n`
+  else if (score == 1) text = `\n[${arg0} check DC: ${target} roll: ${dieText}. Critical Failure!]\n`
+  else if (modifier != 0) text = `\n[${arg0} check DC: ${target} roll: ${dieText}${modifier > 0 ? "+" + modifier : modifier}=${score + modifier}. ${score + modifier >= target ? "Success!" : "Failure!"}]\n`
+  else text = `\n[${arg0} check DC: ${target} roll: ${dieText}. ${score >= target ? "Success!" : "Failure!"}]\n`
+  return [text, true]
 }
 
-function doNote(command) {
-  var arg0 = getArgumentRemainder(command, 0)
-  
-  if (arg0 != null && arg0.length > 0) {
-    state.notes.push(arg0)
-    state.show = "none"
-    return ["\n[Note added successfully]\n", true]
-  }
-  state.notes.push(history[history.length - 1].text)
-  state.show = "none"
-  return ["\n[The last action was successfully added to the notes]\n", true]
-}
-
-function doShowNotes(command) {
-  state.show = "showNotes"
-  return [" ", true]
-}
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////// COMMAND FUNCTIONS - TIME ///////////////////////////////////////////////////
 
 function doShowDay(command) {
   state.show = "none"
@@ -1294,34 +671,532 @@ function doSetDay(command) {
   return [`\n[The day has been set to day ${state.day}]\n`, true]
 }
 
-function doEncounter(command) {
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    arg0 = "easy"
+function doRest(command) {
+  var commandName = getCommandName(command)
+  state.day++
+
+  var healingFactor = 1
+  var text
+  if (commandName.toLowerCase() == "shortrest") {
+    state.day--
+    healingFactor = .5
+    text = `\n[All characters have healed 50%]\n`
+  } else {
+    text = `\n[All characters have rested and feel rejuvinated. It's now day ${state.day}]\n`
   }
 
-  var encounter = createEncounter(arg0)
-  var text = `\n${encounter.text}\n`
+  state.characters.forEach(function(character) {
+    var max = getHealthMax(character)
+    character.health += Math.floor(max * healingFactor)
+    if (character.health > max) character.health = max
+  })
+  state.show = "none"
   return [text, true]
 }
 
-function doBlock(command) {
-  if (state.blockCharacter == null) {
-    return ["\n[Error: No attack to block. See #help]\n", false]
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////// COMMAND FUNCTIONS - SYSTEM /////////////////////////////////////////////////
+
+function doSetDefaultDifficulty(command) {
+  const difficultyNames = ["impossible", "extreme", "hard", "medium", "easy", "effortless", "veryeasy", "very easy", "automatic", "auto"]
+  const difficultyScores = [30, 25, 20, 15, 10, 5, 5, 5, 0, 0]
+
+  const difficultyPatternNames = [...new Set(difficultyNames)]
+  difficultyPatternNames.push("\\d+")
+  var difficulty = getArgument(command, 0)
+  if (difficulty == null) difficulty = "easy"
+
+  var difficultyIndex = difficultyNames.indexOf(difficulty)
+  if (difficultyIndex >= 0 && difficultyIndex < difficultyNames.length) {
+    difficulty = difficultyScores[difficultyIndex]
   }
 
-  var character = state.characters.find(x => x.name.toLowerCase() == state.blockCharacter.name.toLowerCase())
-  if (character == null) {
-    return ["\n[Error: Character no longer exists. See #help]\n", false]
-  }
+  state.defaultDifficulty = Math.max(0, difficulty)
 
-  character.health = state.blockPreviousHealth
-
-  var properName = toTitleCase(character.name)
-  state.show = "prefix"
-  state.prefix = `[${properName} has ${character.health} health]`
-  return [`\nHowever, the damage to ${properName} was blocked!\n`, true]
+  state.show = "none"
+  return [`\n[The default difficulty is set to ${state.defaultDifficulty}]\n`, true]
 }
+
+function doShowDefaultDifficulty(command) {
+  state.show = "none"
+  return [`\n[The default difficulty is set to ${state.defaultDifficulty}]\n`, true]
+}
+
+function doReset(command) {
+  state.notes = []
+  state.characters = []
+  state.defaultDifficulty = null
+  state.autoXp = null
+  state.day = null
+
+  state.show = "reset"
+  return [" ", true]
+}
+
+function doVersion(command) {
+  state.show = "none"
+  return [`[${version}]`, true]
+}
+
+function doHelp(command) {
+  const helpType = getArgument(command, 0)
+  if (helpType) state.show = "help "
+  else state.show = "help"
+  return [" ", true]
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////// COMMAND FUNCTIONS - CHARACTER ///////////////////////////////////////////////
+
+function doCreate(command) {
+  if (!hasCharacter(state.characterName)) createCharacter(state.characterName)
+  var character = getCharacter()
+
+  state.createStep = 0
+  state.tempCharacter.name = character.name
+  resetTempCharacterSkills() // Why for skills and not for stats?
+  state.tempCharacter.stats = []
+  state.tempCharacter.spells = []
+  state.tempCharacter.inventory = [] // Anything that goes into the inventory must go through doTake()!
+  state.tempCharacter.spellStat = null
+  state.tempCharacter.meleeStat = "Strength"
+  state.tempCharacter.rangedStat = "Dexterity"
+  state.tempCharacter.ac = 10
+  state.tempCharacter.damage = "1d6"
+  state.tempCharacter.proficiency = 2
+  
+  state.show = "create"
+  return [" ", true]
+}
+
+function resetTempCharacterSkills() {
+  state.tempCharacter.skills = [
+    {name: "Acrobatics", stat: "Dexterity", modifier: 0},
+    {name: "Animal Handling", stat: "Wisdom", modifier: 0},
+    {name: "Arcana", stat: "Intelligence", modifier: 0},
+    {name: "Athletics", stat: "Strength", modifier: 0},
+    {name: "Deception", stat: "Charisma", modifier: 0},
+    {name: "History", stat: "Intelligence", modifier: 0},
+    {name: "Insight", stat: "Wisdom", modifier: 0},
+    {name: "Intimidation", stat: "Charisma", modifier: 0},
+    {name: "Investigation", stat: "Intelligence", modifier: 0},
+    {name: "Medicine", stat: "Wisdom", modifier: 0},
+    {name: "Nature", stat: "Intelligence", modifier: 0},
+    {name: "Perception", stat: "Wisdom", modifier: 0},
+    {name: "Performance", stat: "Charisma", modifier: 0},
+    {name: "Persuasion", stat: "Charisma", modifier: 0},
+    {name: "Religion", stat: "Intelligence", modifier: 0},
+    {name: "Sleight of Hand", stat: "Dexterity", modifier: 0},
+    {name: "Stealth", stat: "Dexterity", modifier: 0},
+    {name: "Survival", stat: "Wisdom", modifier: 0},
+  ]
+}
+
+function doRenameCharacter(command) {
+  var character = getCharacter()
+  var arg0 = getArgumentRemainder(command, 0)
+  if (arg0 == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+  var possessiveName = getPossessiveName(character.name)
+
+  state.show = "none"
+  var text = `\n[${possessiveName} name has been changed to ${arg0}]\n`
+
+  character.name = arg0
+
+  return [text, true]
+}
+
+function doCloneCharacter(command) {
+  var character = getCharacter()
+
+  var arg0 = getArgumentRemainder(command, 0)
+  if (arg0 == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+
+  if (!hasCharacter(arg0)) createCharacter(arg0)
+  var newCharacter = getCharacter(arg0)
+  copyCharacter(character, newCharacter)
+
+  state.show = "none"
+  var text = `\n[${character.name} has been cloned to a new character called ${newCharacter.name}]\n`
+
+  return [text, true]
+}
+
+function doBio(command) {
+  state.show = "bio"
+  return [" ", true]
+}
+
+function doSetClass(command) {
+  var character = getCharacter()
+  var arg0 = getArgumentRemainder(command, 0)
+  if (arg0 == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+
+  var possessiveName = getPossessiveName(character.name)
+
+  character.className = arg0
+
+  state.show = "none"
+  return [`\n[${possessiveName} class is set to "${character.className}"]\n`, true]
+}
+
+function doSetSummary(command) {
+  var character = getCharacter()
+  var arg0 = getArgumentRemainder(command, 0)
+  if (arg0 == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+
+  var possessiveName = getPossessiveName(character.name)
+
+  character.summary = arg0
+
+  state.show = "none"
+  return [`\n[${possessiveName} summary is set]\n`, true]
+}
+
+function doShowCharacters(command) {
+  state.show = "characters"
+  return [" ", true]
+}
+
+function doRemoveCharacter(command) {
+  var arg0 = getArgumentRemainder(command, 0)
+  if (arg0 == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+
+  for (var i = 0; i < state.characters.length; i++) {
+    var character = state.characters[i]
+    if (character.name.toLowerCase() == arg0.toLowerCase()) {
+      state.characters.splice(i, 1)
+      state.show = "none"
+      return [`[Character ${character.name} removed]`, true]
+    }
+  }
+
+  return [`[Character ${arg0} was not found]`, true]
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////// COMMAND FUNCTIONS - LEVELS & EXP /////////////////////////////////////////////
+
+function doSetExperience(command) {
+  var character = getCharacter()
+  var arg0 = getArgument(command, 0)
+  if (arg0 == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+
+  if (isNaN(arg0)) {
+    return ["\n[Error: Not a number. See #help]\n", false]
+  }
+
+  var possessiveName = getPossessiveName(character.name)
+
+  character.experience = parseInt(arg0)
+
+  state.show = "none"
+  return [`\n[${possessiveName} experience is set to ${character.experience}]\n`, true]
+}
+
+function doAddExperience(command) {
+  var character = getCharacter()
+  var arg0 = getArgument(command, 0)
+  if (arg0 == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+
+  arg0 = searchArgument(command, /\d+/gi)
+  if (arg0 == null) {
+    return ["\n[Error: Expected a number. See #help]\n", false]
+  }
+  arg0 = parseInt(arg0)
+
+  var arg1 = searchArgument(command, /party/gi)
+
+  if (arg1 == null && character == null) {
+    return [`\n[Error: Character name not specified. Use the "do" or "say" modes. Alternatively, use "story" mode in the following format without quotes: "charactername #hashtag"]\n`, false]
+  }
+
+  if (state.characters.length == 0) {
+    return [`\n[Error: There are no characters. Type #setup to create a character]\n`, false]
+  }
+
+  state.prefix = "\n"
+  characters = arg1 == null ? [character] : state.characters
+  for (var c of characters) {
+    var possessiveName = getPossessiveName(c.name)
+
+    var level = getLevel(c.experience)
+    c.experience += arg0
+    var newLevel = getLevel(c.experience)
+
+    if (newLevel > level) state.prefix += `[${possessiveName} experience is increased to ${c.experience}. LEVEL UP! Level: ${newLevel}, Health Max: ${getHealthMax(c)}. Next level at ${getNextLevelXp(c.experience)}]\n`
+    else state.prefix += `[${possessiveName} experience is increased to ${c.experience}. Next level at ${getNextLevelXp(c.experience)}]\n`
+  }
+
+  state.show = "prefixOnly"
+  return [" ", true]
+}
+
+function doLevelUp(command) {
+  var character = getCharacter()
+  var level = getLevel(character.experience)
+  var experience = level >= levelSplits.length ? 0 : levelSplits[level] - character.experience
+  return doAddExperience(`${command} ${experience}`)
+}
+
+function doSetAutoXp(command) {
+  var arg0 = getArgument(command, 0)
+  if (arg0 == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+  if (isNaN(arg0)) {
+    return ["\n[Error: Expected a number. See #help]\n", false]
+  }
+
+  state.autoXp = Math.max(0, arg0)
+
+  state.show = "none"
+  return [state.autoXp <= 0 ? `\n[Auto XP is disabled]\n` : `\n[Auto XP is set to ${state.autoXp}]\n`, true]
+}
+
+function doShowAutoXp(command) {
+  state.show = "none"
+  return [state.autoXp <= 0 ? `\n[Auto XP is disabled]\n` : `\n[Auto XP is set to ${state.autoXp}]\n`, true]
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////// COMMAND FUNCTIONS - ABILITIES & SKILLS //////////////////////////////////////////
+
+function doSetStat(command) {
+  var character = getCharacter()
+  var arg0 = getArgument(command, 0)
+  if (arg0 == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+  var arg1 = clamp(parseInt(getArgument(command, 1)), 1, 100)
+  var possessiveName = getPossessiveName(character.name)
+
+  const stat = {
+    name: arg0,
+    value: arg1
+  }
+
+  var index = character.stats.findIndex((element) => element.name.toLowerCase() == stat.name.toLowerCase())
+  if (index == -1) {
+    character.stats.push(stat)
+  } else {
+    var existingStat = character.stats[index]
+    existingStat.value = parseInt(stat.value)
+  }
+
+  state.show = "none"
+  return [`\n[${possessiveName} ${toTitleCase(arg0)} ability is now ${arg1}]\n`, true]
+}
+
+function doShowStats(command) {
+  state.show = "stats"
+  return [" ", true]
+}
+
+function doRemoveStat(command) {
+  var character = getCharacter()
+  var arg0 = getArgumentRemainder(command, 0)
+  if (arg0 == "") {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+  var dontWord = character.name == "You" ? "don't" : "doesn't"
+  var tryWord = character.name == "You" ? "try" : "tries"
+
+  var found = character.stats.find((element) => element == arg0)
+  if (found == null) return [`\n[${character.name} ${tryWord} to remove the ability ${arg0}, but ${character.name} ${dontWord} even know it]\n`, true]
+  
+  var index = character.stats.findIndex((element) => element.toLowerCase() == arg0.toLowerCase())
+  character.stats.splice(index, 1)
+
+  return [`\n[${character.name} removed the ability ${arg0}]\n`, true]
+}
+
+function doClearStats(command) {
+  var character = getCharacter()
+  character.stats = []
+  state.show = "clearStats"
+  return [" ", true]
+}
+
+function doSetSkill(command) {
+  var character = getCharacter()
+  var arg0 = getArgument(command, 0)
+  if (arg0 == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+
+  var arg1 = getArgument(command, 1)
+  if (arg1 == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+
+  var arg2 = getArgument(command, 2)
+  if (arg2 == null) {
+    arg2 = (clamp(parseInt(arg1, 1, 100)))
+    arg1 = null
+  } else {
+    arg2 = clamp(parseInt(arg2), 1, 100)
+  }
+
+  var possessiveName = getPossessiveName(character.name)
+
+  const skill = {
+    name: arg0,
+    stat: arg1,
+    modifier: arg2
+  }
+
+  var index = character.skills.findIndex((element) => element.name.toLowerCase() == skill.name.toLowerCase())
+  if (index == -1) {
+    if (arg1 == null) {
+      return ["\n[Error: New skills must have an ability specified. See #help]\n", false]
+    }
+    
+    character.skills.push(skill)
+  } else {
+    var existingSkill = character.skills[index]
+    existingSkill.modifier = parseInt(skill.modifier)
+    if (arg1 != null) existingSkill.stat = skill.stat
+  }
+
+  state.show = "none"
+  return [`\n[${possessiveName} ${toTitleCase(arg0)} skill is now ${arg2 >= 0 ? "+" + arg2 : "-" + arg2} and based on ${toTitleCase(arg1)}]\n`, true]
+}
+
+function doShowSkills(command) {
+  state.show = "skills"
+  return [" ", true]
+}
+
+function doRemoveSkill(command) {
+  var character = getCharacter()
+  var arg0 = getArgumentRemainder(command, 0)
+  if (arg0 == "") {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+  var dontWord = character.name == "You" ? "don't" : "doesn't"
+  var tryWord = character.name == "You" ? "try" : "tries"
+
+  var found = character.skills.find((element) => element == arg0)
+  if (found == null) return [`\n[${character.name} ${tryWord} to remove the skill ${arg0}, but ${character.name} ${dontWord} even know it]\n`, true]
+  
+  var index = character.skills.findIndex((element) => element.toLowerCase() == arg0.toLowerCase())
+  character.skills.splice(index, 1)
+
+  return [`\n[${character.name} removed the skill ${arg0}]\n`, true]
+}
+
+function doClearSkills(command) {
+  var character = getCharacter()
+  character.skills = []
+  state.show = "clearSkills"
+  return [" ", true]
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////// COMMAND FUNCTIONS - NOTES /////////////////////////////////////////////////
+
+function doShowNotes(command) {
+  state.show = "showNotes"
+  return [" ", true]
+}
+
+function doNote(command) {
+  var arg0 = getArgumentRemainder(command, 0)
+  
+  if (arg0 != null && arg0.length > 0) {
+    state.notes.push(arg0)
+    state.show = "none"
+    return ["\n[Note added successfully]\n", true]
+  }
+  state.notes.push(history[history.length - 1].text)
+  state.show = "none"
+  return ["\n[The last action was successfully added to the notes]\n", true]
+}
+
+function doClearNotes(command) {
+  state.notes = []
+  
+  state.show = "clearNotes"
+  return [" ", true]
+}
+
+function doEraseNote(command) {
+  var arg0 = getArgumentRemainder(command, 0)
+  if (arg0 == null) arg0 = 1
+
+  var list = arg0.split(/\D+/)
+  list.sort(function(a, b) {
+    return b - a, true
+  });
+
+  var text = "\n"
+  list.forEach(x => {
+    var num = parseInt(x) - 1
+    if (num >= state.notes.length) {
+      return [`\n[Error: Note ${x} does not exist. Type #shownotes]\n`, false]
+    }
+
+    state.notes.splice(num, 1)
+    text += `[Note #${x} removed]\n`
+  })
+  
+  state.show = "none"
+  return [text, true]
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////// COMMAND FUNCTIONS - INVENTORY ///////////////////////////////////////////////
 
 const helpDialog_itemStoryCards = `
 <><> Item Story Cards <><>
@@ -1489,64 +1364,6 @@ function doTake(command) {
   return [text+`\n`, true]
 }
 
-/**********| This function adds, or increases, an item in the character's inventory
-* @function
-* @param {character} [character] The character whose inventory is being manipulated
-* @param {item} [newItem] The item to be added or increased
-* @param {number} [quantity] The quantity of the item attempting to add
-* @returns {item} Returns the inventory item just added or increased
-***********/
-function putItemIntoInventory(character, newItem, quantityOverride=null)
-{
-  // Check story cards (create one if needed), and make sure it's a complete item
-  newItem = checkItemCards(newItem, true)
-  // Has to be done after checkItemCards, so that new cards don't have the override quantity
-  newItem.quantity = (quantityOverride ?? newItem.quantity) // Enforce override quantity
-  // Update inventory
-  const index = character.inventory.findIndex((element) => compareWithoutPlural(newItem.itemName, element.itemName))
-  if (index == -1) {
-    character.inventory.push(newItem)
-    return character.inventory[character.inventory.length-1]
-  }
-  character.inventory[index].quantity += newItem.quantity
-  return character.inventory[index]
-}
-
-/**********| ITEM STORY CARDS!
-* 1) Check the item story cards to see if the item exists!
-* 2) If the item exists, replace remaining default values with item card values!
-* 3) If the item does not exist, create a story card for one.
-* @function
-* @param {item} [newItem] The item to be checked.
-* @returns {item} Returns the newItem with updated details.
-***********/
-function checkItemCards(newItem, buildCard=false) {
-  const itemName = singularize(newItem.itemName).toLowerCase()
-  const itemCards = getStoryCardListByTitle(itemName, true)
-  const itemCard = itemCards.length > 0 ? itemCards[0] : null;
-  if (itemCard) {
-    const existingDetails = JSON.parse(itemCard.description)
-    for (const key in existingDetails) {
-      if (newItem[key] === defaultItemDetails[key] && existingDetails[key] !== undefined) {
-        newItem[key] = existingDetails[key]
-      }
-    }
-  } else {
-    // Make sure newItem is a complete item
-    for (const key in defaultItemDetails) {
-      if (newItem[key] === undefined) {
-        newItem[key] = defaultItemDetails[key]
-      }
-    }
-    if (buildCard) {
-      buildStoryCard(newItem.itemName, "", "Item - Misc - Uncommon", "", JSON.stringify(newItem))
-    } else {
-      return null // null for error
-    }
-  }
-  return newItem
-}
-
 // A helper function for creating items
 // TODO: Commented out until I find a use for this.
 // function createItem(itemName,
@@ -1677,121 +1494,6 @@ function doReward(command) {
   return [text, true]
 }
 
-const HelpDialog_doEquip = `
-#equip item_name slot
--- Equips an item in the character's inventory for a given slot.
--- item_name must be an exact match the the inventory item's name.
--- Equiped items change the character's damage/hit/ac values respectively based on slot.
--- Slots are:
--- -- "wepaon" - changes hit bonus, damage dice, ability mod (only one wepaon may be equiped) 
--- -- "armor"  - changes base ac (only one armor may be equiped)
-
-To create your own:
-Type #help "item take"
-Type #help "item story cards"
-`
-// NEEDS REVIEW after item card changes
-// Since I've removed the itemShop, there may be some broken logic here
-function doEquip(command) {
-  let character = getCharacter()
-  const itemName = getArgument(command, 0)
-  const slotType = getArgument(command, 1)
-  if (itemName == null || slotType == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-  // At this point we assume that every item in the character's inventory has gone through putItemIntoInventory()
-  // Thus, there is no need to check all the various properties or story cards for it
-  const invItem = character.inventory.find((element) => element.name.toLowerCase() === itemName.toLowerCase())
-
-  const dontWord = character.name == "You" ? "don't" : "doesn't"
-  if (invItem == null) return [`${character.name} tried to equip ${toTitleCase(itemName)}, but ${dontWord} possess it.`, true]
-
-  // Recalculate the character's equipment bonuses (based on D&D 5e logic)
-
-  // TODO: Add the category and rairty of an item into it's JSON details
-  // -- We can't tell what an item is from the invItem details
-  // -- Since only the item story card type contains the category
-
-  // NOW, technically in D&D a character would attack with X wepaon
-  // BUT, (damage/hitBonus/etc) character values
-  // -- I assume the idea is to make the #attack command easier
-  // -- If that's the case, then what about a specific #equip command for weapons
-  // ...
-  // TODO: Add an argument to #equip to handle equipment slots, like: (#equip itemName as weapon)
-  // -- This way, even if we can't tell if an item is a (weapon, armor, etc), we will know how the character intends to use it
-  // ...
-
-  // NOW, technically in D&D a character's hit bonus would be calculated as:
-  // -- character's base proficiency bonus + character's ability modifier for weapon's ability type + weapon's hit bonus
-  // -- however, if a character is not proficient with a weapon type, they don't get thier character's base proficiency bonus
-  // BUT, our character code doesn't have a proficiency bonus, nor any proficiency types (at least not yet)
-  // SO, we'll just use: character's ability modifier for weapon's ability type + weapon's hit bonus
-
-  // NOW, technically in D&D a character's base AC is typically 10 + their Dexterity modifier
-  // -- Wearing armor changes the base AC value (i.e. light armor has a base of 11)
-  // -- However! Some armors don't allow the Dexterity bonus, or restrict it (i.e. heavy armor)
-  // -- However! Shields and some items have plus bonus's to AC which stack (i.e. shields give +2 AC)
-  // BUT, we can't tell if an item is a armor piece from the invItem details
-  // -- also our items only have an acBonus value, not a acBase value (tho we could assume)
-  // -- only item story card type contains the category, and categories are ambiguous at best
-  // ...
-  // TODO: Add an argument to #equip to handle equipment slots, like: (#equip itemName as armor)
-  // -- This way, even if we can't tell if an item is a (shield, armor, etc), we will know how the character intends to use it
-  // -- now, for AC we need two or three slots:
-  // -- -- an armor slot for the base AC (only allows one item)
-  // -- -- a shield slot for the shield's AC bonus (only allows one)
-  // -- -- a misc slot for any other item's AC bonus (allows many)
-  // ...
-
-  // NOW, technically in D&D character's don't have equipment slots, but there are restrictions
-  // -- like off-hand attacks not having the character's base proficiency bonus on damage (normally)
-  // -- only one armor and one shield may confer a bonus (shields also take up a hand)
-  // -- two-handing and two-handed weapons (damage and hand occupation)
-  // -- And there is more...
-  // BUT, for now our character code can't handle any of these restrictions, nor does our #attack command
-  // -- Something to look into later down the line when we can handle more complexities
-  // SO, for now, we'll just use equipment slots as a makeshift implementation
-  // -- (1 weapon, 1 armor, 1 shield, and then misc items)
-
-  // ----
-
-  // Equip the item!
-  let text = `\n${character.name} equipped the item ${toTitleCase(invItem.itemName)}!\n`
-
-  // Slot types
-  // TODO: Add slots for shields, and accessories
-  switch (slotType.toLowerCase()) {
-    case "weapon":
-      let abilityValue = character.stats.find((element) => element.name.toLowerCase() == invItem.ability)
-      let ability = abilityValue == null ? 10 : abilityValue.value
-      let abilityModifier = Math.ceil((ability - 10) / 2)
-      let damageBase = invItem.dmgDice.replaceAll(/\+.*/gi, "")
-      let damageModifier = parseInt(invItem.dmgDice.replaceAll(/.*\+/gi, "")) + abilityModifier
-      character.damage = `${damageBase}+${damageModifier}`
-      character.proficiency = invItem.hitBonus + abilityModifier
-      character.meleeStat = invItem.ability
-      break;
-
-    case "armor":
-      let dexterityStat = character.stats.find((element) => element.name.toLowerCase() == "dexterity")
-      let dexterity = dexterityStat == null ? 10 : dexterityStat.value
-      let ac = parseInt(invItem.acBonus.replaceAll(/(?<=.)\+.*/gi, ""))
-      if (/.*\+dmax2/i.test(invItem.acBonus)) character.ac = ac + Math.max(2, Math.ceil((dexterity - 10) / 2))
-      else if (/.*\+d/i.test(invItem.acBonus)) character.ac = ac + Math.ceil((dexterity - 10) / 2)
-      else if (/\+.*/i.test(invItem.acBonus)) character.ac += ac
-      else character.ac = ac
-      break;
-  
-    default:
-      state.show = "none"
-      text = `\n${character.name} cannot equip the item ${toTitleCase(invItem.itemName)} as ${slotType}!\n`
-      break;
-  }
-  
-  text += "\n"
-  return [text, true]
-}
-
 const HelpDialog_doDrop = `
 #drop (quantity or all|every) item_name
 -- Removes the specified quantity of item from the character's inventory.
@@ -1841,29 +1543,6 @@ function doDrop(command) {
   }
 
   return [text+'\n', true]
-}
-
-/**********| This function removes/reduces items in the character's inventory
-* @function
-* @param {character} [character] The character whose inventory is being manipulated
-* @param {string} [itemName] The name of the item to be removed
-* @param {number} [quantity] The quantity of the item attempting to remove
-* @returns {[item, number]} [Item removed (or null), quantity removed]
-***********/
-function removeItemFromInventory(character, itemName, quantity) {
-  const invIndex = character.inventory.findIndex((element) => compareWithoutPlural(itemName, element.itemName))
-  if (invIndex === -1) {
-    return [null, quantity] // Cannot find index of itemName in inventory
-  }
-  const invItem = character.inventory[invIndex]
-  const invItemQty = invItem.quantity
-  if (quantity >= invItemQty) {
-    invItem.quantity = 0 // Remaining will be exactly 0
-    character.inventory.splice(invIndex, 1) // Remove item completely
-    return [invItem, invItemQty]
-  }
-  invItem.quantity -= quantity
-  return [invItem, quantity]
 }
 
 const HelpDialog_doGive = `
@@ -1922,46 +1601,6 @@ function doGive(command) {
     text += ` ${character.name} now ${character.name == "You" ? "have" : "has"} ${removedItem.quantity} ${singularize(itemName, removedItem.quantity === 1)}.`
   }
   return [text+`\n`, true]
-}
-
-/**********| parseQuantityAndName - 
- * - Parses a quantity and item name from an argument.
- * - If not a number, quantity defaults to 1, and the argument at quantityIndex is the item name.
- * - Accepts non-numeric quantity inputs like "all", "a", "an".
- * - Will not return a number as the name, name will be null if not found or numeric.
- * 
- * @function
- * @param {string} argQuantity - The suspected argument containing the quantity
- * @param {string} argName - The suspected argument containing the argName
- * @param {boolean} handleAllCase - Determines if cases like "all" or "every" need to be check for the quntity.
- * @param {boolean} handleArticleCase - Determines if cases like "a" or "the" need to be check for the quntity.
- * @returns {[number,string]} - Tuple containing the quantity (number) and the name (string).
- ***********/
-function parseQuantityAndName(argQuantity, argName, handleAlls=true, handleArticles=true) {
-  let quantity = 1
-  let name = argName ?? null
-  // Handle case where quantity is a number
-  if (!isNaN(argQuantity)) {
-    quantity = Number(argQuantity)
-  
-  // Handle cases where quantity might be "all" or "every"
-  } else if (allSynonyms.includes(argQuantity) && handleAlls) {
-    quantity = Number.MAX_SAFE_INTEGER
-
-  // Handle cases where quantity might be "a", "an", "the"
-  } else if (articleSynonyms.includes(argQuantity) && handleArticles) {
-    // quantity = 1 // defaults
-  }
-
-  // Handle case where quantity was not valid
-  else {
-    name = argQuantity ?? null // Might be the name
-    return [quantity, name] // ignore argName
-  }
-  
-  // Handle case after valid number
-  name = isNaN(name) ? name : null // Can't be a number
-  return [quantity, name]
 }
 
 const HelpDialog_doBuy = `
@@ -2144,6 +1783,35 @@ function doInventory(command) {
   return [" ", true]
 }
 
+function doClearInventory(command) {
+  var character = getCharacter()
+  character.inventory = []
+  state.show = "clearInventory"
+  return [" ", true]
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////// COMMAND FUNCTIONS - SPELLS /////////////////////////////////////////////////
+
+function doSetSpellStat(command) {
+  var character = getCharacter()
+  var arg0 = getArgument(command, 0)
+  if (arg0 == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+
+  character.spellStat = arg0
+
+  state.show = "none"
+  return [`\nSpellcasting Ability is set to ${arg0}\n`, true]
+}
+
 function doLearnSpell(command) {
   var arg0 = getArgumentRemainder(command, 0)
   if (arg0 == "") {
@@ -2182,42 +1850,6 @@ function doForgetSpell(command) {
 
   state.show = "none"
   return [`\n[${character.name} forgot the spell ${arg0}]\n`, true]
-}
-
-function doRemoveStat(command) {
-  var character = getCharacter()
-  var arg0 = getArgumentRemainder(command, 0)
-  if (arg0 == "") {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-  var dontWord = character.name == "You" ? "don't" : "doesn't"
-  var tryWord = character.name == "You" ? "try" : "tries"
-
-  var found = character.stats.find((element) => element == arg0)
-  if (found == null) return [`\n[${character.name} ${tryWord} to remove the ability ${arg0}, but ${character.name} ${dontWord} even know it]\n`, true]
-  
-  var index = character.stats.findIndex((element) => element.toLowerCase() == arg0.toLowerCase())
-  character.stats.splice(index, 1)
-
-  return [`\n[${character.name} removed the ability ${arg0}]\n`, true]
-}
-
-function doRemoveSkill(command) {
-  var character = getCharacter()
-  var arg0 = getArgumentRemainder(command, 0)
-  if (arg0 == "") {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-  var dontWord = character.name == "You" ? "don't" : "doesn't"
-  var tryWord = character.name == "You" ? "try" : "tries"
-
-  var found = character.skills.find((element) => element == arg0)
-  if (found == null) return [`\n[${character.name} ${tryWord} to remove the skill ${arg0}, but ${character.name} ${dontWord} even know it]\n`, true]
-  
-  var index = character.skills.findIndex((element) => element.toLowerCase() == arg0.toLowerCase())
-  character.skills.splice(index, 1)
-
-  return [`\n[${character.name} removed the skill ${arg0}]\n`, true]
 }
 
 function doCastSpell(command) {
@@ -2321,8 +1953,10 @@ function doCastSpell(command) {
   return [`\n${text}\n`, true]
 }
 
-function doShowCharacters(command) {
-  state.show = "characters"
+function doClearSpells(command) {
+  var character = getCharacter()
+  character.spells = []
+  state.show = "clearSpells"
   return [" ", true]
 }
 
@@ -2331,95 +1965,469 @@ function doSpellbook(command) {
   return [" ", true]
 }
 
-function doShowSkills(command) {
-  state.show = "skills"
-  return [" ", true]
-}
-function doShowStats(command) {
-  state.show = "stats"
-  return [" ", true]
-}
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////// COMMAND FUNCTIONS - COMBAT /////////////////////////////////////////////////
 
-function doClearNotes(command) {
-  state.notes = []
-  
-  state.show = "clearNotes"
-  return [" ", true]
-}
+function doEncounter(command) {
+  var arg0 = getArgument(command, 0)
+  if (arg0 == null) {
+    arg0 = "easy"
+  }
 
-function doClearInventory(command) {
-  var character = getCharacter()
-  character.inventory = []
-  state.show = "clearInventory"
-  return [" ", true]
-}
-
-function doEraseNote(command) {
-  var arg0 = getArgumentRemainder(command, 0)
-  if (arg0 == null) arg0 = 1
-
-  var list = arg0.split(/\D+/)
-  list.sort(function(a, b) {
-    return b - a, true
-  });
-
-  var text = "\n"
-  list.forEach(x => {
-    var num = parseInt(x) - 1
-    if (num >= state.notes.length) {
-      return [`\n[Error: Note ${x} does not exist. Type #shownotes]\n`, false]
-    }
-
-    state.notes.splice(num, 1)
-    text += `[Note #${x} removed]\n`
-  })
-  
-  state.show = "none"
+  var encounter = createEncounter(arg0)
+  var text = `\n${encounter.text}\n`
   return [text, true]
 }
 
-function doRemoveCharacter(command) {
-  var arg0 = getArgumentRemainder(command, 0)
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////// COMMAND FUNCTIONS - COMABT (DISABLED) //////////////////////////////////////////
+
+const HelpDialog_doEquip = `
+#equip item_name slot
+-- Equips an item in the character's inventory for a given slot.
+-- item_name must be an exact match the the inventory item's name.
+-- Equiped items change the character's damage/hit/ac values respectively based on slot.
+-- Slots are:
+-- -- "wepaon" - changes hit bonus, damage dice, ability mod (only one wepaon may be equiped) 
+-- -- "armor"  - changes base ac (only one armor may be equiped)
+
+To create your own:
+Type #help "item take"
+Type #help "item story cards"
+`
+// NEEDS REVIEW after item card changes
+// Since I've removed the itemShop, there may be some broken logic here
+function doEquip(command) {
+  let character = getCharacter()
+  const itemName = getArgument(command, 0)
+  const slotType = getArgument(command, 1)
+  if (itemName == null || slotType == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+  // At this point we assume that every item in the character's inventory has gone through putItemIntoInventory()
+  // Thus, there is no need to check all the various properties or story cards for it
+  const invItem = character.inventory.find((element) => element.name.toLowerCase() === itemName.toLowerCase())
+
+  const dontWord = character.name == "You" ? "don't" : "doesn't"
+  if (invItem == null) return [`${character.name} tried to equip ${toTitleCase(itemName)}, but ${dontWord} possess it.`, true]
+
+  // Recalculate the character's equipment bonuses (based on D&D 5e logic)
+
+  // TODO: Add the category and rairty of an item into it's JSON details
+  // -- We can't tell what an item is from the invItem details
+  // -- Since only the item story card type contains the category
+
+  // NOW, technically in D&D a character would attack with X wepaon
+  // BUT, (damage/hitBonus/etc) character values
+  // -- I assume the idea is to make the #attack command easier
+  // -- If that's the case, then what about a specific #equip command for weapons
+  // ...
+  // TODO: Add an argument to #equip to handle equipment slots, like: (#equip itemName as weapon)
+  // -- This way, even if we can't tell if an item is a (weapon, armor, etc), we will know how the character intends to use it
+  // ...
+
+  // NOW, technically in D&D a character's hit bonus would be calculated as:
+  // -- character's base proficiency bonus + character's ability modifier for weapon's ability type + weapon's hit bonus
+  // -- however, if a character is not proficient with a weapon type, they don't get thier character's base proficiency bonus
+  // BUT, our character code doesn't have a proficiency bonus, nor any proficiency types (at least not yet)
+  // SO, we'll just use: character's ability modifier for weapon's ability type + weapon's hit bonus
+
+  // NOW, technically in D&D a character's base AC is typically 10 + their Dexterity modifier
+  // -- Wearing armor changes the base AC value (i.e. light armor has a base of 11)
+  // -- However! Some armors don't allow the Dexterity bonus, or restrict it (i.e. heavy armor)
+  // -- However! Shields and some items have plus bonus's to AC which stack (i.e. shields give +2 AC)
+  // BUT, we can't tell if an item is a armor piece from the invItem details
+  // -- also our items only have an acBonus value, not a acBase value (tho we could assume)
+  // -- only item story card type contains the category, and categories are ambiguous at best
+  // ...
+  // TODO: Add an argument to #equip to handle equipment slots, like: (#equip itemName as armor)
+  // -- This way, even if we can't tell if an item is a (shield, armor, etc), we will know how the character intends to use it
+  // -- now, for AC we need two or three slots:
+  // -- -- an armor slot for the base AC (only allows one item)
+  // -- -- a shield slot for the shield's AC bonus (only allows one)
+  // -- -- a misc slot for any other item's AC bonus (allows many)
+  // ...
+
+  // NOW, technically in D&D character's don't have equipment slots, but there are restrictions
+  // -- like off-hand attacks not having the character's base proficiency bonus on damage (normally)
+  // -- only one armor and one shield may confer a bonus (shields also take up a hand)
+  // -- two-handing and two-handed weapons (damage and hand occupation)
+  // -- And there is more...
+  // BUT, for now our character code can't handle any of these restrictions, nor does our #attack command
+  // -- Something to look into later down the line when we can handle more complexities
+  // SO, for now, we'll just use equipment slots as a makeshift implementation
+  // -- (1 weapon, 1 armor, 1 shield, and then misc items)
+
+  // ----
+
+  // Equip the item!
+  let text = `\n${character.name} equipped the item ${toTitleCase(invItem.itemName)}!\n`
+
+  // Slot types
+  // TODO: Add slots for shields, and accessories
+  switch (slotType.toLowerCase()) {
+    case "weapon":
+      let abilityValue = character.stats.find((element) => element.name.toLowerCase() == invItem.ability)
+      let ability = abilityValue == null ? 10 : abilityValue.value
+      let abilityModifier = Math.ceil((ability - 10) / 2)
+      let damageBase = invItem.dmgDice.replaceAll(/\+.*/gi, "")
+      let damageModifier = parseInt(invItem.dmgDice.replaceAll(/.*\+/gi, "")) + abilityModifier
+      character.damage = `${damageBase}+${damageModifier}`
+      character.proficiency = invItem.hitBonus + abilityModifier
+      character.meleeStat = invItem.ability
+      break;
+
+    case "armor":
+      let dexterityStat = character.stats.find((element) => element.name.toLowerCase() == "dexterity")
+      let dexterity = dexterityStat == null ? 10 : dexterityStat.value
+      let ac = parseInt(invItem.acBonus.replaceAll(/(?<=.)\+.*/gi, ""))
+      if (/.*\+dmax2/i.test(invItem.acBonus)) character.ac = ac + Math.max(2, Math.ceil((dexterity - 10) / 2))
+      else if (/.*\+d/i.test(invItem.acBonus)) character.ac = ac + Math.ceil((dexterity - 10) / 2)
+      else if (/\+.*/i.test(invItem.acBonus)) character.ac += ac
+      else character.ac = ac
+      break;
+  
+    default:
+      state.show = "none"
+      text = `\n${character.name} cannot equip the item ${toTitleCase(invItem.itemName)} as ${slotType}!\n`
+      break;
+  }
+  
+  text += "\n"
+  return [text, true]
+}
+
+function doSetMeleeStat(command) {
+  var character = getCharacter()
+  var arg0 = getArgument(command, 0)
   if (arg0 == null) {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
-  for (var i = 0; i < state.characters.length; i++) {
-    var character = state.characters[i]
-    if (character.name.toLowerCase() == arg0.toLowerCase()) {
-      state.characters.splice(i, 1)
-      state.show = "none"
-      return [`[Character ${character.name} removed]`, true]
-    }
+  character.meleeStat = arg0
+
+  state.show = "none"
+  return [`\nMelee Ability is set to ${arg0}\n`, true]
+}
+
+function doSetRangedStat(command) {
+  var character = getCharacter()
+  var arg0 = getArgument(command, 0)
+  if (arg0 == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
-  return [`[Character ${arg0} was not found]`, true]
-}
+  character.rangedStat = arg0
 
-function doClearSpells(command) {
-  var character = getCharacter()
-  character.spells = []
-  state.show = "clearSpells"
-  return [" ", true]
-}
-
-function doClearStats(command) {
-  var character = getCharacter()
-  character.stats = []
-  state.show = "clearStats"
-  return [" ", true]
-}
-
-function doClearSkills(command) {
-  var character = getCharacter()
-  character.skills = []
-  state.show = "clearSkills"
-  return [" ", true]
-}
-
-function doVersion(command) {
   state.show = "none"
-  return [`[${version}]`, true]
+  return [`\nRanged Ability is set to ${arg0}\n`, true]
+}
+
+function doSetAc(command) {
+  var character = getCharacter()
+  var arg0 = getArgument(command, 0)
+  if (arg0 == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+
+  if (isNaN(arg0)) {
+    return ["\n[Error: Not a number. See #help]\n", false]
+  }
+
+  var possessiveName = getPossessiveName(character.name)
+
+  character.ac = parseInt(arg0)
+
+  state.show = "none"
+  return [`\n[${possessiveName} armor class is set to ${character.ac}]\n`, true]
+}
+
+function doSetHealth(command) {
+  var character = getCharacter()
+  var arg0 = getArgument(command, 0)
+  if (arg0 == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+
+  var possessiveName = getPossessiveName(character.name)
+
+  character.health = arg0
+  character.health = clamp(character.health, 0, getHealthMax())
+
+  state.show = "none"
+  return [`\n[${possessiveName} health is set to ${character.health} health]\n`, true]
+}
+
+function doHeal(command) {
+  var character = getCharacter()
+  var arg0 = getArgument(command, 0)
+  if (arg0 == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+
+  var arg1 = getArgumentRemainder(command, 1)
+  
+  if (arg1 == null) {
+    if (character == null) {
+      return ["\n[Error: Character must be specified. See #help]\n", false]
+    }
+
+    var healing
+
+    var healingMatches = arg0.match(/\d*d\d+((\+|-)d+)?/gi)
+    if (healingMatches != null) healing = calculateRoll(healingMatches[0])
+    else {
+      healingMatches = arg0.match(/\d+/g)
+      if (healingMatches != null) healing = parseInt(healingMatches[healingMatches.length - 1])
+    }
+
+    if (healing == null) {
+      return ["\n[Error: Expected a number. See #help]\n", false]
+    }
+
+    var haveWord = character.name == "You" ? "have" : "has"
+
+    character.health += healing
+    character.health = clamp(character.health, 0, getHealthMax())
+
+    state.show = "none"
+    return [`\n[${character.name} ${haveWord} been healed for ${healing} hp to a total of ${character.health}]\n`, true]
+  } else {
+    var healing
+
+    var healingMatches = arg0.match(/\d*d\d+((\+|-)d+)?/gi)
+    if (healingMatches != null) healing = calculateRoll(healingMatches[0])
+    else {
+      healingMatches = arg0.match(/\d+/g)
+      if (healingMatches != null) healing = parseInt(healingMatches[0])
+    }
+
+    if (healing == null) {
+      return ["\n[Error: Expected a number. See #help]\n", false]
+    }
+
+    for (var character of state.characters) {
+      if (character.name.toLowerCase() == arg1.toLowerCase()) {
+        character.health += healing
+        character.health = clamp(character.health, 0, getHealthMax(character))
+        state.show = "none"
+        return [`\n[${toTitleCase(character.name)} has been healed for ${healing} hp to a total of ${character.health}]\n`, true]
+      }
+    }
+
+    return [`\n[Error: Could not find an enemy, ally, or character matching the name ${arg1}. Type #enemies, #allies, or #characters to see a list]`, false]
+  }
+}
+
+function doDamage(command) {
+  var character = getCharacter()
+  var arg0 = getArgument(command, 0)
+  if (arg0 == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+
+  var arg1 = getArgumentRemainder(command, 1)
+  
+  if (arg1 == null) {
+    if (character == null) {
+      return ["\n[Error: Character must be specified. See #help]\n", false]
+    }
+
+    var damage
+
+    var damageMatches = arg0.match(/\d*d\d+((\+|-)d+)?/gi)
+    if (damageMatches != null) damage = calculateRoll(damageMatches[0])
+    else {
+      damageMatches = arg0.match(/\d+/g)
+      if (damageMatches != null) damage = parseInt(damageMatches[damageMatches.length - 1])
+    }
+
+    if (damage == null) {
+      return ["\n[Error: Expected a number. See #help]\n", false]
+    }
+
+    var haveWord = character.name == "You" ? "have" : "has"
+
+    character.health -= damage
+    character.health = clamp(character.health, 0, getHealthMax())
+
+    state.show = "none"
+    return [`\n[${character.name} ${haveWord} been damaged for ${damage} hp with ${character.health} remaining] ${character.health == 0 ? " You are unconscious" : ""}\n`, true]
+  } else {
+    var damage
+
+    var damageMatches = arg0.match(/\d*d\d+((\+|-)d+)?/gi)
+    if (damageMatches != null) damage = calculateRoll(damageMatches[0])
+    else {
+      damageMatches = arg0.match(/\d+/g)
+      if (damageMatches != null) damage = parseInt(damageMatches[0])
+    }
+
+    if (damage == null) {
+      return ["\n[Error: Expected a number. See #help]\n", false]
+    }
+
+    for (var character of state.characters) {
+      if (character.name.toLowerCase() == arg1.toLowerCase()) {
+        character.health = Math.max(0, character.health - damage)
+        state.show = "none"
+        return [`\n[${toTitleCase(character.name)} has been damaged for ${damage} hp with ${character.health} remaining] ${character.health == 0 ? " " + toTitleCase(character.name) + " is unconcious!" : ""}\n`, true]
+      }
+    }
+    
+    return [`\n[Error: Could not find an enemy, ally, or character matching the name ${arg1}. Type #enemies, #allies, or #characters to see a list]`, false]
+  }
+}
+
+function doHealParty(command) {
+  var arg0 = getArgument(command, 0)
+  if (arg0 == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+
+  var healing
+  var healingMatches = arg0.match(/\d*d\d+((\+|-)d+)?/gi)
+  if (healingMatches != null) healing = calculateRoll(healingMatches[0])
+  else {
+    healingMatches = arg0.match(/\d+/g)
+    if (healingMatches != null) healing = parseInt(healingMatches[healingMatches.length - 1])
+  }
+
+  if (healing == null) {
+    return ["\n[Error: Expected a number. See #help]\n", false]
+  }
+
+  var text = `\n[All characters have been healed by ${healing}.]\n`
+  state.characters.forEach(function(character) {
+    var max = getHealthMax(character)
+    character.health += healing
+    if (character.health > max) character.health = max
+    text += `[${toTitleCase(character.name)}: ${character.health} / ${max} health]\n`
+  })
+  state.show = "none"
+  return [text, true]
+}
+
+function doAttack(command) {
+  const advantageNames = ["normal", "advantage", "disadvantage"]
+  const difficultyNames = ["impossible", "extreme", "hard", "medium", "easy", "effortless", "veryeasy", "very easy", "automatic", "auto"]
+  const difficultyScores = [30, 25, 20, 15, 10, 5, 5, 5, 0, 0]
+  var character = getCharacter()
+  var textIndex = 3
+  var missWord = character.name == "You" ? "miss" : "misses"
+  var tryWord = character.name == "You" ? "try" : "tries"
+  var usingDefaultDifficulty = false
+
+  var statText = null
+  statText = searchArgument(command, /ranged/gi, textIndex - 1)
+  if (statText == null) {
+    statText = character.meleeStat
+    textIndex--
+  } else if (statText.toLowerCase() == "ranged") statText = character.rangedStat
+  statText = toTitleCase(statText)
+  
+  var advantageText = searchArgument(command, arrayToOrPattern(advantageNames), textIndex - 1)
+  if (advantageText == null) {
+    advantageText = "normal"
+    textIndex--
+  }
+  else advantageText = advantageText.toLowerCase()
+
+  const difficultyPatternNames = [...new Set(difficultyNames)]
+  difficultyPatternNames.push("\\d+")
+  var difficultyText = searchArgument(command, arrayToOrPattern(difficultyPatternNames), textIndex - 1)
+  if (difficultyText == null) {
+    difficultyText = state.defaultDifficulty
+    usingDefaultDifficulty = true
+    textIndex--
+  }
+  else difficultyText = difficultyText.toLowerCase()
+
+  var targetText = getArgumentRemainder(command, textIndex)
+  if (targetText == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+  var toMatches = targetText.match(/^to\s+/gi)
+  if (toMatches != null) targetText = targetText.substring(toMatches[0].length)
+  targetText = targetText.replaceAll(/((\.)|(!))\s*$/g, "")
+
+  var die1 = calculateRoll("1d20")
+  var die2 = calculateRoll("1d20")
+  var score = advantageText == "advantage" ? Math.max(die1, die2) : advantageText == "disadvantage" ? Math.min(die1, die2) : die1
+
+  var modifier = 0
+
+  var stat = character.stats.find(x => x.name.toLowerCase() == statText.toLowerCase())
+  modifier = character.proficiency
+  if (stat != null) modifier += getModifier(stat.value)
+
+  var targetRoll = 15
+  if (/^\d+$/.test(difficultyText)) targetRoll = difficultyText
+  else {
+    var targetIndex = difficultyNames.indexOf(difficultyText)
+    if (targetIndex >= 0 && targetIndex < difficultyNames.length) targetRoll = difficultyScores[targetIndex]
+  }
+
+  var damage
+  if (/^\d*d\d+((\+|-)d+)?$/gi.test(character.damage)) damage = score == 20 ? calculateRoll(character.damage) + calculateRoll(character.damage) : calculateRoll(character.damage)
+  else damage = parseInt(character.damage)
+
+  var damageMatches = targetText.match(/\d*d\d+((\+|-)d+)?/gi)
+  if (damageMatches != null) damage = score == 20 ? calculateRoll(damageMatches[0]) + calculateRoll(damageMatches[0]) : calculateRoll(damageMatches[0])
+  else {
+    damageMatches = targetText.match(/\d+/g)
+    if (damageMatches != null) damage = score == 20 ? parseInt(damageMatches[damageMatches.length - 1]) * 2 : parseInt(damageMatches[damageMatches.length - 1])
+  }
+
+  var dieText = advantageText == "advantage" || advantageText == "disadvantage" ? `${advantageText}(${die1},${die2})` : die1
+
+  state.show = "prefix"
+  
+  if (targetRoll == 0) state.prefix = ""
+  else if (score == 20) state.prefix = `\n[Target AC: ${targetRoll} Attack roll: ${dieText}]\n`
+  else if (score == 1) state.prefix = `\n[Target AC: ${targetRoll} Attack roll: ${dieText}]\n`
+  else if (modifier != 0) state.prefix = `\n[Target AC: ${targetRoll} Attack roll: ${dieText}${modifier > 0 ? "+" + modifier : modifier}=${score + modifier}. ${score + modifier >= targetRoll ? "Success!" : "Failure!"}]\n`
+  else state.prefix = `\n[Target AC: ${targetRoll} Attack roll: ${dieText}. ${score >= targetRoll ? "Success!" : "Failure!"}]\n`
+
+  var text
+  if (score + modifier >= targetRoll) text = `\n${toTitleCase(character.name)} successfully hit ${targetText}!`
+  else text = `\n${toTitleCase(character.name)} ${tryWord} to hit ${targetText}. ${toTitleCase(character.name)} ${missWord}!`
+
+  if (score == 20) text += " Critical success! The attack is exceptionally damaging!"
+  else if (score == 1) text += " Critical failure! The attack missed in a spectacular way!"
+
+  if (targetRoll > 0 && (score + modifier >= targetRoll || score == 20)) text += addXpToAll(Math.floor(state.autoXp * clamp(targetRoll, 1, 20) / 20))
+  return [text + "\n", true]
+}
+
+function doBlock(command) {
+  if (state.blockCharacter == null) {
+    return ["\n[Error: No attack to block. See #help]\n", false]
+  }
+
+  var character = state.characters.find(x => x.name.toLowerCase() == state.blockCharacter.name.toLowerCase())
+  if (character == null) {
+    return ["\n[Error: Character no longer exists. See #help]\n", false]
+  }
+
+  character.health = state.blockPreviousHealth
+
+  var properName = toTitleCase(character.name)
+  state.show = "prefix"
+  state.prefix = `[${properName} has ${character.health} health]`
+  return [`\nHowever, the damage to ${properName} was blocked!\n`, true]
 }
 
 function doSetDamage(command) {
@@ -2464,25 +2472,14 @@ function doSetProficiency(command) {
   return [`\n[${possessiveName} proficiency is set to ${character.hitModifier}]\n`, true]
 }
 
-function doReset(command) {
-  state.notes = []
-  state.characters = []
-  state.defaultDifficulty = null
-  state.autoXp = null
-  state.day = null
-
-  state.show = "reset"
-  return [" ", true]
-}
-
-function doHelp(command) {
-  const helpType = getArgument(command, 0)
-  if (helpType) state.show = "help "
-  else state.show = "help"
-  return [" ", true]
-}
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////// DO NOT TOUCH - DEVELOPER TEST ZONE! //////////////////////////////////////////////
 
 // If you want to develop; Replace with DEVELOPER TEST ZONE from TestZone.js
 function doTest(command) {

@@ -22,7 +22,7 @@ Hashtag DnD is a scripted AI Dungeon scenario that gives you a variety of tools 
 #### Enhanced Features
 - Story Card Encounters         (Encounters are now sourced from story cards, and can be player generated!)
 - Story Card Presets            (Character presets are now sourced from story cards, and can be user generated!)
-- Overhauled Items              (Items are now sourced from story cards, and can be user generated!)
+- Story Card Items              (Items are now sourced from story cards, and can be user generated!)
 #### Added Features
 - Thematic Loot Tables          (Reward command now uses thematic story card loot tables, which can be user generated!)
 #### Planned Features
@@ -39,7 +39,7 @@ Hashtag DnD is a scripted AI Dungeon scenario that gives you a variety of tools 
 
 ## Original Features:
 - Fully working inventory system, loot drops, <s>and item/spell shops</s>
-- Hit points, turn-based battles, and a focus on strategic combat
+- <s>Hit points, turn-based battles, and a focus on strategic combat</s>
 - Skill/Ability based gameplay guarantees a challenge at every turn
 - Advanced dice rolling syntax allows you to set the precise odds
 - Unlimited party size with each character having their own inventory, stats, and biographies

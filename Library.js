@@ -6,8 +6,15 @@ const version = "Hashtag DnD v0.7.0 by Raeleus / Lite Edition by SirSheeply"
 // Checkout the Guidebook examples to get an idea of other ways you can use scripting
 // https://help.aidungeon.com/scripting
 
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////// GENERAL CASE LIBRARY FUNCTIONS ////////////////////////////////////////////////
 
 function getRandomInteger(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -22,43 +29,16 @@ function getRandom(seed) {
   return x - Math.floor(x)
 }
 
-function sanitizeText(text) {
-  if (/^\s*>.*says? ".*/.test(text)) {
-    text = text.replace(/^\s*>\s/, "")
-    text = text.replace(/says? "/, "")
-    text = text.replace(/"\n$/, "")
-    if (text.split('"').length - 1 % 2 == 1)  text += '"'
-  } else if (/^\s*>\s.*/.test(text)) {
-    text = text.replace(/^\s*>\s/, "")
-    text = text.replace(/\.?\n$/, "")
-  }
-  
-  return text
-}
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////// PATTERN MATCHING & ARGUMENT PARSING /////////////////////////////////////////////
 
-function getCharacterName(rawText) {
-  var matches = rawText.match(/(?<=\s+> ).*(?=(\s+#)|( says? "))/)
-  if (matches != null && matches[0].trim() != "") {
-    return matches[0].trim()
-  }
-
-  matches = rawText.match(/.*(?= #)/)
-  if (matches != null && matches[0].trim() != "") {
-    return matches[0].trim()
-  }
-
-  return null
-}
-
-function getPossessiveName(name) {
-  var possesiveName = "Your"
-  if (name != "You") {
-    possesiveName = name
-    if (name.endsWith("s")) possesiveName += "'"
-    else possesiveName += "'s"
-  }
-  return possesiveName
-}
+const argumentPattern = /("[^"\\]*(?:\\[\S\s][^"\\]*)*"|'[^'\\]*(?:\\[\S\s][^'\\]*)*'|\/[^\/\\]*(?:\\[\S\s][^\/\\]*)*\/[gimy]*(?=\s|$)|(?:\\\s|\S)+)/g
 
 /**
  * Returns the command keyword in a command string
@@ -71,8 +51,6 @@ function getCommandName(command) {
   if (args.length == 0) return null
   return args[0]
 }
-
-const argumentPattern = /("[^"\\]*(?:\\[\S\s][^"\\]*)*"|'[^'\\]*(?:\\[\S\s][^'\\]*)*'|\/[^\/\\]*(?:\\[\S\s][^\/\\]*)*\/[gimy]*(?=\s|$)|(?:\\\s|\S)+)/g
 
 /**
  * Returns command split into array
@@ -167,6 +145,15 @@ function statsToOrPattern(stats) {
   return arrayToOrPattern(array)
 }
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////// DICE CALCULATIONS & ROLLING SYSTEM //////////////////////////////////////////////
+
 function getDice(rolltext) {
   var matches = rolltext.match(/\d+(?=d)/)
   if (matches != null) {
@@ -222,76 +209,14 @@ function calculateRoll(rolltext) {
   return Math.max(0, score)
 }
 
-function getCharacter(characterName, allowFallback = true) {
-  if (characterName == null && allowFallback) characterName = state.characterName
-  if (characterName == null) return null
-  return state.characters.find(element => element.name.toLowerCase() == characterName.toLowerCase())
-}
-
-function hasCharacter(characterName) {
-  return getCharacter(characterName) != null
-}
-
-function createCharacter(name) {
-  var existingCharacter = getCharacter(name)
-  if (existingCharacter != null) {
-    existingCharacter.name = name
-    existingCharacter.className = "adventurer"
-    existingCharacter.summary = "An auto generated character. Use #create to create this character"
-    existingCharacter.inventory = []
-    existingCharacter.spells = []
-    existingCharacter.stats = []
-    existingCharacter.spellStat = null
-    existingCharacter.meleeStat = null
-    existingCharacter.rangedStat = null
-    existingCharacter.skills = []
-    existingCharacter.experience = 0
-    existingCharacter.health = 10
-    existingCharacter.ac = 10
-    return existingCharacter
-  }
-
-  var character = {
-    name: name,
-    className: "adventurer",
-    summary: "An auto generated character. Use #create to create this character",
-    inventory: [],
-    spells: [],
-    stats: [],
-    spellStat: null,
-    meleeStat: null,
-    rangedStat: null,
-    skills: [],
-    experience: 0,
-    health: 10,
-    ac: 10
-  }
-  state.characters.push(character)
-  return character
-}
-
-function copyCharacter(fromCharacter, toCharacter) {
-  if (toCharacter != null && fromCharacter != null) {
-    toCharacter.className = fromCharacter.className
-    toCharacter.summary = fromCharacter.summary
-    toCharacter.inventory = [...new Set(fromCharacter.inventory)]
-    toCharacter.spells = [...new Set(fromCharacter.spells)]
-    toCharacter.stats = [...new Set(fromCharacter.stats)]
-    toCharacter.spellStat = fromCharacter.spellStat
-    toCharacter.meleeStat = fromCharacter.meleeStat
-    toCharacter.rangedStat = fromCharacter.rangedStat
-    toCharacter.skills = [...new Set(fromCharacter.skills)]
-    toCharacter.experience = fromCharacter.experience
-    toCharacter.health = fromCharacter.health
-    toCharacter.ac = fromCharacter.ac
-    return toCharacter
-  }
-}
-
-function deleteCharacter(name) {
-  var index = state.characters.findIndex((element) => element.name == name)
-  state.characters.splice(index, 1)
-}
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////// ENCOUNTER SYSTEM //////////////////////////////////////////////////////
 
 function createEncounter(listName) {
   // Defualt Encounter
@@ -366,7 +291,120 @@ function createEncounter(listName) {
   return encounter
 }
 
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////// CHARACTER SYSTEM & MANIPULATION ///////////////////////////////////////////////
+
 const levelSplits = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000]
+
+function getCharacter(characterName, allowFallback = true) {
+  if (characterName == null && allowFallback) characterName = state.characterName
+  if (characterName == null) return null
+  return state.characters.find(element => element.name.toLowerCase() == characterName.toLowerCase())
+}
+
+function hasCharacter(characterName) {
+  return getCharacter(characterName) != null
+}
+
+function createCharacter(name) {
+  var existingCharacter = getCharacter(name)
+  if (existingCharacter != null) {
+    existingCharacter.name = name
+    existingCharacter.className = "adventurer"
+    existingCharacter.summary = "An auto generated character. Use #create to create this character"
+    existingCharacter.inventory = []
+    existingCharacter.spells = []
+    existingCharacter.stats = []
+    existingCharacter.spellStat = null
+    existingCharacter.meleeStat = null
+    existingCharacter.rangedStat = null
+    existingCharacter.skills = []
+    existingCharacter.experience = 0
+    existingCharacter.health = 10
+    existingCharacter.ac = 10
+    return existingCharacter
+  }
+
+  var character = {
+    name: name,
+    className: "adventurer",
+    summary: "An auto generated character. Use #create to create this character",
+    inventory: [],
+    spells: [],
+    stats: [],
+    spellStat: null,
+    meleeStat: null,
+    rangedStat: null,
+    skills: [],
+    experience: 0,
+    health: 10,
+    ac: 10
+  }
+  state.characters.push(character)
+  return character
+}
+
+function copyCharacter(fromCharacter, toCharacter) {
+  if (toCharacter != null && fromCharacter != null) {
+    toCharacter.className = fromCharacter.className
+    toCharacter.summary = fromCharacter.summary
+    toCharacter.inventory = [...new Set(fromCharacter.inventory)]
+    toCharacter.spells = [...new Set(fromCharacter.spells)]
+    toCharacter.stats = [...new Set(fromCharacter.stats)]
+    toCharacter.spellStat = fromCharacter.spellStat
+    toCharacter.meleeStat = fromCharacter.meleeStat
+    toCharacter.rangedStat = fromCharacter.rangedStat
+    toCharacter.skills = [...new Set(fromCharacter.skills)]
+    toCharacter.experience = fromCharacter.experience
+    toCharacter.health = fromCharacter.health
+    toCharacter.ac = fromCharacter.ac
+    return toCharacter
+  }
+}
+
+function deleteCharacter(name) {
+  var index = state.characters.findIndex((element) => element.name == name)
+  state.characters.splice(index, 1)
+}
+
+function getCharacterName(rawText) {
+  var matches = rawText.match(/(?<=\s+> ).*(?=(\s+#)|( says? "))/)
+  if (matches != null && matches[0].trim() != "") {
+    return matches[0].trim()
+  }
+
+  matches = rawText.match(/.*(?= #)/)
+  if (matches != null && matches[0].trim() != "") {
+    return matches[0].trim()
+  }
+
+  return null
+}
+
+function getPossessiveName(name) {
+  var possesiveName = "Your"
+  if (name != "You") {
+    possesiveName = name
+    if (name.endsWith("s")) possesiveName += "'"
+    else possesiveName += "'s"
+  }
+  return possesiveName
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////// LEVELS, STATS, & SKILLS ///////////////////////////////////////////////////
 
 function getLevel(experience) {
   if (experience < 0) experience = 0
@@ -416,25 +454,28 @@ function getModifier(statValue) {
   return Math.floor((statValue - 10) / 2)
 }
 
-// The ultimate story cards retrieval for any cards of X type
-// exactType parameter allows us to choose whether to match the type exactly or just includes type as a substring
-function getStoryCardListByType(listType, exactType=true) {
-  if (exactType) {
-    return storyCards.filter((element) => (element.type.toLowerCase() == listType.toLowerCase()));
-  }
-  return storyCards.filter((element) => (element.type.toLowerCase().includes(listType.toLowerCase())));
-}
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////// TEXT CONVERSION & MANIPULATION ////////////////////////////////////////////////
 
-// The ultimate story card retrieval for any cards of X title
-// exactTitle parameter allows us to choose whether to match the title exactly or by inclusion
-function getStoryCardListByTitle(listTitle, exactTitle = true) {
-  const normalizedTitle = singularize(listTitle, true).toLowerCase()
-  if (exactTitle) {
-    return storyCards.filter((element) => singularize(element.title, true).toLowerCase() === normalizedTitle )
+function sanitizeText(text) {
+  if (/^\s*>.*says? ".*/.test(text)) {
+    text = text.replace(/^\s*>\s/, "")
+    text = text.replace(/says? "/, "")
+    text = text.replace(/"\n$/, "")
+    if (text.split('"').length - 1 % 2 == 1)  text += '"'
+  } else if (/^\s*>\s.*/.test(text)) {
+    text = text.replace(/^\s*>\s/, "")
+    text = text.replace(/\.?\n$/, "")
   }
-  return storyCards.filter((element) => singularize(element.title, true).toLowerCase().includes(normalizedTitle) )
+  
+  return text
 }
-
 
 function singularize(word, makeSingle = true) { //TODO: Changed to default true from false, need to check all usage
   const pluralRules = {
@@ -560,14 +601,25 @@ function compareWithoutPlural(searchForThis, searchInThis, exactMatch=true) {
   return singularize(searchInThis.toLowerCase()).includes(singularize(searchForThis.toLowerCase()))
 }
 
+/**********| clamp - 
+* Restricts a number to be within a specified range.
+* @function
+* @param {number} num - The value to clamp.
+* @param {number} min - The lower bound of the range.
+* @param {number} max - The upper bound of the range.
+* @returns {number} The clamped value, guaranteed to be between min and max (inclusive).
+***********/
 function clamp(num, min, max) {
-  return num <= min 
-    ? min 
-    : num >= max 
-      ? max 
-      : num
+  return num <= min ? min :
+         num >= max ? max : num
 }
 
+/**********| toTitleCase - 
+* Converts a string into title case.
+* @function
+* @param {string} [str] A str to converts.
+* @returns {string} str with title case.
+***********/
 function toTitleCase(str) {
   return str.replace(
     /\w\S*/g,
@@ -575,12 +627,30 @@ function toTitleCase(str) {
   );
 }
 
-function stripPunctuation(str) {
-  return str.replaceAll(/((\.)|(!))\s*$/g, "")
-}
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////// STORY CARDS MANAGEMENT ////////////////////////////////////////////////////
 
-/// STORY CARD CODE
-
+/**********| buildStoryCard - 
+ * Creates and inserts a story card into the `storyCards` array.
+ * - Accepts either individual parameters or a single object containing the
+ * story card properties. If `keys` is not provided, it defaults to a trimmed
+ * version of `title`.
+ * 
+ * @function
+ * @param {string|object} title - Card title, or an object containing all card properties: { title, entry, type, keys, description, insertionIndex }.
+ * @param {string} [entry=""] - The main text or content of the story card.
+ * @param {string} [type=""] - The type/category of the card.
+ * @param {string} [keys=""] - Search or trigger keys for the card.
+ * @param {string} [description=""] - Additional descriptive text for the card.
+ * @param {number} [insertionIndex=storyCards.length] - Position in `storyCards` where the new card is inserted.
+ * @returns {object} The newly created story card object.
+ */
 function buildStoryCard(title, entry = "", type = "", keys = "", description = "", insertionIndex = storyCards.length) {
   // If passing an object, destructure values
   if (typeof title === "object" && title !== null && "title" in title) {
@@ -588,7 +658,7 @@ function buildStoryCard(title, entry = "", type = "", keys = "", description = "
   }
 
   // Default key builder — keep only if you need it
-  if (!keys) keys = buildKeys("", title);
+  if (!keys) keys = ("" || title || "").trim();
 
   const card = { type, title, keys, entry, description };
 
@@ -601,7 +671,189 @@ function buildStoryCard(title, entry = "", type = "", keys = "", description = "
   return card;
 }
 
-function buildKeys(keys, key) {
-  // Super simple version — just return cleaned key string
-  return (keys || key || "").trim();
+/**********| getStoryCardListByType - 
+* The ultimate story card retrieval for any cards of X title
+* @function
+* @param {string} [listType] Type string to search story cards for.
+* @param {boolean} [exactType] Whether to search for exact type matches, or types that include the string arg.
+* @returns {array} An array containing all the story cards that match the type string (given above).
+***********/
+function getStoryCardListByType(listType, exactType=true) {
+  if (exactType) {
+    return storyCards.filter((element) => (element.type.toLowerCase() == listType.toLowerCase()));
+  }
+  return storyCards.filter((element) => (element.type.toLowerCase().includes(listType.toLowerCase())));
 }
+
+/**********| getStoryCardListByTitle -
+* The ultimate story card retrieval for any cards of X title
+* @function
+* @param {string} [listTitle] Title string to search story cards for.
+* @param {boolean} [exactTitle] Whether to search for exact title matches, or titles that include the string arg.
+* @returns {array} An array containing all the story cards that match the title string (given above).
+***********/
+function getStoryCardListByTitle(listTitle, exactTitle = true) {
+  const normalizedTitle = singularize(listTitle, true).toLowerCase()
+  if (exactTitle) {
+    return storyCards.filter((element) => singularize(element.title, true).toLowerCase() === normalizedTitle )
+  }
+  return storyCards.filter((element) => singularize(element.title, true).toLowerCase().includes(normalizedTitle) )
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////// ITEM & INVENTORY MANAGEMENT /////////////////////////////////////////////////
+
+/**********| This function adds, or increases, an item in the character's inventory
+* @function
+* @param {character} [character] The character whose inventory is being manipulated
+* @param {item} [newItem] The item to be added or increased
+* @param {number} [quantity] The quantity of the item attempting to add
+* @returns {item} Returns the inventory item just added or increased
+***********/
+function putItemIntoInventory(character, newItem, quantityOverride=null)
+{
+  // Check story cards (create one if needed), and make sure it's a complete item
+  newItem = checkItemCards(newItem, true)
+  // Has to be done after checkItemCards, so that new cards don't have the override quantity
+  newItem.quantity = (quantityOverride ?? newItem.quantity) // Enforce override quantity
+  // Update inventory
+  const index = character.inventory.findIndex((element) => compareWithoutPlural(newItem.itemName, element.itemName))
+  if (index == -1) {
+    character.inventory.push(newItem)
+    return character.inventory[character.inventory.length-1]
+  }
+  character.inventory[index].quantity += newItem.quantity
+  return character.inventory[index]
+}
+
+/**********| ITEM STORY CARDS!
+* 1) Check the item story cards to see if the item exists!
+* 2) If the item exists, replace remaining default values with item card values!
+* 3) If the item does not exist, create a story card for one.
+* @function
+* @param {item} [newItem] The item to be checked.
+* @returns {item} Returns the newItem with updated details.
+***********/
+function checkItemCards(newItem, buildCard=false) {
+  const itemName = singularize(newItem.itemName).toLowerCase()
+  const itemCards = getStoryCardListByTitle(itemName, true)
+  const itemCard = itemCards.length > 0 ? itemCards[0] : null;
+  if (itemCard) {
+    const existingDetails = JSON.parse(itemCard.description)
+    for (const key in existingDetails) {
+      if (newItem[key] === defaultItemDetails[key] && existingDetails[key] !== undefined) {
+        newItem[key] = existingDetails[key]
+      }
+    }
+  } else {
+    // Make sure newItem is a complete item
+    for (const key in defaultItemDetails) {
+      if (newItem[key] === undefined) {
+        newItem[key] = defaultItemDetails[key]
+      }
+    }
+    if (buildCard) {
+      buildStoryCard(newItem.itemName, "", "Item - Misc - Uncommon", "", JSON.stringify(newItem))
+    } else {
+      return null // null for error
+    }
+  }
+  return newItem
+}
+
+/**********| This function removes/reduces items in the character's inventory
+* @function
+* @param {character} [character] The character whose inventory is being manipulated
+* @param {string} [itemName] The name of the item to be removed
+* @param {number} [quantity] The quantity of the item attempting to remove
+* @returns {[item, number]} [Item removed (or null), quantity removed]
+***********/
+function removeItemFromInventory(character, itemName, quantity) {
+  const invIndex = character.inventory.findIndex((element) => compareWithoutPlural(itemName, element.itemName))
+  if (invIndex === -1) {
+    return [null, quantity] // Cannot find index of itemName in inventory
+  }
+  const invItem = character.inventory[invIndex]
+  const invItemQty = invItem.quantity
+  if (quantity >= invItemQty) {
+    invItem.quantity = 0 // Remaining will be exactly 0
+    character.inventory.splice(invIndex, 1) // Remove item completely
+    return [invItem, invItemQty]
+  }
+  invItem.quantity -= quantity
+  return [invItem, quantity]
+}
+
+/**********| parseQuantityAndName - 
+ * - Parses a quantity and item name from an argument.
+ * - If not a number, quantity defaults to 1, and the argument at quantityIndex is the item name.
+ * - Accepts non-numeric quantity inputs like "all", "a", "an".
+ * - Will not return a number as the name, name will be null if not found or numeric.
+ * 
+ * @function
+ * @param {string} argQuantity - The suspected argument containing the quantity
+ * @param {string} argName - The suspected argument containing the argName
+ * @param {boolean} handleAllCase - Determines if cases like "all" or "every" need to be check for the quntity.
+ * @param {boolean} handleArticleCase - Determines if cases like "a" or "the" need to be check for the quntity.
+ * @returns {[number,string]} - Tuple containing the quantity (number) and the name (string).
+ ***********/
+function parseQuantityAndName(argQuantity, argName, handleAlls=true, handleArticles=true) {
+  let quantity = 1
+  let name = argName ?? null
+  // Handle case where quantity is a number
+  if (!isNaN(argQuantity)) {
+    quantity = Number(argQuantity)
+  
+  // Handle cases where quantity might be "all" or "every"
+  } else if (allSynonyms.includes(argQuantity) && handleAlls) {
+    quantity = Number.MAX_SAFE_INTEGER
+
+  // Handle cases where quantity might be "a", "an", "the"
+  } else if (articleSynonyms.includes(argQuantity) && handleArticles) {
+    // quantity = 1 // defaults
+  }
+
+  // Handle case where quantity was not valid
+  else {
+    name = argQuantity ?? null // Might be the name
+    return [quantity, name] // ignore argName
+  }
+  
+  // Handle case after valid number
+  name = isNaN(name) ? name : null // Can't be a number
+  return [quantity, name]
+}
+
+/**********| showInventory - 
+* Returns a textual representation/list of the character's inventory.
+* @function
+* @param {character} [character] Character whose inventory to display.
+* @param {string} [dotPointChar] Style of dot point for listing items, defaults to double-space.
+* @returns {string} A textual representation/list of the character's inventory.
+***********/
+function showInventory(character, dotPointChar=" ") {
+  text = ""
+  if (character.inventory.length > 0) {
+    character.inventory.forEach(item => {
+      text += `${dotPointChar} ${item.quantity}x ${toTitleCase(item.itemName)}\n`
+    });
+  } else {
+    text += `* Inventory is empty!\n`
+  }
+  return text
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
