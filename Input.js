@@ -109,25 +109,25 @@ const commandRegistry = [
     // doAttack and doBlock, may be broken in the meantime
 
     // <><> Character Actions in Combat
-    { handler: doAttack,                synonyms: ["attack", "strike", "ambush", "assault", "fireat", "fireon"] },
-    { handler: doBlock,                 synonyms: ["block", "parry", "nullify", "invalidate"] },
+    // { handler: doAttack,                synonyms: ["attack", "strike", "ambush", "assault", "fireat", "fireon"] },
+    // { handler: doBlock,                 synonyms: ["block", "parry", "nullify", "invalidate"] },
 
     // <><> TTRPG Mechanics
     { handler: doEncounter,             synonyms: ["encounter", "startencounter"] }, //TODO: Make like thematic loot tables (no need for entity creation anymore)
 
     // <><> Health & Damage
-    { handler: doHeal,                  synonyms: ["heal", "mend", "restore"] },
-    { handler: doDamage,                synonyms: ["damage", "hurt", "harm", "injure"] },
-    { handler: doHealParty,             synonyms: ["healparty", "healcharacters"] },
+    // { handler: doHeal,                  synonyms: ["heal", "mend", "restore"] },
+    // { handler: doDamage,                synonyms: ["damage", "hurt", "harm", "injure"] },
+    // { handler: doHealParty,             synonyms: ["healparty", "healcharacters"] },
     { handler: doRest,                  synonyms: ["rest", "longrest", "shortrest", "sleep", "nap"] },
 
     // <><> Character Combat Values
-    { handler: doSetHealth,             synonyms: ["sethealth"] },
-    { handler: doSetMeleeStat,          synonyms: ["setmeleestat", "setmeleestatistic", "setmeleeability", "changemeleestat", "changemeleestatistic", "changemeleeability"] },
-    { handler: doSetRangedStat,         synonyms: ["setrangedstat", "setrangedstatistic", "setrangedability", "changerangedstat", "changerangedstatistic", "changerangedability"] },
-    { handler: doSetAc,                 synonyms: ["setac", "setarmorclass", "ac", "armorclass"] },
-    { handler: doSetDamage,             synonyms: ["setdamage"] },
-    { handler: doSetProficiency,        synonyms: ["setproficiency", "setweaponproficiency"] },
+    // { handler: doSetHealth,             synonyms: ["sethealth"] },
+    // { handler: doSetMeleeStat,          synonyms: ["setmeleestat", "setmeleestatistic", "setmeleeability", "changemeleestat", "changemeleestatistic", "changemeleeability"] },
+    // { handler: doSetRangedStat,         synonyms: ["setrangedstat", "setrangedstatistic", "setrangedability", "changerangedstat", "changerangedstatistic", "changerangedability"] },
+    // { handler: doSetAc,                 synonyms: ["setac", "setarmorclass", "ac", "armorclass"] },
+    // { handler: doSetDamage,             synonyms: ["setdamage"] },
+    // { handler: doSetProficiency,        synonyms: ["setproficiency", "setweaponproficiency"] },
     { handler: doEquip,                 synonyms: ["equip", "arm", "wear"] }
 ];
 
@@ -2477,7 +2477,7 @@ function doReset(command) {
 
 function doHelp(command) {
   const helpType = getArgument(command, 0)
-  if (helpType) state.show = "help "+helpType
+  if (helpType) state.show = "help "
   else state.show = "help"
   return [" ", true]
 }
