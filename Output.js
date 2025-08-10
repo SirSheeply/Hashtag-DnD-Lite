@@ -220,11 +220,7 @@ function DNDHash_output(text) {
       }
 
       text += `-INVENTORY-\n`
-      
-      character.inventory.forEach(function(x) {
-        text += `* ${x.quantity} ${toTitleCase(singularize(x.itemName, x.quantity == 1))}\n`
-      })
-
+      text += showInventory(character, "-")
       text += `----\n\n`
 
       text += `Summary: ${character.summary}\n\n`
@@ -244,15 +240,9 @@ function DNDHash_output(text) {
       text += "[Notes cleared successfully]\n"
       break
     case "inventory":
-      text += `*** ${possessiveName.toUpperCase()} INVENTORY ***`
-      if (character.inventory.length > 0) {
-        character.inventory.forEach(function(x) {
-          text += `\n* ${x.quantity} ${toTitleCase(singularize(x.itemName, x.quantity == 1))}`
-        })
-      } else {
-        text += `\n${possessiveName} inventory is empty!`
-      }
-      text += "\n******************\n\n"
+      text += `*** ${possessiveName.toUpperCase()} INVENTORY ***\n`
+      text += showInventory(character, "*")
+      text += "******************\n\n"
       break
     case "characters":
       text += `*** CHARACTERS ***`
@@ -386,6 +376,25 @@ function DNDHash_output(text) {
   }
 
   state.show = null
+  return text
+}
+
+/**********| showInventory - 
+* Returns a textual representation/list of the character's inventory.
+* @function
+* @param {character} [character] Character whose inventory to display.
+* @param {string} [dotPointChar] Style of dot point for listing items, defaults to double-space.
+* @returns {string} A textual representation/list of the character's inventory.
+***********/
+function showInventory(character, dotPointChar=" ") {
+  text = ""
+  if (character.inventory.length > 0) {
+    character.inventory.forEach(item => {
+      text += `${dotPointChar} ${item.quantity}x ${toTitleCase(item.itemName)}\n`
+    });
+  } else {
+    text += `* Inventory is empty!\n`
+  }
   return text
 }
 

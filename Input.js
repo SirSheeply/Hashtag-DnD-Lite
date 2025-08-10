@@ -80,7 +80,7 @@ const commandRegistry = [
     { handler: doDrop,                  synonyms: ["remove", "discard", "drop", "leave", "dispose", "toss", "throw", "throwaway", "trash", "donate", "eat", "consume", "use", "drink", "pay", "lose"] },
     { handler: doGive,                  synonyms: ["give", "handover", "hand", "gift"] },
 
-    { handler: doRenameItem,            synonyms: ["renameitem", "renameobject", "renamegear", "renameequipment"] },
+    { handler: doRenameItem,            synonyms: ["rename", "renameitem", "renameobject", "renamegear", "renameequipment"] },
     { handler: doInventory,             synonyms: ["inv", "inventory", "backpack", "gear", "showinv", "showinventory", "viewinventory", "viewinv"] },
     { handler: doClearInventory,        synonyms: ["clearinventory", "clearinv", "emptyinventory", "emptybackpack", "clearbackpack", "emptygear", "cleargear"] },
     { handler: doReward,                synonyms: ["reward"] },
@@ -2873,34 +2873,58 @@ function doSell(command) {
   return [text, success]
 }
 
+const HelpDialog_doRenameItem = `
+#renameitem original_name new_name
+-- Renames the item indicated by original_name to the new_name.
+-- The quantity remains the same.
+-- Quotes are necessary for names.
+`
+/**********| doRenameItem - 
+* Renames the item indicated by original_name to the new_name.
+* @function
+* @param {string} [command] (you|character) #renameitem original_name new_name
+* @returns {[string, boolean]} Tupple containing [text result of command, and successful execution flag]
+***********/
 function doRenameItem(command) {
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
+  const original_name = getArgument(command, 0)
+  const new_name = getArgument(command, 1)
+
+  if (original_name == null || new_name == null) {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
-  var arg1 = getArgument(command, 1)
-  if (arg1 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  // Text result to print
+  const character = getCharacter()
+  const hasWord = character.name == "You" ? "have" : "has"
+  const possessiveName = getPossessiveName(character.name)
+  let text = `\n[${possessiveName} ${original_name} ${hasWord} been renamed to ${new_name}]\n`
+
+  // Attempt to rename item
+  const index = character.inventory.findIndex((element) => element.itemName.toLowerCase() == original_name.toLowerCase())
+  if (index >= 0 ) {
+    character.inventory[index].itemName = new_name
+  } else {
+    return [`\n[Error: ${character.name} ${hasWord} no item named "${original_name}". See #inventory]\n`, false]
   }
 
-  var commandName = getCommandName(command)
-  var character = getCharacter()
-  var haveWord = character.name == "You" ? "have" : "has"
-  var possessiveName = getPossessiveName(character.name)
+  // TODO: Rename items consideration
+  // Inventory items are instances of 'items'
+  // Should a renamed item create a new story card?
 
   state.show = "none"
-  var text = `\n[${possessiveName} ${arg0} has been renamed to ${arg1}]\n`
-
-  var index = character.inventory.findIndex((element) => element.name.toLowerCase() == arg0.toLowerCase())
-  if (index >= 0 ) {
-    var existingItem = character.inventory[index]
-    existingItem.name = arg1
-  }
-
   return [text, true]
 }
 
+const HelpDialog_doInventory = `
+#inventory
+-- Shows the items in the inventory of the character.
+`
+/**********| doInventory - 
+* Sets the state to show the character's inventory in next output
+* @function
+* @param {string} [command] (you|character) #inventory
+* @returns {[string, boolean]} Tupple containing [text result of command, and successful execution flag]
+***********/
 function doInventory(command) {
   state.show = "inventory"
   return [" ", true]
