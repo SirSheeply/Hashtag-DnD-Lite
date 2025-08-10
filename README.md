@@ -18,10 +18,9 @@ Hashtag DnD is a scripted AI Dungeon scenario that gives you a variety of tools 
 - Removed Location System        (Hard to Manage T-T)
 - Removed SpellShop and Itemshop (Hard to Manage T-T)
 - Removed Turn Based Combat      (Clashes with AI Dungeon narrative flow)
+- Removed Allies & Enemies       (Clashes with AI Dungeon narrative flow)
 #### Enhanced Features
 - Story Card Encounters         (Encounters are now sourced from story cards, and can be player generated!)
-- Story Card Enemies            (Enemy presets are now sourced from story cards, and can be user generated!)
-- Story Card Allies             (Ally presets are now sourced from story cards, and can be user generated!)
 - Story Card Presets            (Character presets are now sourced from story cards, and can be user generated!)
 - Overhauled Items              (Items are now sourced from story cards, and can be user generated!)
 #### Added Features

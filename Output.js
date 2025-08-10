@@ -62,112 +62,6 @@ function DNDHash_output(text) {
           break
       }
       break
-    case "setupEnemy":
-      switch (state.setupEnemyStep) {
-        case 0:
-          text += `***ENEMY CREATION***\nWould you like to use a preset enemy? (y/n/q to quit)\n`
-          break
-        case 1:
-          text += `What is the enemy's name? This must be a unique name that has no duplicates in the current encounter. Type q to quit.\n`
-          break
-        case 2:
-          text += `What is the enemy's health? This can be any positive integer or a dice roll (ie. 3d6+5). Type q to quit.\n`
-          break
-        case 3:
-          text += `What is the enemy's armor class (AC)? This can be any positive integer with 10 being easy and 20 being incredibly difficult. It can also be a dice roll (ie. 2d4+5). Type q to quit\n`
-          break
-        case 4:
-          text += `What is the enemy's hit modifier? This affects how accurate their attacks are. This can be any integer. 0 is normal accuracy. Type q to quit\n`
-          break
-        case 5:
-          text += `What is the enemy's damage? This can be any positive integer or a dice roll (ie. 2d6+5). The dice roll is calculated at the time of each attack. Type q to quit.\n`
-          break
-        case 6:
-          text += `What is the enemy's initiative? Initiative controls turn order. This can be any positive integer with higher numbers going first in battle. This can also be a dice roll (ie. 1d20+3). Type q to quit.\n`
-          break
-        case 7:
-          text += "Enter the name of a spell that the enemy knows. If it can target this spell at a player character, add a dice roll for the damage calculation after it (ie. Ray of Frost3d6+2). Type s to stop entering spells or type q to quit.\n"
-          break
-        case 8:
-          text += "Enter the name of another spell that the enemy knows. If it can target this spell at a player character, add a dice roll for the damage calculation after it (ie. Ray of Frost3d6+2). Type s to stop entering spells or type q to quit.\n"
-          break
-        case 100:
-          // The rework here is to have all the enemies inside story cards, from which we can pull.
-          // This means players can curate the enemies prefabs, and we're not limited to X amount.
-          // We pass the enemy subtype as "enemy - " to find all enemy cards regardless of subtype
-          const enemyIndexes = getStoryCardListByType("enemy - ")
-          text += `What enemy preset will you choose?\n`
-          for (let index = 0; index < enemyIndexes.length; index++) {
-            text += `${index}. ${enemyIndexes[index].title}\n`
-          }
-          text += `\n\nEnter the number or q to quit. If you want to rename the enemy, add a space and type the name\n(ie. 25 Thuggish Zombie B)\n`
-          break
-        case 500:
-          var hashtag = `#addenemy "${state.tempEnemy.name}" ${state.tempEnemy.health} ${state.tempEnemy.ac} ${state.tempEnemy.hitModifier} ${state.tempEnemy.damage} ${state.tempEnemy.initiative}`
-          for (var spell of state.tempEnemy.spells) {
-            hashtag += ` "${spell}"`
-          }
-
-          text += `${state.tempEnemy.name} has been created.\nType #initiative to start the battle.\nCopy and paste the following hashtag to create another identical enemy like this:\n${hashtag}\n***********\n`
-          break;
-        case null:
-          text += `[Enemy creation has been aborted!]\n`
-          break
-      }
-      break
-    case "setupAlly":
-      switch (state.setupAllyStep) {
-        case 0:
-          text += `***ALLY CREATION***\nWould you like to use a preset ally? (y/n/q to quit)\n`
-          break
-        case 1:
-          text += `What is the ally's name? This must be a unique name that has no duplicates in the current encounter. Typing the name of an existing ally will modify that ally's properties. Type q to quit.\n`
-          break
-        case 2:
-          text += `${!state.newAlly ? "Ally name already exists. You are now modifying the existing ally " + state.tempAlly.name + ". " : ""}What is the ally's health? This can be any positive integer or a dice roll (ie. 3d6+5). Type q to quit.${!state.newAlly ? " Type default to leave as current value " + state.tempAlly.health : ""}\n`
-          break
-        case 3:
-          text += `What is the ally's armor class (AC)? This can be any positive integer with 10 being easy and 20 being incredibly difficult. It can also be a dice roll (ie. 2d4+5). Type q to quit.${!state.newAlly ? " Type default to leave as current value " + state.tempAlly.ac : ""}\n`
-          break
-        case 4:
-          text += `What is the ally's hit modifier? This affects how accurate their attacks are. This can be any integer. 0 is normal accuracy. Type q to quit.${!state.newAlly ? " Type default to leave as current value " + state.tempAlly.hitModifier : ""}\n`
-          break
-        case 5:
-          text += `What is the ally's damage? This can be any positive integer or a dice roll (ie. 2d6+5). The dice roll is calculated at the time of each attack. Type q to quit.${!state.newAlly ? " Type default to leave as current value " + state.tempAlly.damage : ""}\n`
-          break
-        case 6:
-          text += `What is the ally's initiative? Initiative controls turn order. This can be any positive integer with higher numbers going first in battle. This can also be a dice roll (ie. 1d20+3). Type q to quit.${!state.newAlly ? " Type default to leave as current value " + state.tempAlly.initiative : ""}\n`
-          break
-        case 7:
-          text += `Enter the name of a spell that the ally knows. If it can target this spell at an enemy character, add a dice roll for the damage calculation after it (ie. Ray of Frost3d6+2). Type s to stop entering spells or type q to quit.${!state.newAlly ? " Type e to erase all current spells." : ""}\n`
-          break
-        case 8:
-          text += `Enter the name of another spell that the ally knows. If it can target this spell at an enemy character, add a dice roll for the damage calculation after it (ie. Ray of Frost3d6+2). Type s to stop entering spells or type q to quit.\n`
-          break
-        case 100:
-          // The rework here is to have all the allies inside story cards, from which we can pull.
-          // This means players can curate the ally prefabs, and we're not limited to X amount.
-          // We pass the ally subtype as "" to find all ally cards regardless of subtype
-          const allyIndexes = listAllyCards("")
-          text += `What ally preset will you choose?\n`
-          for (let index = 0; index < allyIndexes.length; index++) {
-            text += `${index}. ${allyIndexes[index].title}\n`
-          }
-          text += `\n\nEnter the number or q to quit. If you want to rename the ally, add a space and type the name\n(ie. 25 Thuggish Friend B)\n`
-          break
-        case 500:
-          var hashtag = `#addally "${state.tempAlly.name}" ${state.tempAlly.health} ${state.tempAlly.ac} ${state.tempAlly.hitModifier} ${state.tempAlly.damage} ${state.tempAlly.initiative}`
-          for (var spell of state.tempAlly.spells) {
-            hashtag += ` "${spell}"`
-          }
-
-          text += `${state.tempAlly.name} has been created.\nType #showallies to show the list of all allies.\nCopy and paste the following hashtag to create another identical ally like this:\n${hashtag}\n***********\n`
-          break;
-        case null:
-          text += `[Ally creation has been aborted!]\n`
-          break
-      }
-      break
     case "bio":
       text += `*** ${possessiveName.toUpperCase()} BIO ***\n`
       text += `Class: ${character.className}\n`
@@ -313,62 +207,11 @@ function DNDHash_output(text) {
     case "clearSpells":
       text += `[${possessiveName} spells have been cleared]\n`
       break
-    case "showEnemies":
-      text += "*** ENEMIES ***\n"
-
-      if (state.enemies.length == 0) {
-        text += "There are no enemies present here. Type #encounter to generate a scripted set or #addenemy to add your own\n"
-      } else {
-        var index = 0
-        for (var enemy of state.enemies) {
-          text += `${++index}. ${toTitleCase(enemy.name)} (Health: ${enemy.health} AC: ${enemy.ac} Initiative: ${enemy.initiative})\n`
-        }
-      }
-      text += "******************\n\n"
-      break
-    case "showAllies":
-      text += "*** ALLIES ***\n"
-
-      if (state.allies.length == 0) {
-        text += "There are no allies present here. Type #encounter to generate a scripted set or #addally to add your own\n"
-      } else {
-        var index = 0
-        for (var ally of state.allies) {
-          text += `${++index}. ${toTitleCase(ally.name)} (Health: ${ally.health} AC: ${ally.ac} Initiative: ${ally.initiative})\n`
-        }
-      }
-
-      text += "******************\n\n"
-      break
     case "reset":
       text += "[All settings have been reset]\n"
       break
     case "help":
       text = helpText
-      break
-    case "help characters":
-      text = helpTextCharacters
-      break
-    case "help checks":
-      text = helpTextChecks
-      break
-    case "help allies":
-      text = helpTextAllies
-      break
-    case "help combat":
-      text = helpTextCombat
-      break
-    case "help abilities":
-      text = helpTextAbilities
-      break
-    case "help skills":
-      text = helpTextSkills
-      break
-    case "help spells":
-      text = helpTextSpells
-      break
-    case "help inventory":
-      text = helpTextInventory
       break
     default:
       text = " "

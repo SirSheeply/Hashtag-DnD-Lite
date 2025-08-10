@@ -302,8 +302,7 @@ function createEncounter(listName) {
   // Defualt Encounter
   var encounter = {
     text: "It's just a plesent day! Nothing happens.",
-    cr: 1,
-    enemies: []
+    cr: 1
   }
   var multiplier = 1
 
@@ -359,14 +358,6 @@ function createEncounter(listName) {
   const randomEncounter = encounterIndexes[randomIndex]
   encounter.text = randomEncounter.entry
 
-  // Convert description into createEnemy()
-  // "description": "[\n    {\n        \"ally\": false,\n        \"name\": \"Turkey Prime\",\n        \"health\": \"5d10+10\",\n        \"ac\": 14,\n        \"hitMod\": 0,\n        \"damage\": \"2d6+3\",\n        \"initiative\": \"d20+2\",\n        \"spells\": []\n    },\n    {\n        \"ally\": false,\n        \"name\": \"Turkey Mage\",\n        \"health\": \"2d10+10\",\n        \"ac\": 14,\n        \"hitMod\": 0,\n        \"damage\": \"2d6+3\",\n        \"initiative\": \"d20+2\",\n        \"spells\": [\"Web\", \"Ray of Frost\"]\n    }\n]",
-  // Eample: createEnemy("Turkey Prime", calculateRoll("5d10+10"), 14, 0, "2d6+3", "d20+2", false, [])
-  const entities = JSON.parse(randomEncounter.description)
-  entities.forEach(element => {
-    encounter.enemies.push( createEntity(element.name, calculateRoll(element.health), element.ac, element.hitMod, element.damage, element.initiative, element.ally, element.spells) )
-  });
-
   //-----
 
   var characterName = toTitleCase(state.characters[getRandomInteger(0, state.characters.length-1)].name)
@@ -377,84 +368,7 @@ function createEncounter(listName) {
   encounter.text = encounter.text.replaceAll("character's", possessiveName)
   encounter.text = encounter.text.replaceAll("Character's", toTitleCase(possessiveName))
 
-  for (var enemy of encounter.enemies) {
-    enemy.health = Math.floor(enemy.health * multiplier)
-    enemy.ac = Math.floor(enemy.ac * multiplier)
-
-    damagePrefix = enemy.damage.match(/^\d*d\d*/gi)[0]
-    damageSuffix = enemy.damage.match(/(?<=^\d*d\d*)(\+|-).*$/gi)
-    damageSuffix = damageSuffix != null ? parseInt(damageSuffix[0]) : 0
-    damageSuffix += Math.floor(3 * (multiplier - 1))
-    damageSuffix = `${damageSuffix > 0 ? "+" : ""}${damageSuffix}`
-    enemy.damage = `${damagePrefix}${damageSuffix == 0 ? "" : damageSuffix}`
-
-    initiativePrefix = enemy.initiative.match(/^\d*d\d*/gi)[0]
-    initiativeSuffix = enemy.initiative.match(/(?<=^\d*d\d*)(\+|-).*$/gi)
-    initiativeSuffix = initiativeSuffix != null ? parseInt(initiativeSuffix[0]) : 0
-    initiativeSuffix += Math.floor(3 * (multiplier - 1))
-    initiativeSuffix = `${initiativeSuffix > 0 ? "+" : ""}${initiativeSuffix}`
-    enemy.initiative = `${initiativePrefix}${initiativeSuffix == 0 ? "" : initiativeSuffix}`
-  }
-
   return encounter
-}
-
-function createEntity(name, health, ac, hitModifier, damage, initiative, ally, ...spells) {
-  var entity = {
-    name: name,
-    health: health,
-    ac: ac,
-    hitModifier: hitModifier,
-    damage: damage,
-    initiative: initiative,
-    spells: spells,
-    ally: ally
-  }
-  return entity
-}
-
-// NOTE: createEnemy and createAlly can depreciated
-function createEnemy(name, health, ac, hitModifier, damage, initiative, ...spells) {
-  var enemy = {
-    name: name,
-    health: health,
-    ac: ac,
-    hitModifier: hitModifier,
-    damage: damage,
-    initiative: initiative,
-    spells: spells,
-    ally: false
-  }
-  return enemy
-}
-
-// NOTE: createEnemy and createAlly can depreciated
-function createAlly(name, health, ac, hitModifier, damage, initiative, ...spells) {
-  var ally = {
-    name: name,
-    health: health,
-    ac: ac,
-    hitModifier: hitModifier,
-    damage: damage,
-    initiative: initiative,
-    spells: spells,
-    ally: true
-  }
-  return ally
-}
-
-function getUniqueName(name) {
-  const letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"]
-  var letterIndex = 0
-
-  var newName
-  var enemyMatches
-  do {
-    newName = `${name} ${letters[letterIndex++]}`
-    enemyMatches = state.enemies.filter(x => x.name.toLowerCase() == newName.toLowerCase())
-  } while (enemyMatches.length > 0 && letterIndex < letters.length)
-
-  return newName
 }
 
 const levelSplits = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000]

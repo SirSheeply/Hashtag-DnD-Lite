@@ -121,18 +121,6 @@ const commandRegistry = [
     { handler: doHealParty,             synonyms: ["healparty", "healcharacters"] },
     { handler: doRest,                  synonyms: ["rest", "longrest", "shortrest", "sleep", "nap"] },
 
-    // <><> Allies and Enemies
-    { handler: doShowEnemies,           synonyms: ["showenemies", "enemies"] },
-    { handler: doShowAllies,            synonyms: ["showallies", "allies"] },
-    { handler: doAddEnemy,              synonyms: ["addenemy"] },
-    { handler: doAddAlly,               synonyms: ["addally"] },
-    { handler: doRemoveEnemy,           synonyms: ["removeenemy"] },
-    { handler: doRemoveAlly,            synonyms: ["removeally"] },
-    { handler: doClearEnemies,          synonyms: ["clearenemies", "resetenemies", "removeenemies"] },
-    { handler: doClearAllies,           synonyms: ["clearallies", "resetallies", "removeallies"] },
-    { handler: doSetupEnemy,            synonyms: ["setupenemy", "createenemy"] },
-    { handler: doSetupAlly,             synonyms: ["setupally", "createally"] },
-
     // <><> Character Combat Values
     { handler: doSetHealth,             synonyms: ["sethealth"] },
     { handler: doSetMeleeStat,          synonyms: ["setmeleestat", "setmeleestatistic", "setmeleeability", "changemeleestat", "changemeleestatistic", "changemeleeability"] },
@@ -174,18 +162,6 @@ function DNDHash_input (text) {
   if (state.createStep != null) {
     text = handleCreateStep(text)
     if (state.createStep != null) return text
-    else text = rawText
-  }
-
-  if (state.setupEnemyStep != null) {
-    text = handleSetupEnemyStep(text)
-    if (state.setupEnemyStep != null) return text
-    else text = rawText
-  }
-
-  if (state.setupAllyStep != null) {
-    text = handleSetupAllyStep(text)
-    if (state.setupAllyStep != null) return text
     else text = rawText
   }
 
@@ -439,336 +415,6 @@ function handleCreateStep(text) {
   return text
 }
 
-function handleSetupEnemyStep(text) {
-  state.show = "setupEnemy"
-
-  if (/^\s*>.*says? ".*/.test(text)) {
-    text = text.replace(/^\s*>.*says? "/, "")
-    text = text.replace(/"\s*$/, "")
-  } else if (/^\s*>\s.*/.test(text)) {
-    text = text.replace(/\s*> /, "")
-    for (var i = 0; i < info.characters.length; i++) {
-      var matchString = info.characters[i] == "" ? "You " : `${info.characters[i]} `
-      if (text.startsWith(matchString)) {
-        text = text.replace(matchString, "")
-        break
-      }
-    }
-    text = text.replace(/\.?\s*$/, "")
-  } else {
-    text = text.replace(/^\s+/, "")
-  }
-
-  if (text.toLowerCase() == "q") {
-    state.setupEnemyStep = null
-    return text
-  }
-
-  switch (state.setupEnemyStep) {
-    case 0:
-      text = text.toLowerCase();
-      if (text.startsWith("y")) state.setupEnemyStep = 100
-      else if (text.startsWith("n")) state.setupEnemyStep++
-      break
-    case 1:
-      if (text.length > 0) {
-        state.tempEnemy.name = text
-        state.setupEnemyStep++
-      }
-      return text
-    case 2:
-      if (text.length > 0) {
-        if (/^\d*d\d+((\+|-)\d+)?$/gi.test(text)) {
-          state.tempEnemy.health = calculateRoll(text)
-          state.setupEnemyStep++
-        } else if (!isNaN(text)) {
-          state.tempEnemy.health = Math.max(0, parseInt(text))
-          state.setupEnemyStep++
-        }
-      }
-      return text
-    case 3:
-      if (/^\d*d\d+((\+|-)\d+)?$/gi.test(text)) {
-        state.tempEnemy.ac = calculateRoll(text)
-        state.setupEnemyStep++
-      } else if (!isNaN(text)) {
-        state.tempEnemy.ac = Math.max(0, parseInt(text))
-        state.setupEnemyStep++
-      }
-      return text
-    case 4:
-      if (!isNaN(text)) {
-        state.tempEnemy.hitModifier = Math.max(0, parseInt(text))
-        state.setupEnemyStep++
-      }
-      return text
-    case 5:
-      if (/^\d*d\d+((\+|-)\d+)?$/gi.test(text)) {
-        state.tempEnemy.damage = text
-        state.setupEnemyStep++
-      } else if (!isNaN(text)) {
-        state.tempEnemy.damage = Math.max(0, parseInt(text))
-        state.setupEnemyStep++
-      }
-      return text
-    case 6:
-      if (/^\d*d\d+((\+|-)\d+)?$/gi.test(text)) {
-        state.tempEnemy.initiative = calculateRoll(text)
-        state.setupEnemyStep++
-      } else if (!isNaN(text)) {
-        state.tempEnemy.initiative = Math.max(0, parseInt(text))
-        state.setupEnemyStep++
-      }
-      return text
-    case 7:
-      if (text.toLowerCase() == "s") {
-        state.setupEnemyStep = 500
-      }
-      else if (text.length > 0) {
-        state.tempEnemy.spells.push(text)
-        state.setupEnemyStep++
-      }
-      return text
-    case 8:
-      if (text.toLowerCase() == "s") {
-        state.setupEnemyStep = 500
-      }
-      else if (text.length > 0) {
-        state.tempEnemy.spells.push(text)
-      }
-      return text
-    case 100:
-      if (/^\d+(\s.*)?$/gi.test(text)) {
-        state.setupEnemyStep = 500
-
-        var value = text.match(/^\d+/gi)[0]
-        var nameMatches = text.match(/(?<=\s).*/gi)
-
-        // ~400 lines of prefab enemies! Nice.
-        // The rework here is to have all the enemies inside story cards, from which we can pull.
-        // This means players can curate the enemies prefabs, and we're not limited to X amount.
-
-        // Get a list of all the enemy cards with the enemy subtype
-        // We pass the enemy subtype as "enemy - " to find all enemy cards regardless of subtype
-        const enemyIndexes = getStoryCardListByType("enemy - ")
-        if (enemyIndexes.length <= 0) {
-          // Error no enemy cards for this case!
-          return "Error: No Enemy Cards Found!"
-        }
-        const enemyCard = enemyIndexes[parseInt(value)]
-
-        // Convert description into createEntity()
-        // "description": "{\n        \"ally\": false,\n        \"name\": \"Turkey Prime\",\n        \"health\": \"5d10+10\",\n        \"ac\": 14,\n        \"hitMod\": 0,\n        \"damage\": \"2d6+3\",\n        \"initiative\": \"d20+2\",\n        \"spells\": []\n    },\n    {\n        \"ally\": false,\n        \"name\": \"Turkey Mage\",\n        \"health\": \"2d10+10\",\n        \"ac\": 14,\n        \"hitMod\": 0,\n        \"damage\": \"2d6+3\",\n        \"initiative\": \"d20+2\",\n        \"spells\": [\"Web\", \"Ray of Frost\"]\n}",
-        // Eample: createEnemy("Turkey Prime", calculateRoll("5d10+10"), 14, 0, "2d6+3", "d20+2", false, [])
-        const entity = JSON.parse(enemyCard.description)
-        state.tempEnemy = createEntity(entity.name, calculateRoll(entity.health), entity.ac, entity.hitMod, entity.damage, entity.initiative, entity.ally, entity.spells)
-
-        // ----
-
-        if (nameMatches != null) state.tempEnemy.name = nameMatches[0]
-      }
-      return text
-    case 500:
-      state.show = null
-      state.setupEnemyStep = null
-
-      var enemy = createEnemy(state.tempEnemy.name, state.tempEnemy.health, state.tempEnemy.ac, state.tempEnemy.hitModifier, state.tempEnemy.damage, state.tempEnemy.initiative)
-      enemy.spells = [...state.tempEnemy.spells]
-      
-      var enemyMatches = state.enemies.filter(x => x.name.toLowerCase() == enemy.name.toLowerCase() || x.name.toLowerCase() == `${enemy.name.toLowerCase()} a`)
-      if (enemyMatches.length > 0) {
-        enemy.name = getUniqueName(enemy.name)
-        if (enemy.name.endsWith("A")) {
-          enemyMatches[0].name = enemy.name
-          enemy.name = enemy.name.substring(0, enemy.name.length - 1) + "B"
-        }
-      }
-
-      state.enemies.push(enemy)
-      break
-  }
-  return text
-}
-
-function handleSetupAllyStep(text) {
-  state.show = "setupAlly"
-
-  if (/^\s*>.*says? ".*/.test(text)) {
-    text = text.replace(/^\s*>.*says? "/, "")
-    text = text.replace(/"\s*$/, "")
-  } else if (/^\s*>\s.*/.test(text)) {
-    text = text.replace(/\s*> /, "")
-    for (var i = 0; i < info.characters.length; i++) {
-      var matchString = info.characters[i] == "" ? "You " : `${info.characters[i]} `
-      if (text.startsWith(matchString)) {
-        text = text.replace(matchString, "")
-        break
-      }
-    }
-    text = text.replace(/\.?\s*$/, "")
-  } else {
-    text = text.replace(/^\s+/, "")
-  }
-
-  if (text.toLowerCase() == "q") {
-    state.setupAllyStep = null
-    return text
-  }
-
-  switch (state.setupAllyStep) {
-    case 0:
-      text = text.toLowerCase();
-      if (text.startsWith("y")) state.setupAllyStep = 100
-      else if (text.startsWith("n")) state.setupAllyStep++
-      break
-    case 1:
-      if (text.length > 0) {
-        state.tempAlly.name = text
-        state.setupAllyStep++
-
-        var allyMatches = state.allies.filter(x => x.name.toLowerCase() == state.tempAlly.name.toLowerCase() || x.name.toLowerCase() == `${state.tempAlly.name.toLowerCase()} a`)
-        if (allyMatches.length > 0) {
-          state.newAlly = false
-          state.tempAlly.health = allyMatches[0].health
-          state.tempAlly.ac = allyMatches[0].ac
-          state.tempAlly.hitModifier = allyMatches[0].hitModifier
-          state.tempAlly.damage = allyMatches[0].damage
-          state.tempAlly.initiative = allyMatches[0].initiative
-          state.tempAlly.spells = [...allyMatches[0].spells]
-        } else {
-          state.newAlly = true
-        }
-      }
-      return text
-    case 2:
-      if (text.length > 0) {
-        if (text.toLowerCase() == "default") {
-          state.setupAllyStep++
-        } else if (/^\d*d\d+((\+|-)\d+)?$/gi.test(text)) {
-          state.tempAlly.health = calculateRoll(text)
-          state.setupAllyStep++
-        } else if (!isNaN(text)) {
-          state.tempAlly.health = Math.max(0, parseInt(text))
-          state.setupAllyStep++
-        }
-      }
-      return text
-    case 3:
-      if (text.toLowerCase() == "default") {
-          state.setupAllyStep++
-      } else if (/^\d*d\d+((\+|-)\d+)?$/gi.test(text)) {
-        state.tempAlly.ac = calculateRoll(text)
-        state.setupAllyStep++
-      } else if (!isNaN(text)) {
-        state.tempAlly.ac = Math.max(0, parseInt(text))
-        state.setupAllyStep++
-      }
-      return text
-    case 4:
-      if (text.toLowerCase() == "default") {
-          state.setupAllyStep++
-      } else if (!isNaN(text)) {
-        state.tempAlly.hitModifier = Math.max(0, parseInt(text))
-        state.setupAllyStep++
-      }
-      return text
-    case 5:
-      if (text.toLowerCase() == "default") {
-          state.setupAllyStep++
-      } else if (/^\d*d\d+((\+|-)\d+)?$/gi.test(text)) {
-        state.tempAlly.damage = text
-        state.setupAllyStep++
-      } else if (!isNaN(text)) {
-        state.tempAlly.damage = Math.max(0, parseInt(text))
-        state.setupAllyStep++
-      }
-      return text
-    case 6:
-      if (text.toLowerCase() == "default") {
-          state.setupAllyStep++
-      } else if (/^\d*d\d+((\+|-)\d+)?$/gi.test(text)) {
-        state.tempAlly.initiative = calculateRoll(text)
-        state.setupAllyStep++
-      } else if (!isNaN(text)) {
-        state.tempAlly.initiative = Math.max(0, parseInt(text))
-        state.setupAllyStep++
-      }
-      return text
-    case 7:
-      if (text.toLowerCase() == "s") {
-        state.setupAllyStep = 500
-      } else if (text.toLowerCase() == "e") {
-        state.tempAlly.spells = []
-      } else if (text.length > 0) {
-        state.tempAlly.spells.push(text)
-        state.setupAllyStep++
-      }
-      return text
-    case 8:
-      if (text.toLowerCase() == "s") {
-        state.setupAllyStep = 500
-      }
-      else if (text.length > 0) {
-        state.tempAlly.spells.push(text)
-      }
-      return text
-    case 100:
-      if (/^\d+(\s.*)?$/gi.test(text)) {
-        state.setupAllyStep = 500
-        state.newAlly = true
-
-        var value = text.match(/^\d+/gi)[0]
-        var nameMatches = text.match(/(?<=\s).*/gi)
-
-        // ~200+ lines of prefab allies! Nice.
-        // The rework here is to have all the allies inside story cards, from which we can pull.
-        // This means players can curate the ally prefabs, and we're not limited to X amount.
-
-        // Get a list of all the enemy cards with the enemy subtype
-        // We pass the enemy subtype as "" to find all enemy cards regardless of subtype
-        const allyIndexes = listAllyCards("")
-        if (allyIndexes.length <= 0) {
-          // Error no enemy cards for this case!
-          return "Error: No Ally Cards Found!"
-        }
-        const allyCard = allyIndexes[parseInt(value)]
-
-        // Convert description into createEntity()
-        // "description": "{\n        \"ally\": true,\n        \"name\": \"Turkey Friend\",\n        \"health\": \"5d10+10\",\n        \"ac\": 14,\n        \"hitMod\": 0,\n        \"damage\": \"2d6+3\",\n        \"initiative\": \"d20+2\",\n        \"spells\": []\n    },\n    {\n        \"ally\": false,\n        \"name\": \"Turkey Mage\",\n        \"health\": \"2d10+10\",\n        \"ac\": 14,\n        \"hitMod\": 0,\n        \"damage\": \"2d6+3\",\n        \"initiative\": \"d20+2\",\n        \"spells\": [\"Web\", \"Ray of Frost\"]\n}",
-        // Eample: createEnemy("Turkey Friend", calculateRoll("5d10+10"), 14, 0, "2d6+3", "d20+2", true, [])
-        const entity = JSON.parse(allyCard.description)
-        state.tempEnemy = createEntity(entity.name, calculateRoll(entity.health), entity.ac, entity.hitMod, entity.damage, entity.initiative, entity.ally, entity.spells)
-
-        //----
-
-        if (nameMatches != null) state.tempAlly.name = nameMatches[0]
-      }
-      return text
-    case 500:
-      state.show = null
-      state.setupAllyStep = null
-
-      var ally = createAlly(state.tempAlly.name, state.tempAlly.health, state.tempAlly.ac, state.tempAlly.hitModifier, state.tempAlly.damage, state.tempAlly.initiative)
-      ally.spells = [...state.tempAlly.spells]
-      
-      var allyMatches = state.allies.filter(x => x.name.toLowerCase() == ally.name.toLowerCase() || x.name.toLowerCase() == `${ally.name.toLowerCase()} a`)
-      if (state.newAlly && allyMatches.length > 0) {
-        ally.name = getUniqueName(ally.name)
-        if (ally.name.endsWith("A")) {
-          allyMatches[0].name = ally.name
-          ally.name = ally.name.substring(0, ally.name.length - 1) + "B"
-        }
-      } else if (!state.newAlly) {
-        let removeIndex = state.allies.indexOf(allyMatches[0])
-        state.allies.splice(removeIndex, 1)
-      }
-
-      state.allies.push(ally)
-      break
-  }
-  return text
-}
-
 function resetTempCharacterSkills() {
   state.tempCharacter.skills = [
     {name: "Acrobatics", stat: "Dexterity", modifier: 0},
@@ -821,16 +467,13 @@ function init() {
       proficiency: 2
     }
   }
-
-  if (state.tempEnemy == null) state.tempEnemy = createEnemy("enemy", 10, 10, "2d6", 10)
-  if (state.tempAlly == null) state.tempAlly = createAlly("ally", 10, 10, "2d6", 10)
+  
   if (state.characters == null) state.characters = []
   if (state.notes == null) state.notes = []
   if (state.autoXp == null) state.autoXp = 0
   if (state.defaultDifficulty == null) state.defaultDifficulty = 10
   if (state.day == null) state.day = 0
-  if (state.enemies == null) state.enemies = []
-  if (state.allies == null) state.allies = []
+
   state.show = null
   state.prefix = null
   state.critical = null
@@ -891,20 +534,6 @@ function doCreate(command) {
   return [" ", true]
 }
 
-function doSetupEnemy(command) {
-  state.setupEnemyStep = 0
-  state.tempEnemy = createEnemy("enemy", 20, 10, 0, "2d6", 10)
-  state.show = "setupEnemy"
-  return [" ", true]
-}
-
-function doSetupAlly(command) {
-  state.setupAllyStep = 0
-  state.tempAlly = createAlly("ally", 20, 10, 0, "2d6", 10)
-  state.show = "setupAlly"
-  return [" ", true]
-}
-
 function doBio(command) {
   state.show = "bio"
   return [" ", true]
@@ -928,7 +557,6 @@ function doRenameCharacter(command) {
 
 function doCloneCharacter(command) {
   var character = getCharacter()
-  var possessiveName = getPossessiveName(character.name)
 
   var arg0 = getArgumentRemainder(command, 0)
   if (arg0 == null) {
@@ -1279,22 +907,6 @@ function doHeal(command) {
       return ["\n[Error: Expected a number. See #help]\n", false]
     }
 
-    for (var enemy of state.enemies) {
-      if (enemy.name.toLowerCase() == arg1.toLowerCase()) {
-        enemy.health = Math.max(0, enemy.health + healing)
-        state.show = "none"
-        return [`\n[${toTitleCase(enemy.name)} has been healed for ${healing} hp to a total of ${enemy.health}]\n`, true]
-      }
-    }
-
-    for (var ally of state.allies) {
-      if (ally.name.toLowerCase() == arg1.toLowerCase()) {
-        ally.health = Math.max(0, ally.health + healing)
-        state.show = "none"
-        return [`\n[${toTitleCase(ally.name)} has been healed for ${healing} hp to a total of ${ally.health}]\n`, true]
-      }
-    }
-
     for (var character of state.characters) {
       if (character.name.toLowerCase() == arg1.toLowerCase()) {
         character.health += healing
@@ -1356,22 +968,6 @@ function doDamage(command) {
       return ["\n[Error: Expected a number. See #help]\n", false]
     }
 
-    for (var enemy of state.enemies) {
-      if (enemy.name.toLowerCase() == arg1.toLowerCase()) {
-        enemy.health = Math.max(0, enemy.health - damage)
-        state.show = "none"
-        return [`\n[${toTitleCase(enemy.name)} has been damaged for ${damage} hp with ${enemy.health} remaining] ${enemy.health == 0 ? " " + toTitleCase(enemy.name) + " has been defeated!" : ""}\n`, true]
-      }
-    }
-
-    for (var ally of state.allies) {
-      if (ally.name.toLowerCase() == arg1.toLowerCase()) {
-        ally.health = Math.max(0, ally.health - damage)
-        state.show = "none"
-        return [`\n[${toTitleCase(ally.name)} has been damaged for ${damage} hp with ${ally.health} remaining] ${ally.health == 0 ? " " + toTitleCase(ally.name) + " has been defeated!" : ""}\n`, true]
-      }
-    }
-
     for (var character of state.characters) {
       if (character.name.toLowerCase() == arg1.toLowerCase()) {
         character.health = Math.max(0, character.health - damage)
@@ -1387,7 +983,6 @@ function doDamage(command) {
 function doRest(command) {
   var commandName = getCommandName(command)
   state.day++
-  state.enemies = []
 
   var healingFactor = 1
   var text
@@ -1435,18 +1030,6 @@ function doHealParty(command) {
   })
   state.show = "none"
   return [text, true]
-}
-
-function doFlipCommandAbility(command) {
-  var ability = getCommandName(command)
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) return;
-  var remainder = getArgumentRemainder(command, 1)
-
-  command = `${arg0} "${ability}"${remainder == null ? "" : " " + remainder}`
-  text = processCommandSynonyms(command, arg0, checkSynonyms, doCheck)
-  if (text == null) text = processCommandSynonyms(command, arg0, trySynonyms, doTry)
-  return text
 }
 
 function doCheck(command) {
@@ -1644,42 +1227,6 @@ function doAttack(command) {
     if (targetIndex >= 0 && targetIndex < difficultyNames.length) targetRoll = difficultyScores[targetIndex]
   }
 
-  var enemyString = ""
-  var allyString = ""
-  var foundEnemy
-
-  for (var enemy of state.enemies) {
-    if (targetText.toLowerCase().includes(enemy.name.toLowerCase())) {
-      foundEnemy = enemy
-      break
-    }
-  }
-
-  if (foundEnemy == null) {
-    var indexMatches = targetText.match(/(?<=enemy\s*)\d+/gi)
-    if (indexMatches != null) {
-      foundEnemy = state.enemies[parseInt(indexMatches[0]) - 1]
-      targetText = targetText.replace(/enemy\s*d+/gi, foundEnemy.name)
-    }
-  }
-
-  var foundAlly
-
-  if (foundEnemy == null) for (var ally of state.allies) {
-    if (targetText.toLowerCase().includes(ally.name.toLowerCase())) {
-      foundAlly = ally
-      break
-    }
-  }
-
-  if (foundAlly == null) {
-    var indexMatches = targetText.match(/(?<=ally\s*)\d+/gi)
-    if (indexMatches != null) {
-      foundAlly = state.allies[parseInt(indexMatches[0]) - 1]
-      targetText = targetText.replace(/ally\s*d+/gi, foundAlly.name)
-    }
-  }
-
   var damage
   if (/^\d*d\d+((\+|-)d+)?$/gi.test(character.damage)) damage = score == 20 ? calculateRoll(character.damage) + calculateRoll(character.damage) : calculateRoll(character.damage)
   else damage = parseInt(character.damage)
@@ -1689,38 +1236,6 @@ function doAttack(command) {
   else {
     damageMatches = targetText.match(/\d+/g)
     if (damageMatches != null) damage = score == 20 ? parseInt(damageMatches[damageMatches.length - 1]) * 2 : parseInt(damageMatches[damageMatches.length - 1])
-  }
-
-  if (foundEnemy != null) {
-    if (usingDefaultDifficulty) targetRoll = foundEnemy.ac
-    if (score == 20 || score + modifier >= targetRoll) {
-      if (score == 20) enemyString += `\nCritical Damage: ${damage}\n`
-      else enemyString += `\nDamage: ${damage}\n`
-
-      state.blockCharacter = foundEnemy
-      state.blockPreviousHealth = foundEnemy.health
-      foundEnemy.health = Math.max(0, foundEnemy.health - damage)
-      if (foundEnemy.health == 0) {
-        enemyString += ` ${toTitleCase(foundEnemy.name)} has been defeated!`
-        
-      } else enemyString += ` ${toTitleCase(foundEnemy.name)} has ${foundEnemy.health} health remaining!`
-    }
-  }
-
-  if (foundAlly != null) {
-    if (usingDefaultDifficulty) targetRoll = foundAlly.ac
-    if (score == 20 || score + modifier >= targetRoll) {
-      if (score == 20) allyString += `\nCritical Damage: ${damage}\n`
-      else allyString += `\nDamage: ${damage}\n`
-
-      state.blockCharacter = foundAlly
-      state.blockPreviousHealth = foundAlly.health
-      foundAlly.health = Math.max(0, foundAlly.health - damage)
-      if (foundAlly.health == 0) {
-        allyString += ` ${toTitleCase(foundAlly.name)} has been defeated!`
-        
-      } else allyString += ` ${toTitleCase(foundAlly.name)} has ${foundAlly.health} health remaining!`
-    }
   }
 
   var dieText = advantageText == "advantage" || advantageText == "disadvantage" ? `${advantageText}(${die1},${die2})` : die1
@@ -1740,9 +1255,6 @@ function doAttack(command) {
   if (score == 20) text += " Critical success! The attack is exceptionally damaging!"
   else if (score == 1) text += " Critical failure! The attack missed in a spectacular way!"
 
-  if (enemyString != null) text += enemyString
-  if (allyString != null) text += allyString
-
   if (targetRoll > 0 && (score + modifier >= targetRoll || score == 20)) text += addXpToAll(Math.floor(state.autoXp * clamp(targetRoll, 1, 20) / 20))
   return [text + "\n", true]
 }
@@ -1758,6 +1270,11 @@ function doNote(command) {
   state.notes.push(history[history.length - 1].text)
   state.show = "none"
   return ["\n[The last action was successfully added to the notes]\n", true]
+}
+
+function doShowNotes(command) {
+  state.show = "showNotes"
+  return [" ", true]
 }
 
 function doShowDay(command) {
@@ -1777,11 +1294,6 @@ function doSetDay(command) {
   return [`\n[The day has been set to day ${state.day}]\n`, true]
 }
 
-function doShowNotes(command) {
-  state.show = "showNotes"
-  return [" ", true]
-}
-
 function doEncounter(command) {
   var arg0 = getArgument(command, 0)
   if (arg0 == null) {
@@ -1789,304 +1301,8 @@ function doEncounter(command) {
   }
 
   var encounter = createEncounter(arg0)
-  state.enemies = encounter.enemies
   var text = `\n${encounter.text}\n`
-
-  state.prefix = "\n"
-  if (encounter.enemies.length > 0) {
-    state.prefix += "You encounter the following enemies:\n"
-    for (var enemy of encounter.enemies) {
-      state.prefix += `${toTitleCase(enemy.name)} (Health: ${enemy.health} AC: ${enemy.ac} Initiative: ${enemy.initiative})\n`
-    }
-  }
-
-  state.prefix += encounter.enemies.length > 0 ? "[Type #initiative to begin the battle]\n" : ""
-
-  state.show = "prefix"
   return [text, true]
-}
-
-function doShowEnemies(command) {
-  state.show = "showEnemies"
-  return [" ", true]
-}
-
-function doShowAllies(command) {
-  state.show = "showAllies"
-  return [" ", true]
-}
-
-function doRemoveEnemy(command) {
-  var arg0 = getArgumentRemainder(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-
-  if (/\d+\D+(\d+\D*)+/gi.test(arg0)) {
-
-    var list = arg0.split(/\D+/)
-    list.sort(function(a, b) {
-      return b - a;
-    });
-
-    var text = "\n"
-    list.forEach(x => {
-      var num = parseInt(x) - 1
-      if (num >= state.enemies.length) {
-        return [`\n[Error: Enemy ${x} does not exist. See #showenemies]\n`, false]
-      }
-
-      var enemy = state.enemies[num]
-      state.enemies.splice(num, 1)
-      text += `[The enemy ${toTitleCase(enemy.name)} has been removed]\n`
-    })
-
-    state.show = "none"
-    return [text, true]
-  }
-
-  var enemy
-  if (isNaN(arg0)) arg0 = state.enemies.findIndex(x => x.name.toLowerCase() == arg0.toLowerCase())
-  else arg0--
-
-  if (arg0 == -1) {
-    return ["\n[Error: Enemy not found. See #showenemies]\n", false]
-  } else if (arg0 >= state.enemies.length || arg0 < 0) {
-    return ["\n[Error: Index number out of bounds. See #showenemies]\n", false]
-  } else {
-    enemy = state.enemies[arg0]
-    state.enemies.splice(arg0, 1)
-  }
-
-  state.show = "none"
-  return [`\n[The enemy ${toTitleCase(enemy.name)} has been removed]\n`, true]
-}
-
-function doRemoveAlly(command) {
-  var arg0 = getArgumentRemainder(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-
-  if (/\d+\D+(\d+\D*)+/gi.test(arg0)) {
-
-    var list = arg0.split(/\D+/)
-    list.sort(function(a, b) {
-      return b - a;
-    });
-
-    var text = "\n"
-    list.forEach(x => {
-      var num = parseInt(x) - 1
-      if (num >= state.allies.length) {
-        return [`\n[Error: Ally ${x} does not exist. See #showallies]\n`, false]
-      }
-
-      var ally = state.allies[num]
-      state.allies.splice(num, 1)
-      text += `[The ally ${toTitleCase(ally.name)} has been removed]\n`
-    })
-
-    state.show = "none"
-    return [text, true]
-  }
-
-  var ally
-  if (isNaN(arg0)) arg0 = state.allies.findIndex(x => x.name.toLowerCase() == arg0.toLowerCase())
-  else arg0--
-
-  if (arg0 == -1) {
-    return ["\n[Error: Ally not found. See #showallies]\n", false]
-  } else if (arg0 >= state.allies.length || arg0 < 0) {
-    return ["\n[Error: Index number out of bounds. See #showallies]\n", false]
-  } else {
-    ally = state.allies[arg0]
-    state.allies.splice(arg0, 1)
-  }
-
-  state.show = "none"
-  return [`\n[The ally ${toTitleCase(ally.name)} has been removed]\n`, true]
-}
-
-function doClearEnemies(command) {
-  var arg0 = getArgument(command, 0)
-  if (arg0 != null) {
-    return doRemoveEnemy(command)
-  }
-
-  state.enemies = []
-
-  state.show = "none"
-  return ["\n[The enemies have been cleared]\n", true]
-}
-
-function doClearAllies(command) {
-  var arg0 = getArgument(command, 0)
-  if (arg0 != null) {
-    return doRemoveAlly(command)
-  }
-
-  state.allies = []
-
-  state.show = "none"
-  return ["\n[The allies have been cleared]\n", true]
-}
-
-function doAddEnemy(command) {
-  var name = getArgument(command, 0)
-  if (name == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-
-  var health = getArgument(command, 1)
-  if (health == null) {
-    state.show = "none"
-    return "\n[Error: Not enough parameters. See #help]\n"
-  } else if (/^\d*d\d+((\+|-)\d+)?$/gi.test(health)) {
-    health = calculateRoll(health)
-  } else if (isNaN(health)) {
-    return ["\n[Error: Expected a number. See #help]\n", false]
-  }
-  health = parseInt(health)
-
-  var ac = getArgument(command, 2)
-  if (ac == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  } else if (/^\d*d\d+((\+|-)\d+)?$/gi.test(ac)) {
-    ac = calculateRoll(ac)
-  } else if (isNaN(ac)) {
-    return ["\n[Error: Expected a number. See #help]\n", false]
-  }
-  ac = parseInt(ac)
-
-  var hitModifier = getArgument(command, 3)
-  if (hitModifier == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  } else if (/^\d*d\d+((\+|-)\d+)?$/gi.test(hitModifier)) {
-    hitModifier = calculateRoll(hitModifier)
-  }  else if (isNaN(hitModifier)) {
-    return ["\n[Error: Expected a number. See #help]\n", false]
-  }
-
-  var damage = getArgument(command, 4)
-  if (damage == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  } else if (isNaN(damage) && !/^\d*d\d+((\+|-)\d+)?$/gi.test(damage)) {
-    return ["\n[Error: Expected a number. See #help]\n", false]
-  }
-
-  var initiative = getArgument(command, 5)
-  if (initiative == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  } else if (/^\d*d\d+((\+|-)\d+)?$/gi.test(initiative)) {
-    initiative = calculateRoll(initiative)
-  } else if (isNaN(initiative)) {
-    return ["\n[Error: Expected a number. See #help]\n", false]
-  }
-  initiative = parseInt(initiative)
-
-  var spells = []
-  var spell = null
-  var index = 6
-  do {
-    spell = getArgument(command, index++)
-    if (spell != null) spells.push(spell)
-  } while (spell != null)
-  
-  var enemy = createEnemy(name, health, ac, hitModifier, damage, initiative)
-  enemy.spells = spells
-
-  var enemyMatches = state.enemies.filter(x => x.name.toLowerCase() == enemy.name.toLowerCase() || x.name.toLowerCase() == `${enemy.name.toLowerCase()} a`)
-  if (enemyMatches.length > 0) {
-    enemy.name = getUniqueName(enemy.name)
-    if (enemy.name.endsWith("A")) {
-      enemyMatches[0].name = enemy.name
-      enemy.name = enemy.name.substring(0, enemy.name.length - 1) + "B"
-    }
-  }
-
-  state.enemies.push(enemy)
-
-  state.show = "none"
-  return [`[Enemy ${toTitleCase(enemy.name)} has been created]`, true]
-}
-
-function doAddAlly(command) {
-  var name = getArgument(command, 0)
-  if (name == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-
-  var health = getArgument(command, 1)
-  if (health == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  } else if (/^\d*d\d+((\+|-)\d+)?$/gi.test(health)) {
-    health = calculateRoll(health)
-  } else if (isNaN(health)) {
-    return ["\n[Error: Expected a number. See #help]\n", false]
-  }
-  health = parseInt(health)
-
-  var ac = getArgument(command, 2)
-  if (ac == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  } else if (/^\d*d\d+((\+|-)\d+)?$/gi.test(ac)) {
-    ac = calculateRoll(ac)
-  } else if (isNaN(ac)) {
-    return ["\n[Error: Expected a number. See #help]\n", false]
-  }
-  ac = parseInt(ac)
-
-  var hitModifier = getArgument(command, 3)
-  if (hitModifier == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  } else if (/^\d*d\d+((\+|-)\d+)?$/gi.test(hitModifier)) {
-    hitModifier = calculateRoll(hitModifier)
-  }  else if (isNaN(hitModifier)) {
-    return ["\n[Error: Expected a number. See #help]\n", false]
-  }
-
-  var damage = getArgument(command, 4)
-  if (damage == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  } else if (isNaN(damage) && !/^\d*d\d+((\+|-)\d+)?$/gi.test(damage)) {
-    return ["\n[Error: Expected a number. See #help]\n", false]
-  }
-
-  var initiative = getArgument(command, 5)
-  if (initiative == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  } else if (/^\d*d\d+((\+|-)\d+)?$/gi.test(initiative)) {
-    initiative = calculateRoll(initiative)
-  } else if (isNaN(initiative)) {
-    return ["\n[Error: Expected a number. See #help]\n", false]
-  }
-  initiative = parseInt(initiative)
-
-  var spells = []
-  var spell = null
-  var index = 6
-  do {
-    spell = getArgument(command, index++)
-    if (spell != null) spells.push(spell)
-  } while (spell != null)
-  
-  var ally = createAlly(name, health, ac, hitModifier, damage, initiative)
-  ally.spells = spells
-
-  var allyMatches = state.allies.filter(x => x.name.toLowerCase() == ally.name.toLowerCase() || x.name.toLowerCase() == `${ally.name.toLowerCase()} a`)
-  if (allyMatches.length > 0) {
-    ally.name = getUniqueName(ally.name)
-    if (ally.name.endsWith("A")) {
-      allyMatches[0].name = ally.name
-      ally.name = ally.name.substring(0, ally.name.length - 1) + "B"
-    }
-  }
-
-  state.allies.push(ally)
-
-  state.show = "none"
-  return [`[Ally ${toTitleCase(ally.name)} has been created]`, true]
 }
 
 function doBlock(command) {
@@ -2095,8 +1311,6 @@ function doBlock(command) {
   }
 
   var character = state.characters.find(x => x.name.toLowerCase() == state.blockCharacter.name.toLowerCase())
-  if (character == null) character = state.enemies.find(x => x.name.toLowerCase() == state.blockCharacter.name.toLowerCase())
-  if (character == null) character = state.allies.find(x => x.name.toLowerCase() == state.blockCharacter.name.toLowerCase())
   if (character == null) {
     return ["\n[Error: Character no longer exists. See #help]\n", false]
   }
@@ -3041,7 +2255,6 @@ function doCastSpell(command) {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
   var targetText = null
-  var atWord = null
 
   var found = character.spells.find(x => x.toLowerCase() == spell.toLowerCase())
   if (found != null) {
@@ -3079,43 +2292,7 @@ function doCastSpell(command) {
   var roll2 = calculateRoll("d20")
   var roll = advantage == "advantage" ? Math.max(roll1, roll2) : advantage == "disadvantage" ? Math.min(roll1, roll2) : roll1
 
-  var enemyString = ""
-  var allyString = ""
   if (targetText != null) {
-    var foundEnemy
-
-    for (var enemy of state.enemies) {
-      if (targetText.toLowerCase().includes(enemy.name.toLowerCase())) {
-        foundEnemy = enemy
-        break
-      }
-    }
-
-    if (foundEnemy == null) {
-      var indexMatches = targetText.match(/(?<=enemy\s*)\d+/gi)
-      if (indexMatches != null) {
-        foundEnemy = state.enemies[parseInt(indexMatches[0]) - 1]
-        targetText = targetText.replace(/enemy\s*d+/gi, foundEnemy.name)
-      }
-    }
-
-    var foundAlly
-
-    if (foundEnemy == null) for (var ally of state.allies) {
-      if (targetText.toLowerCase().includes(ally.name.toLowerCase())) {
-        foundAlly = ally
-        break
-      }
-    }
-
-    if (foundAlly == null) {
-      var indexMatches = targetText.match(/(?<=ally\s*)\d+/gi)
-      if (indexMatches != null) {
-        foundAlly = state.allies[parseInt(indexMatches[0]) - 1]
-        targetText = targetText.replace(/ally\s*d+/gi, foundAlly.name)
-      }
-    }
-
     var damage = roll == 20 ? calculateRoll("2d6") + calculateRoll("2d6") : calculateRoll("2d6")
 
     var damageMatches = targetText.match(/\d*d\d+((\+|-)d+)?/gi)
@@ -3123,34 +2300,6 @@ function doCastSpell(command) {
     else {
       damageMatches = targetText.match(/\d+/g)
       if (damageMatches != null) damage = roll == 20 ? parseInt(damageMatches[damageMatches.length - 1]) * 2 : parseInt(damageMatches[damageMatches.length - 1])
-    }
-
-    if (foundEnemy != null) {
-      if (usingDefaultDifficulty) difficulty = foundEnemy.ac
-      if (roll == 20 || roll + modifier >= difficulty) {
-        if (roll == 20) enemyString += `\nCritical Damage: ${damage}\n`
-        else enemyString += `\nDamage: ${damage}\n`
-
-        state.blockCharacter = foundEnemy
-        state.blockPreviousHealth = foundEnemy.health
-        foundEnemy.health = Math.max(0, foundEnemy.health - damage)
-        if (foundEnemy.health == 0) enemyString += ` ${toTitleCase(foundEnemy.name)} has been defeated!\n`
-        else enemyString += ` ${toTitleCase(foundEnemy.name)} has ${foundEnemy.health} health remaining!\n`
-      }
-    }
-
-    if (foundAlly != null) {
-      if (usingDefaultDifficulty) difficulty = foundAlly.ac
-      if (roll == 20 || roll + modifier >= difficulty) {
-        if (roll == 20) allyString += `\nCritical Damage: ${damage}\n`
-        else allyString += `\nDamage: ${damage}\n`
-
-        state.blockCharacter = foundAlly
-        state.blockPreviousHealth = foundAlly.health
-        foundAlly.health = Math.max(0, foundAlly.health - damage)
-        if (foundAlly.health == 0) allyString += ` ${toTitleCase(foundAlly.name)} has been defeated!\n`
-        else allyString += ` ${toTitleCase(foundAlly.name)} has ${foundAlly.health} health remaining!\n`
-      }
     }
   }
 
@@ -3167,9 +2316,6 @@ function doCastSpell(command) {
   else if (roll == 1) text += ` Critical failure! The spell ${targetText != null ? "misses" : "fails"} in a spectacular way.`
   else if (roll + modifier >= difficulty) text += ` The spell ${targetText != null ? "hits the target" : "is successful"}!`
   else text += ` The spell ${targetText != null ? "misses" : "fails"}!`
-
-  if (enemyString != null) text += enemyString
-  if (allyString != null) text += allyString
 
   if (difficulty > 0 && (roll + modifier >= difficulty || roll == 20)) text += addXpToAll(Math.floor(state.autoXp * clamp(difficulty, 1, 20) / 20))
   return [`\n${text}\n`, true]
@@ -3321,8 +2467,6 @@ function doSetProficiency(command) {
 function doReset(command) {
   state.notes = []
   state.characters = []
-  state.enemies = null
-  state.allies = null
   state.defaultDifficulty = null
   state.autoXp = null
   state.day = null
