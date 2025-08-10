@@ -23,6 +23,14 @@ const modifier = (text) => {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////// DND HASH OUTPUT FUNCTION ////////////////////////////////////////////////////
 
+/**
+* - This is the main Hashtag DND function!
+* - It handles output text, and states.
+* - Handles step flows, forms as well.
+* @function
+* @param {string} [text] Raw output text from AI Dungeon
+* @returns {string} Returns new output text of any flows or states, if any.
+*/
 function DNDHash_output(text) {
   if (state.show == null) return text
 
@@ -233,8 +241,6 @@ const helpText = `
 #help skills -- Extra help on skill related commnads.
 #help inventory -- Extra help on inventory related commnads.
 #help spells -- Extra help on spell related commnads.
-#help combat -- Extra help on combat related commnads.
-#help allies -- Extra help on ally related commnads.
 
 <><> Other <><>
 #version -- Returns the current version of this scenario.
@@ -250,18 +256,8 @@ const helpTextCharacters = `
 #renamecharacter new_name -- Renames the character to the new name. All abilities, skills, inventory, etc. will remain the same. Quotes are not necessary.
 #clonecharacter new_name -- Copies the abilities, skills, inventory, etc. of the current character to a new character with the name new_name. Quotes are not necessary.
 #setclass class -- Sets the class of the character for player reference. Quotes are not necessary.
-#setsummary summary -- Sets the summary of the character for player reference. Quotes are not necessary.
 #showcharacters -- Lists all current characters and their classes/summaries.
 #removecharacter name -- Removes the character that has the indicated name.
-
-<><> Health & Damage <><>
-#sethealth value -- Sets the character's health to specified value. It's capped at the character's max health.
-#heal value or dice_roll (target) -- Increases the target enemy's or character's health by the specified value or dice_roll. If a target isn't specified, the character calling the command is healed.
-#healparty value or dice_roll -- Increases the health of all party characters' by the specified value or dice_roll.
-#damage value or dice_roll (target) -- Decreases the target enemy's or character's health by the specified value or dice_roll. If a target isn't specified, the character calling the command is damaged. Reaching 0 causes the target to become "unconscious".
-#setac value -- Sets the armor class of the character. The default is 10
-#setdamage value or dice_roll -- Sets the default damage that the character causes when attacking. If a dice_roll is specified, a randomized damage will be calculated at the time of the attack. The default is 1d6
-#setweaponproficiency value or dice_roll -- Sets the weapon proficiency of the character which affects the chance to hit. If a dice_roll is specified, a randomized value is calculated. The default is 2
 
 <><> Time <><>
 #showday -- Shows the number of days since your adventure began.
@@ -296,9 +292,6 @@ const helpTextAbilities = `
 #showabilities -- Shows the character's list of abilities.
 #removeability ability -- Removes the ability from the character's list of abilities. Quotes are not necessary.
 #clearabilities -- Removes all abilities from the character.
-#setspellability ability -- Sets the ability that affects the modifier for #cast. Quotes are not necessary.
-#setmeleeability ability -- Sets the character's ability modifier that affects melee attacks. Quotes are not necessary.
-#setrangedability ability -- Sets the character's ability modifier that affects ranged attacks. Quotes are not necessary.
 `
 const helpTextSkills = `
 <><> Skills <><>
@@ -349,34 +342,10 @@ const helpTextSpells = `
 `
 const helpTextCombat = `
 <><> Combat <><>
-#setupenemy -- Follow prompts to create an enemy from a template or completely from scratch. It will be added to the existing encounter if there is one already specified.
 #encounter (funny|easy|medium|hard|boss|god or cr) -- Generate an encounter from the specified list. If a list is not specified, it will default to "easy" You can instead provide a number as a challenge rating which will scale encounters from the appropriate list and scale their difficulty.
-#showenemies -- Shows the list of current enemies.
-#addenemy name health ac hitModifier damage initiative spells -- Adds the specified enemy to the list of enemies. health, ac, hitModifier, damage, and initiative can be numbers or dice rolls such as 3d6+5. Type the name in quotes if the name contains a space. The rest of the parameters can be a list of spells. Each spell must be typed in quotes if it has a space. If the spell does damage, write the name and damage roll in the following format: "Ray of Frost5d10"
-#removeenemy name or index -- Removes the enemy as specified by the name or index. To delete multiple enemies, type the numbers with spaces or commas between them. This is safer than calling #removeenemy multiple times because the numbers shift as enemies are deleted. Quotes are not necessary.
-#clearenemies -- Removes all enemies.
-#initiative -- Assigns initiative to all characters and enemies. This begins combat.
-#turn -- Updates the turn to the next character in combat. If it is an enemy, the enemy will attack. If it's a player character, the system will allow the player to take their turn. If there are no enemies left or all the player characters are dead, combat ends.
-#repeatTurn -- Repeats the turn. If it is currently an enemy's turn, it will attack or cast another spell again.
-#block -- Reverses the damage that has been inflicted in the last turn. This applies to damage on characters and enemies.
-#flee (difficulty_class or automatic|effortless|easy|medium|hard|impossible) -- Attempt to flee from combat. If the difficulty is not specified, the default difficulty will be used instead.
-#attack (ranged) (advantage|disadvantage) (ac or effortless|easy|medium|hard|impossible) target
--- Attacks the specified target with a melee (the default) or ranged attack. The roll is compared against the specified AC which will determine if the attack succeeds or misses. If the AC is not specified, the default AC or the AC of the opponent in combat will be used. The parameters can be listed in any order, except the target must be listed last. The target can include the name of the enemy or the word "enemy" and the number of the enemy as listed in #enemies. The target can also include a damage amount. If the damage is not specified, the character's default damage is used. Quotes are not necessary.
--- Example: Astri #attack advantage The Evil Knight for 2d12+2 damage
 #cast (advantage|disadvantage) (difficulty_class or effortless|easy|medium|hard|impossible) spell(target)
 -- Character will cast the indicated spell if the spell is in their spellbook. It will be a targeted spell if a target is indicated. The roll is modified by the spell casting ability of the character. You may type a phrase without quotes for spell such as "cast fire bolt at the giant chicken". If the difficulty is not specified, the default difficulty or the AC of the opponent in combat will be used. The parameters can be listed in any order, except the target must be listed last. The target can include the name of the enemy or the word "enemy" and the number of the enemy as listed in #enemies. The target can also include a damage amount. If the damage is not specified, the character's default damage is used. Quotes are not necessary.
 -- Example: Astri #attack advantage The Evil Knight for 2d12+2 damage
-`
-const helpTextAllies = `
-<><> Allies <><>
-#setupally 
--- Follow prompts to create an ally from a template or completely from scratch. It will be added to the existing encounter if there is one already specified.
-#showallies -- Shows the list of current allies.
-#clearallies -- Removes all allies.
-#addally name health ac hitModifier damage initiative spells
--- Adds the specified ally to the list of allies. health, ac, hitModifier, damage, and initiative can be numbers or dice rolls such as 3d6+5. Type the name in quotes if the name contains a space. The rest of the parameters can be a list of spells. Each spell must be typed in quotes if it has a space. If the spell does damage, write the name and damage roll in the following format: "Ray of Frost5d10"
-#removeally name or index
--- Removes the ally as specified by the name or index. To delete multiple allies, type the numbers with spaces or commas between them. This is safer than calling #removeally multiple times because the numbers shift as allies are deleted. Quotes are not necessary.
 `
 
 // AI DUNGEON -- Don't modify this part

@@ -50,7 +50,6 @@ const commandRegistry = [
     { handler: doCloneCharacter,        synonyms: ["clone", "clonecharacter", "cloneperson", "copycharacter", "copyperson", "duplicatecharacter", "duplicateperson", "dupecharacter", "dupeperson"] },
     { handler: doBio,                   synonyms: ["bio", "biography", "summary", "character", "charactersheet", "statsheet"] },
     { handler: doSetClass,              synonyms: ["setclass", "class"] },
-    { handler: doSetSummary,            synonyms: ["setsummary", "summary"] },
     { handler: doShowCharacters,        synonyms: ["showcharacters", "showparty", "showteam", "characters", "party", "team"] },
     { handler: doRemoveCharacter,       synonyms: ["removecharacter", "deletecharacter", "erasecharacter"] },
     
@@ -107,7 +106,12 @@ const commandRegistry = [
      */
 ];
 
-// Helper: Look up command handler from registry
+/**
+* - Helper: Look up command handler from registry using synonyms
+* @function
+* @param {string} [commandName] A command name or synonym to look up, e.g. "take"
+* @returns {function} Returns the command handler function, e.g. "doTake"
+*/
 function findCommandHandler(commandName) {
   for (let entry of commandRegistry) {
     if (entry.synonyms.some(s => s === commandName || s + "s" === commandName)) {
@@ -117,17 +121,7 @@ function findCommandHandler(commandName) {
   return null
 }
 
-// Helper: Calls commands via synonyms in registry
-function processCommandSynonyms(command, commandName, synonyms, func) {
-  let result, success = null
-  synonyms.forEach(x => {
-    if (commandName == x || commandName == x + "s") {
-      [result, success] = func(command)
-    }
-  })
-  return [result, success]
-}
-
+// Synonyms used too braodly to search the registry every time
 const articleSynonyms = ["a", "an", "the"]
 const allSynonyms = ["all", "every", "each", "every one", "everyone"]
 const turnSynonyms = ["turn", "doturn", "taketurn"]
@@ -144,6 +138,14 @@ const trySynonyms = ["try", "tryto", "tries", "triesto", "attempt", "attemptto",
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////// DND HASH INPUT FUNCTION ////////////////////////////////////////////////////
 
+/**
+* - This is the main Hashtag DND function!
+* - It handles input text, translates them to commands, and executes commands.
+* - Handles step flows, forms, and initialises variables.
+* @function
+* @param {string} [text] Raw input text from AI Dungeon
+* @returns {string} Returns command result, if any, or error messages
+*/
 function DNDHash_input (text) {
   init() // Creates templates and inital values in state
   const rawText = text
@@ -193,7 +195,7 @@ function DNDHash_input (text) {
   const isCreateCommand = createSynonyms.includes(commandName)
   const hasChar = state.characterName != null
   const exists = hasChar && hasCharacter(state.characterName)
-  const hasHandler = findCommandHandler(commandName)
+  const handler = findCommandHandler(commandName)
 
   if (!exists && !isCreateCommand) {
     state.show = "none"
@@ -203,7 +205,7 @@ function DNDHash_input (text) {
     return text
   }
 
-  if (!hasChar && isCreateCommand && !hasHandler) {
+  if (!hasChar && isCreateCommand && !handler) {
     state.show = "none"
     text = youNeedACharacter
     return text
@@ -212,10 +214,7 @@ function DNDHash_input (text) {
   
   // Command Processing Block
   let commandResult, commandSuccess = null;
-  for (const { synonyms, handler } of commandRegistry) {
-    [commandResult, commandSuccess] = processCommandSynonyms(command, commandName, synonyms, handler);
-    if (commandResult != null) break;
-  }
+  [commandResult, commandSuccess] = handler(command)
   if (!commandSuccess) state.show = "none"; // If a command fails, do not show output
   text = commandResult
 
@@ -224,6 +223,10 @@ function DNDHash_input (text) {
   return text;
 }
 
+/**
+* Mini-function that initialises all variables on first run.
+* @function
+*/
 function init() {
   if (state.tempCharacter == null) {
     state.tempCharacter = {
@@ -270,6 +273,15 @@ function init() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////// DND HASH FORM & STEP FUNCTIONS ////////////////////////////////////////////////
 
+/**
+* - Handles the create character form input across multiple inputs.
+* - Allows loading of preset characters from story cards.
+* - Has a partner in the output function.
+* - Operates in state.show = "create"
+* @function
+* @param {string} [text] Text passed from AI dungeon's input
+* @returns {string} Returns textual response, if any, or error messages
+*/
 function handleCreateStep(text) {
   state.show = "create"
 
@@ -430,6 +442,12 @@ function handleCreateStep(text) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////// COMMAND FUNCTIONS - GENERAL /////////////////////////////////////////////////
 
+/**
+ * Rolls dice with optional advantage or disadvantage.
+ * @function
+ * @param {string} [command] Command string specifying roll type and dice.
+ * @returns {[string, boolean]} Roll result text and success flag.
+ */
 function doRoll(command) {
   var rollType = searchArgument(command, /^(advantage)|(disadvantage)$/gi)
   if (rollType == null) rollType = "normal"
@@ -458,6 +476,13 @@ function doRoll(command) {
   return [text, true]
 }
 
+/**
+ * Performs a skill or ability check with difficulty and advantage/disadvantage.
+ * Grants XP on success. Provides descriptive success/failure messages.
+ * @function
+ * @param {string} [command] Command string specifying ability/skill, advantage, difficulty, and description.
+ * @returns {[string, boolean]} Result text and success flag.
+ */
 function doTry(command) {
   if (getArguments(command).length <= 1) {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
@@ -537,6 +562,13 @@ function doTry(command) {
   return [text, true]
 }
 
+/**
+ * Performs a skill or ability check with difficulty and advantage/disadvantage.
+ * Returns check result summary.
+ * @function
+ * @param {string} [command] Command string specifying ability/skill, advantage, and difficulty.
+ * @returns {[string, boolean]} Check result text and success flag.
+ */
 function doCheck(command) {
   const advantageNames = ["normal", "advantage", "disadvantage"]
   const difficultyNames = ["impossible", "extreme", "hard", "medium", "easy", "effortless", "veryeasy", "very easy", "automatic", "auto"]
@@ -602,11 +634,23 @@ function doCheck(command) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////// COMMAND FUNCTIONS - TIME ///////////////////////////////////////////////////
 
+/**
+ * Shows the current day in the game state.
+ * @function
+ * @param {string} [command] Command string (ignored).
+ * @returns {[string, boolean]} Message with the current day and success flag.
+ */
 function doShowDay(command) {
   state.show = "none"
   return [`\n[It is day ${state.day}]\n`, true]
 }
 
+/**
+ * Sets the current day in the game state.
+ * @function
+ * @param {string} [command] Command string containing the day number.
+ * @returns {[string, boolean]} Confirmation message and success flag or error.
+ */
 function doSetDay(command) {
   var arg0 = getArgument(command, 0)
   if (arg0 == null || isNaN(arg0)) {
@@ -619,6 +663,14 @@ function doSetDay(command) {
   return [`\n[The day has been set to day ${state.day}]\n`, true]
 }
 
+
+/**
+ * Advances the day by one and heals characters.
+ * Supports "shortrest" for 50% healing without advancing the day.
+ * @function
+ * @param {string} [command] Command string (may specify "shortrest").
+ * @returns {[string, boolean]} Message about healing/rest and success flag.
+ */
 function doRest(command) {
   var commandName = getCommandName(command)
   state.day++
@@ -651,6 +703,12 @@ function doRest(command) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////// COMMAND FUNCTIONS - SYSTEM /////////////////////////////////////////////////
 
+/**
+ * Sets the default difficulty level for spellcasting or checks.
+ * @function
+ * @param {string} [command] Command string containing the difficulty name or numeric value.
+ * @returns {[string, boolean]} Confirmation message and success flag.
+ */
 function doSetDefaultDifficulty(command) {
   const difficultyNames = ["impossible", "extreme", "hard", "medium", "easy", "effortless", "veryeasy", "very easy", "automatic", "auto"]
   const difficultyScores = [30, 25, 20, 15, 10, 5, 5, 5, 0, 0]
@@ -671,11 +729,23 @@ function doSetDefaultDifficulty(command) {
   return [`\n[The default difficulty is set to ${state.defaultDifficulty}]\n`, true]
 }
 
+/**
+ * Shows the current default difficulty setting.
+ * @function
+ * @param {string} [command] Command string (ignored).
+ * @returns {[string, boolean]} Current difficulty message and success flag.
+ */
 function doShowDefaultDifficulty(command) {
   state.show = "none"
   return [`\n[The default difficulty is set to ${state.defaultDifficulty}]\n`, true]
 }
 
+/**
+ * Resets game state including notes, characters, difficulty, auto XP, and day.
+ * @function
+ * @param {string} [command] Command string (ignored).
+ * @returns {[string, boolean]} Empty response and success flag.
+ */
 function doReset(command) {
   state.notes = []
   state.characters = []
@@ -687,11 +757,23 @@ function doReset(command) {
   return [" ", true]
 }
 
+/**
+ * Shows the current version of the game or system.
+ * @function
+ * @param {string} [command] Command string (ignored).
+ * @returns {[string, boolean]} Version string and success flag.
+ */
 function doVersion(command) {
   state.show = "none"
   return [`[${version}]`, true]
 }
 
+/**
+ * Displays help information or a specific help section.
+ * @function
+ * @param {string} [command] Command string containing optional help topic.
+ * @returns {[string, boolean]} Empty response and success flag.
+ */
 function doHelp(command) {
   const helpType = getArgument(command, 0)
   if (helpType) state.show = "help "
@@ -708,6 +790,12 @@ function doHelp(command) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////// COMMAND FUNCTIONS - CHARACTER ///////////////////////////////////////////////
 
+/**
+ * Initializes the character creation process and resets temporary character data.
+ * @function
+ * @param {string} [command] Command string (ignored).
+ * @returns {[string, boolean]} Empty response and success flag.
+ */
 function doCreate(command) {
   if (!hasCharacter(state.characterName)) createCharacter(state.characterName)
   var character = getCharacter()
@@ -729,6 +817,10 @@ function doCreate(command) {
   return [" ", true]
 }
 
+/**
+ * Resets the temporary character's skills to default values.
+ * @function
+ */
 function resetTempCharacterSkills() {
   state.tempCharacter.skills = [
     {name: "Acrobatics", stat: "Dexterity", modifier: 0},
@@ -752,6 +844,12 @@ function resetTempCharacterSkills() {
   ]
 }
 
+/**
+ * Renames the current character to a new name.
+ * @function
+ * @param {string} [command] Command string containing the new name.
+ * @returns {[string, boolean]} Result message and success flag.
+ */
 function doRenameCharacter(command) {
   var character = getCharacter()
   var arg0 = getArgumentRemainder(command, 0)
@@ -768,6 +866,12 @@ function doRenameCharacter(command) {
   return [text, true]
 }
 
+/**
+ * Clones the current character to a new character with a specified name.
+ * @function
+ * @param {string} [command] Command string containing the new character name.
+ * @returns {[string, boolean]} Result message and success flag.
+ */
 function doCloneCharacter(command) {
   var character = getCharacter()
 
@@ -786,11 +890,23 @@ function doCloneCharacter(command) {
   return [text, true]
 }
 
+/**
+ * Shows the biography screen for the current character.
+ * @function
+ * @param {string} [command] Command string (ignored).
+ * @returns {[string, boolean]} Empty response and success flag.
+ */
 function doBio(command) {
   state.show = "bio"
   return [" ", true]
 }
 
+/**
+ * Sets the class name for the current character.
+ * @function
+ * @param {string} [command] Command string containing the class name.
+ * @returns {[string, boolean]} Result message and success flag.
+ */
 function doSetClass(command) {
   var character = getCharacter()
   var arg0 = getArgumentRemainder(command, 0)
@@ -806,26 +922,24 @@ function doSetClass(command) {
   return [`\n[${possessiveName} class is set to "${character.className}"]\n`, true]
 }
 
-function doSetSummary(command) {
-  var character = getCharacter()
-  var arg0 = getArgumentRemainder(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
 
-  var possessiveName = getPossessiveName(character.name)
-
-  character.summary = arg0
-
-  state.show = "none"
-  return [`\n[${possessiveName} summary is set]\n`, true]
-}
-
+/**
+ * Displays the list of characters.
+ * @function
+ * @param {string} [command] Command string (ignored).
+ * @returns {[string, boolean]} Empty response and success flag.
+ */
 function doShowCharacters(command) {
   state.show = "characters"
   return [" ", true]
 }
 
+/**
+ * Removes a character by name.
+ * @function
+ * @param {string} [command] Command string containing the character name to remove.
+ * @returns {[string, boolean]} Result message and success flag.
+ */
 function doRemoveCharacter(command) {
   var arg0 = getArgumentRemainder(command, 0)
   if (arg0 == null) {
@@ -853,6 +967,12 @@ function doRemoveCharacter(command) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////// COMMAND FUNCTIONS - LEVELS & EXP /////////////////////////////////////////////
 
+/**
+ * Sets a character's experience points to a specified value.
+ * @function
+ * @param {string} [command] Command string containing the experience amount.
+ * @returns {[string, boolean]} Result message and success flag.
+ */
 function doSetExperience(command) {
   var character = getCharacter()
   var arg0 = getArgument(command, 0)
@@ -872,6 +992,12 @@ function doSetExperience(command) {
   return [`\n[${possessiveName} experience is set to ${character.experience}]\n`, true]
 }
 
+/**
+ * Adds experience points to a character or the entire party.
+ * @function
+ * @param {string} [command] Command string containing experience amount and optionally "party".
+ * @returns {[string, boolean]} Result message and success flag.
+ */
 function doAddExperience(command) {
   var character = getCharacter()
   var arg0 = getArgument(command, 0)
@@ -912,6 +1038,12 @@ function doAddExperience(command) {
   return [" ", true]
 }
 
+/**
+ * Levels up a character by granting enough experience to reach the next level.
+ * @function
+ * @param {string} [command] Command string (ignored except for context).
+ * @returns {[string, boolean]} Result message and success flag.
+ */
 function doLevelUp(command) {
   var character = getCharacter()
   var level = getLevel(character.experience)
@@ -919,6 +1051,12 @@ function doLevelUp(command) {
   return doAddExperience(`${command} ${experience}`)
 }
 
+/**
+ * Sets the automatic experience points gain value.
+ * @function
+ * @param {string} [command] Command string containing the auto XP amount.
+ * @returns {[string, boolean]} Result message and success flag.
+ */
 function doSetAutoXp(command) {
   var arg0 = getArgument(command, 0)
   if (arg0 == null) {
@@ -934,6 +1072,12 @@ function doSetAutoXp(command) {
   return [state.autoXp <= 0 ? `\n[Auto XP is disabled]\n` : `\n[Auto XP is set to ${state.autoXp}]\n`, true]
 }
 
+/**
+ * Shows the current auto experience points setting.
+ * @function
+ * @param {string} [command] Command string (ignored).
+ * @returns {[string, boolean]} Result message and success flag.
+ */
 function doShowAutoXp(command) {
   state.show = "none"
   return [state.autoXp <= 0 ? `\n[Auto XP is disabled]\n` : `\n[Auto XP is set to ${state.autoXp}]\n`, true]
@@ -948,6 +1092,13 @@ function doShowAutoXp(command) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////// COMMAND FUNCTIONS - ABILITIES & SKILLS //////////////////////////////////////////
 
+/**
+ * Sets or updates a character's stat with a specified value (1-100).
+ * 
+ * @function
+ * @param {string} [command] Command text containing stat name and value.
+ * @returns {[string, boolean]} Confirmation message and success status.
+ */
 function doSetStat(command) {
   var character = getCharacter()
   var arg0 = getArgument(command, 0)
@@ -974,11 +1125,25 @@ function doSetStat(command) {
   return [`\n[${possessiveName} ${toTitleCase(arg0)} ability is now ${arg1}]\n`, true]
 }
 
+/**
+ * Shows the character stats UI section.
+ * 
+ * @function
+ * @param {string} [command] Command text (ignored).
+ * @returns {[string, boolean]} Placeholder string and success status.
+ */
 function doShowStats(command) {
   state.show = "stats"
   return [" ", true]
 }
 
+/**
+ * Removes a specified stat from the character.
+ * 
+ * @function
+ * @param {string} [command] Command text containing stat name to remove.
+ * @returns {[string, boolean]} Confirmation or error message and success status.
+ */
 function doRemoveStat(command) {
   var character = getCharacter()
   var arg0 = getArgumentRemainder(command, 0)
@@ -997,6 +1162,13 @@ function doRemoveStat(command) {
   return [`\n[${character.name} removed the ability ${arg0}]\n`, true]
 }
 
+/**
+ * Clears all stats from the character.
+ * 
+ * @function
+ * @param {string} [command] Command text (ignored).
+ * @returns {[string, boolean]} Placeholder string and success status.
+ */
 function doClearStats(command) {
   var character = getCharacter()
   character.stats = []
@@ -1004,6 +1176,13 @@ function doClearStats(command) {
   return [" ", true]
 }
 
+/**
+ * Sets or updates a skill for the character with an optional associated stat and modifier.
+ * 
+ * @function
+ * @param {string} [command] Command text containing skill name, optional stat, and modifier.
+ * @returns {[string, boolean]} Confirmation message or error and success status.
+ */
 function doSetSkill(command) {
   var character = getCharacter()
   var arg0 = getArgument(command, 0)
@@ -1049,11 +1228,25 @@ function doSetSkill(command) {
   return [`\n[${possessiveName} ${toTitleCase(arg0)} skill is now ${arg2 >= 0 ? "+" + arg2 : "-" + arg2} and based on ${toTitleCase(arg1)}]\n`, true]
 }
 
+/**
+ * Shows the character skills UI section.
+ * 
+ * @function
+ * @param {string} [command] Command text (ignored).
+ * @returns {[string, boolean]} Placeholder string and success status.
+ */
 function doShowSkills(command) {
   state.show = "skills"
   return [" ", true]
 }
 
+/**
+ * Removes a specified skill from the character.
+ * 
+ * @function
+ * @param {string} [command] Command text containing skill name to remove.
+ * @returns {[string, boolean]} Confirmation or error message and success status.
+ */
 function doRemoveSkill(command) {
   var character = getCharacter()
   var arg0 = getArgumentRemainder(command, 0)
@@ -1072,6 +1265,13 @@ function doRemoveSkill(command) {
   return [`\n[${character.name} removed the skill ${arg0}]\n`, true]
 }
 
+/**
+ * Clears all skills from the character.
+ * 
+ * @function
+ * @param {string} [command] Command text (ignored).
+ * @returns {[string, boolean]} Placeholder string and success status.
+ */
 function doClearSkills(command) {
   var character = getCharacter()
   character.skills = []
@@ -1088,11 +1288,23 @@ function doClearSkills(command) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////// COMMAND FUNCTIONS - NOTES /////////////////////////////////////////////////
 
+/**
+ * Shows the notes UI section.
+ * @function
+ * @param {string} [command] The command text (ignored).
+ * @returns {[string, boolean]} Tuple with a placeholder string and true.
+ */
 function doShowNotes(command) {
   state.show = "showNotes"
   return [" ", true]
 }
 
+/**
+ * Adds a note from the command text or, if empty, adds the last action text.
+ * @function
+ * @param {string} [command] The command text containing the note to add.
+ * @returns {[string, boolean]} Tuple containing a success message and true.
+ */
 function doNote(command) {
   var arg0 = getArgumentRemainder(command, 0)
   
@@ -1106,6 +1318,12 @@ function doNote(command) {
   return ["\n[The last action was successfully added to the notes]\n", true]
 }
 
+/**
+ * Clears all notes.
+ * @function
+ * @param {string} [command] The command text (ignored).
+ * @returns {[string, boolean]} Tuple with a placeholder string and true.
+ */
 function doClearNotes(command) {
   state.notes = []
   
@@ -1113,6 +1331,13 @@ function doClearNotes(command) {
   return [" ", true]
 }
 
+
+/**
+ * Removes specified notes by their indexes.
+ * @function
+ * @param {string} [command] The command text containing note numbers to erase (e.g., "1 3 5").
+ * @returns {[string, boolean]} Tuple containing removal confirmation messages or error and true/false.
+ */
 function doEraseNote(command) {
   var arg0 = getArgumentRemainder(command, 0)
   if (arg0 == null) arg0 = 1
@@ -1198,12 +1423,12 @@ Notes:
 
 To manually create your own item cards, type: #help "item story cards"
 `
-/**********|
+/**
 * Creates a story card for an item using specified values, or use default ones.
 * @function
 * @param {string} [command] #createitem item_name (quantity) (damage_dice) (hit_bonus) (ability) (ac_bonus)
 * @returns {string} Text containing the result fo the action, or an error with (state.show = "none")
-***********/
+*/
 //TODO: This function would allow players to more easily create items, without having to manually create story cards
 // We could have this function command hold all the values, or we could step the player through a item creation form
 function doCreateItem(command) {
@@ -1278,12 +1503,12 @@ const HelpDialog_takeCommand = `
 
 To create your own item cards, type: #help "create item"
 `
-/**********|
+/**
 * Adds an instance of the specified item(s) to a character's inventory.
 * @function
 * @param {string} [command] (you|character) #take (quantity) item_name
 * @returns {string} Text containing the result fo the action, or an error with (state.show = "none")
-***********/
+**/
 function doTake(command) {
   let text = "\n"
   const character = getCharacter()
@@ -1370,12 +1595,12 @@ To create your own:
 Type #help "item story cards"
 Type #help "loot story cards"
 `
-/**********|
+/**
 * Use this command to give the character random rewards from a loot table, or a pool of all items.
 * @function
 * @param {string} [command] #Reward Command Format: {{ (you|character) #reward (quantity) (theme) }}
 * @returns {string} Text containing the result fo the action, or an error with (state.show = "none")
-***********/
+**/
 function doReward(command) {
   let text = "\n"
   const character = getCharacter()
@@ -1449,11 +1674,12 @@ const HelpDialog_doDrop = `
 -- If a quantity is omitted, it's assumed to be 1.
 -- Equipped items are unequipped.
 `
-/**********| Removes the specified quantity of item from the character's inventory.
+/**
+* - Removes the specified quantity of item from the character's inventory.
 * @function
 * @param {string} [command] (you|character) #drop (quantity|"all"|"every") item_name
 * @returns {string} Text containing the result fo the action, or an error with (state.show = "none")
-***********/
+**/
 function doDrop(command) {
   let text = "\n"
   const character = getCharacter()
@@ -1500,11 +1726,12 @@ const HelpDialog_doGive = `
 -- If a quantity is omitted, it's assumed to be 1.
 -- Equipped items are unequipped.
 `
-/**********| Removes the quantity of item from the character's inventory and adds it to the other_character's inventory.
+/**
+* - Removes the quantity of item from the character's inventory and adds it to the other_character's inventory.
 * @function
 * @param {string} [command] (you|character) #give other_character (quantity or all|every) item
 * @returns {string} Text containing the result fo the action, or an error with (state.show = "none")
-***********/
+**/
 function doGive(command) {
   let text = "\n"
   const character = getCharacter()
@@ -1561,12 +1788,12 @@ const HelpDialog_doBuy = `
 -- sell_quantity can be "all", "every", "a", "an", "the", or number.
 -- buy_quantity can only "a", "an", "the", or number.
 `
-/**********| doBuy - 
-* Adds the specified buy_quantity of the buy_item to the character's inventory and also removes the sell_quantity of sell_item.
+/**
+* - Adds the specified buy_quantity of the buy_item to the character's inventory and also removes the sell_quantity of sell_item.
 * @function
 * @param {string} [command] (you|character) #buy (buy_quantity) buy_item sell_quantity sell_item
 * @returns {string} Text containing the result fo the action, or an error with (state.show = "none")
-***********/
+**/
 function doBuy(command) {
   let text = "\n"
   const character = getCharacter()
@@ -1640,12 +1867,12 @@ const HelpDialog_doSell = `
 -- sell_quantity can be "all", "every", "a", "an", "the", or number.
 -- buy_quantity can only "a", "an", "the", or number.
 `
-/**********| doSell - 
+/**
 * Adds the specified sell_quantity of the sell_item to the character's inventory and also removes the buy_quantity of buy_item.
 * @function
 * @param {string} [command] (you|character) #sell sell_quantity sell_item buy_quantity buy_item
 * @returns {string} Text containing the result fo the action, or an error with (state.show = "none")
-***********/
+**/
 function doSell(command) {
   const character = getCharacter()
   command = command.replaceAll(/\s+((for)|(with)|(my)|(your)|(their)|(his)|(her))\s+/g, " ")
@@ -1680,12 +1907,12 @@ const HelpDialog_doRenameItem = `
 -- The quantity remains the same.
 -- Quotes are necessary for names.
 `
-/**********| doRenameItem - 
+/**
 * Renames the item indicated by original_name to the new_name.
 * @function
 * @param {string} [command] (you|character) #renameitem original_name new_name
 * @returns {[string, boolean]} Tupple containing [text result of command, and successful execution flag]
-***********/
+**/
 function doRenameItem(command) {
   const original_name = getArgument(command, 0)
   const new_name = getArgument(command, 1)
@@ -1720,17 +1947,26 @@ const HelpDialog_doInventory = `
 #inventory
 -- Shows the items in the inventory of the character.
 `
-/**********| doInventory - 
+/**
 * Sets the state to show the character's inventory in next output
 * @function
 * @param {string} [command] (you|character) #inventory
 * @returns {[string, boolean]} Tupple containing [text result of command, and successful execution flag]
-***********/
+**/
 function doInventory(command) {
   state.show = "inventory"
   return [" ", true]
 }
 
+/**
+ * Clears all items from the active character's inventory.
+ * 
+ * @function
+ * @param {string} [command] The command text (ignored in this function).
+ * @returns {[string, boolean]} Tuple where:
+ *   - string: Empty string placeholder (output controlled by UI state).
+ *   - boolean: Always true.
+ */
 function doClearInventory(command) {
   var character = getCharacter()
   character.inventory = []
@@ -1747,6 +1983,16 @@ function doClearInventory(command) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////// COMMAND FUNCTIONS - SPELLS /////////////////////////////////////////////////
 
+/**
+ * Attempts to teach the active character a new spell.
+ * If the spell is already known, returns a message stating so.
+ * 
+ * @function
+ * @param {string} [command] The command text containing the spell name to learn.
+ * @returns {[string, boolean]} Tuple where:
+ *   - string: Message about the result of learning the spell.
+ *   - boolean: true if the command was processed, false if invalid.
+ */
 function doLearnSpell(command) {
   var arg0 = getArgumentRemainder(command, 0)
   if (arg0 == "") {
@@ -1765,6 +2011,16 @@ function doLearnSpell(command) {
   return [`\n${character.name} learned the spell ${toTitleCase(arg0)}.\n`, true]
 }
 
+/**
+ * Attempts to remove a spell from the active character's known spells.
+ * If the spell is not known, returns a message stating so.
+ * 
+ * @function
+ * @param {string} [command] The command text containing the spell name to forget.
+ * @returns {[string, boolean]} Tuple where:
+ *   - string: Message about the result of forgetting the spell.
+ *   - boolean: true if the command was processed, false if invalid.
+ */
 function doForgetSpell(command) {
   var character = getCharacter()
   var arg0 = getArgumentRemainder(command, 0)
@@ -1787,6 +2043,21 @@ function doForgetSpell(command) {
   return [`\n[${character.name} forgot the spell ${arg0}]\n`, true]
 }
 
+/**
+ * Attempts to cast a known spell, applying difficulty and advantage rules.
+ * Performs a d20 roll (with modifiers) and determines success or failure.
+ * Can optionally calculate and apply damage if a target is specified.
+ * 
+ * @function
+ * @param {string} [command] The command text containing:
+ *   - spell name
+ *   - optional advantage/disadvantage
+ *   - optional difficulty rating (name or numeric)
+ *   - optional target
+ * @returns {[string, boolean]} Tuple where:
+ *   - string: Narrative result of the casting attempt.
+ *   - boolean: true if the command was processed, false if invalid.
+ */
 function doCastSpell(command) {
   const advantageNames = ["normal", "advantage", "disadvantage"]
   const difficultyNames = ["impossible", "extreme", "hard", "medium", "easy", "effortless", "veryeasy", "very easy", "automatic", "auto"]
@@ -1888,6 +2159,15 @@ function doCastSpell(command) {
   return [`\n${text}\n`, true]
 }
 
+/**
+ * Clears all known spells from the active character.
+ * 
+ * @function
+ * @param {string} [command] The command text (ignored in this function).
+ * @returns {[string, boolean]} Tuple where:
+ *   - string: Empty string placeholder (output controlled by UI state).
+ *   - boolean: Always true.
+ */
 function doClearSpells(command) {
   var character = getCharacter()
   character.spells = []
@@ -1895,6 +2175,15 @@ function doClearSpells(command) {
   return [" ", true]
 }
 
+/**
+ * Displays the spellbook view for the active character.
+ * 
+ * @function
+ * @param {string} [command] The command text (ignored in this function).
+ * @returns {[string, boolean]} Tuple where:
+ *   - string: Empty string placeholder (output controlled by UI state).
+ *   - boolean: Always true.
+ */
 function doSpellbook(command) {
   state.show = "spellbook"
   return [" ", true]
@@ -1909,6 +2198,12 @@ function doSpellbook(command) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////// COMMAND FUNCTIONS - COMBAT /////////////////////////////////////////////////
 
+/**
+* - 
+* @function
+* @param {string} [command] 
+* @returns {[string,boolean]}
+*/
 function doEncounter(command) {
   var arg0 = getArgument(command, 0)
   if (arg0 == null) {
