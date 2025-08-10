@@ -44,12 +44,6 @@ function DNDHash_output(text) {
         case 2:
           text += `You rolled the following stat dice: ${state.statDice}\nChoose your abilities in order from highest to lowest\n1. Strength: Physical power and endurance\n2. Dexterity: Agility and coordination\n3. Constitution: Toughness and physique \n4. Intelligence: Reasoning and memory\n5. Wisdom: Judgement and insight\n6. Charisma: Force of personality and persuasiveness\n\nEnter the numbers with spaces between or q to quit.\n`
           break
-        case 3:
-          text += `What ability is your spell casting ability?\n1. Intelligence\n2. Wisdom\n3. Charisma\n4. Not a spell caster\nq to quit\n`
-          break
-        case 4:
-          text += `Enter a short summary about your character or q to quit\n`
-          break
         case 100:
           text += `What character will you choose?\n`
           const presetIndexes = getStoryCardListByType("preset")
@@ -70,9 +64,6 @@ function DNDHash_output(text) {
       text += `*** ${possessiveName.toUpperCase()} BIO ***\n`
       text += `Class: ${character.className}\n`
       text += `Health: ${character.health}/${getHealthMax()}\n`
-      text += `Armor Class: ${character.ac}\n`
-      text += `Damage: ${character.damage}\n`
-      text += `Weapon Proficiency: ${character.proficiency}\n`
       text += `Experience: ${character.experience}\n`
       text += `Level: ${getLevel(character.experience)}\n`
       var nextLevel = getNextLevelXp(character.experience)
@@ -84,7 +75,6 @@ function DNDHash_output(text) {
       })
 
       text += `----\n\n`
-
       text += `-SKILLS-\n`
 
       character.skills.forEach(function(x) {
@@ -102,11 +92,6 @@ function DNDHash_output(text) {
       })
 
       text += `----\n\n`
-
-      text += `Melee Ability: ${character.meleeStat == null ? "none" : character.meleeStat}\n\n`
-      text += `Ranged Ability: ${character.rangedStat == null ? "none" : character.rangedStat}\n\n`
-      text += `Spellcasting Ability: ${character.spellStat == null ? "none" : character.spellStat}\n\n`
-
       if (character.spellStat != null) {
         text += `-SPELLS-\n`
         
@@ -120,8 +105,6 @@ function DNDHash_output(text) {
       text += `-INVENTORY-\n`
       text += showInventory(character, "-")
       text += `----\n\n`
-
-      text += `Summary: ${character.summary}\n\n`
 
       text += `**************\n\n`
       break
