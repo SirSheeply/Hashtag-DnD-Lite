@@ -2077,9 +2077,9 @@ function doSell(command) {
     return ["\n[Error: Invalid parameters. See #help]\n", false]
   }
   // just call buy command to do the trade
-  let text, success = null
+  let text, success = null;
   [text, success] = doBuy(`${singularize("aquire", character.name == "You")} ${buyQuantity} ${buyItemName} ${sellQuantity} ${sellItemName}`)
-  if (!success) {
+  if (success) {
     text = text.slice(1,text.length) // slice off the newline prepended
     text = text.slice(character.name.length+1, text.length) // slice off the name prepended + space
     text = `\n${character.name} ${singularize(getCommandName(command), character.name == "You")}, and ` + text

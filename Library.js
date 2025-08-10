@@ -17,11 +17,6 @@ function getRandomFloat(min, max) {
   return Math.random() * (max - min + 1) + min;
 }
 
-function getRandomBoolean(chance) {
-  if (chance == null) chance = .5
-  return Math.random() <= chance
-}
-
 function getRandom(seed) {
   var x = Math.sin(seed) * 10000
   return x - Math.floor(x)
@@ -584,151 +579,29 @@ function stripPunctuation(str) {
   return str.replaceAll(/((\.)|(!))\s*$/g, "")
 }
 
-const O = hoistO();
-/*** Creates a new story card with the specified parameters
-* Credits to Lewd Leah
-* @function
-* @param {string|Object} title Card title string or full card template object containing all fields
-* @param {string} [entry] The entry text for the card
-* @param {string} [type] The card type (e.g., "character", "location")
-* @param {string} [keys] The keys (triggers) for the card
-* @param {string} [description] The notes or memory bank of the card
-* @param {number} [insertionIndex] Optional index to insert the card at a specific position within storyCards
-* @returns {Object|null} The created card object reference, or null if creation failed
-*/
-function buildStoryCard (title, entry, type, keys, description, insertionIndex) {
-    if (isTitleInObj(title)) {
-        type = title.type ?? type;
-        keys = title.keys ?? keys;
-        entry = title.entry ?? entry;
-        description = title.description ?? description;
-        title = title.title;
-    }
-    title = cast(title);
-    const card = constructCard(O.f({
-        type: cast(type),
-        title,
-        keys: cast(keys, buildKeys("", title)),
-        entry: cast(entry),
-        description: cast(description)
-    }), boundInteger(0, insertionIndex, storyCards.length, newCardIndex()));
-    if (notEmptyObj(card)) {
-        return card;
-    }
-    function cast(value, fallback = "") {
-        if (typeof value === "string") {
-            return value;
-        } else {
-            return fallback;
-        }
-    }
-    return null;
-}
+/// STORY CARD CODE
 
-function hoistO() {
-  return (class O {
-    static f(obj) {
-      return Object.freeze(obj); // Makes the object immutable
-    }
-    static v(base) {
-      return see(Words.copy) + base;
-    }
-    static s(obj) {
-      return Object.seal(obj); // Prevents adding/removing properties
-    }
-  });
-}
+function buildStoryCard(title, entry = "", type = "", keys = "", description = "", insertionIndex = storyCards.length) {
+  // If passing an object, destructure values
+  if (typeof title === "object" && title !== null && "title" in title) {
+    ({ title, entry = entry, type = type, keys = keys, description = description } = title);
+  }
 
-function isTitleInObj(obj) {
-  return (
-    (typeof obj === "object")
-    && (obj !== null)
-    && ("title" in obj)
-    && (typeof obj.title === "string")
-  );
-}
+  // Default key builder — keep only if you need it
+  if (!keys) keys = buildKeys("", title);
 
-function notEmptyObj(obj) {
-    return (obj && (0 < Object.keys(obj).length));
-}
+  const card = { type, title, keys, entry, description };
 
-function boundInteger(lowerBound, value, upperBound, fallback) {
-    if (!Number.isInteger(value)) {
-        if (!Number.isInteger(fallback)) {
-            throw new Error("Invalid arguments: value and fallback are not integers");
-        }
-        value = fallback;
-    }
-    if (Number.isInteger(lowerBound) && (value < lowerBound)) {
-        if (Number.isInteger(upperBound) && (upperBound < lowerBound)) {
-            throw new Error("Invalid arguments: The inequality (lowerBound <= upperBound) must be satisfied");
-        }
-        return lowerBound;
-    } else if (Number.isInteger(upperBound) && (upperBound < value)) {
-        return upperBound;
-    } else {
-        return value;
-    }
-}
+  // Clamp insertion index
+  insertionIndex = Math.max(0, Math.min(insertionIndex, storyCards.length));
 
-// Constructs a new story card from a standardized story card template object
-// {type: "", title: "", keys: "", entry: "", description: ""}
-// Returns a reference to the newly constructed card
-function constructCard(templateCard, insertionIndex = 0) {
-    addStoryCard("%@%");
-    for (const [index, card] of storyCards.entries()) {
-        if (card.title !== "%@%") {
-            continue;
-        }
-        card.type = templateCard.type;
-        card.title = templateCard.title;
-        card.keys = templateCard.keys;
-        card.entry = templateCard.entry;
-        card.description = templateCard.description;
-        if (index !== insertionIndex) {
-            // Remove from the current position and reinsert at the desired index
-            storyCards.splice(index, 1);
-            storyCards.splice(insertionIndex, 0, card);
-        }
-        return O.s(card);
-    }
-    return {};
-}
-function newCardIndex() {
-    return 0;
+  // Insert card
+  storyCards.splice(insertionIndex, 0, card);
+
+  return card;
 }
 
 function buildKeys(keys, key) {
-    key = key.trim().replace(/\s+/g, " ");
-    const keyset = [];
-    if (key === "") {
-        return keys;
-    } else if (keys.trim() !== "") {
-        keyset.push(...keys.split(","));
-        const lowerKey = key.toLowerCase();
-        for (let i = keyset.length - 1; 0 <= i; i--) {
-            const preKey = keyset[i].trim().replace(/\s+/g, " ").toLowerCase();
-            if ((preKey === "") || preKey.includes(lowerKey)) {
-                keyset.splice(i, 1);
-            }
-        }
-    }
-    if (key.length < 6) {
-        keyset.push(...[
-            " " + key + " ", " " + key + "'", "\"" + key + " ", " " + key + ".", " " + key + "?", " " + key + "!", " " + key + ";", "'" + key + " ", "(" + key + " ", " " + key + ")", " " + key + ":", " " + key + "\"", "[" + key + " ", " " + key + "]", "—" + key + " ", " " + key + "—", "{" + key + " ", " " + key + "}"
-        ]);
-    } else if (key.length < 9) {
-        keyset.push(...[
-            key + " ", " " + key, key + "'", "\"" + key, key + ".", key + "?", key + "!", key + ";", "'" + key, "(" + key, key + ")", key + ":", key + "\"", "[" + key, key + "]", "—" + key, key + "—", "{" + key, key + "}"
-        ]);
-    } else {
-        keyset.push(key);
-    }
-    keys = keyset[0] || key;
-    let i = 1;
-    while ((i < keyset.length) && ((keys.length + 1 + keyset[i].length) < 101)) {
-        keys += "," + keyset[i];
-        i++;
-    }
-    return keys;
+  // Super simple version — just return cleaned key string
+  return (keys || key || "").trim();
 }
