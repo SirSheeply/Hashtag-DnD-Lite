@@ -879,9 +879,7 @@ function putItemIntoInventory(character, itemName, quantity)
 * @returns {item} Returns the newItem with updated details.
 **/
 function checkItemCards(itemName, buildCard=autoCreateItemCards) {
-  const newItem = JSON.parse(JSON.stringify(defaultItemTemplate));
-  newItem.itemName = singularize(itemName).toLowerCase()
-
+  const newItem = { itemName: singularize(itemName).toLowerCase() }
   const itemCards = getStoryCardListByTitle(newItem.itemName, true)
   const itemCard = itemCards.length > 0 ? itemCards[0] : null;
   if (itemCard) {

@@ -411,7 +411,7 @@ function handleCreateStep(text) {
         });
         // TODO: Update the presets to be proper items
         entity.inventory.forEach(item => {
-          putItemIntoInventory(character, item.name, item.quantity)
+          putItemIntoInventory(state.tempCharacter, item.name, item.quantity)
         });
         state.tempCharacter.spells = entity.spells
       }
