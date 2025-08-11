@@ -77,8 +77,8 @@ const commandRegistry = [
     { handler: doEraseNote,             synonyms: ["erasenote", "removenote", "deletenote", "cancelnote"] },
     
     // <><> Inventory
-    { handler: doTake,                  synonyms: ["take", "steal", "get", "grab", "receive", "loot"] },
-    { handler: doReward,                synonyms: ["reward"] },
+    { handler: doTake,                  synonyms: ["take", "steal", "get", "grab", "receive"] },
+    { handler: doLoot,                  synonyms: ["loot", "search", "investigate", "harvest"] },
     { handler: doDrop,                  synonyms: ["remove", "discard", "drop", "leave", "dispose", "toss", "throw", "throwaway", "trash", "donate", "eat", "consume", "use", "drink", "pay", "lose"] },
     { handler: doGive,                  synonyms: ["give", "handover", "hand", "gift"] },
     { handler: doBuy,                   synonyms: ["buy", "purchase", "barter", "trade", "swap", "exchange"] },
@@ -95,8 +95,8 @@ const commandRegistry = [
     { handler: doClearSpells,           synonyms: ["clearspells", "clearmagic", "clearincantations", "clearrituals", "forgetallspells", "forgetallmagic", "forgetallincantation", "forgetallritual"] },
     { handler: doSpellbook,             synonyms: ["spellbook", "spells", "listspells", "showspells", "spelllist", "spellcatalog", "spellinventory"] },
     
-    // <><> Combat
-    { handler: doEncounter,             synonyms: ["encounter", "startencounter"] } //TODO: Make like thematic loot tables (no need for entity creation anymore)
+    // <><> Narrative
+    { handler: doEncounter,             synonyms: ["encounter", "travel", "traverse", "explore"] }
     
     /** PLAN: Replace health/damage/ac system with injury system
      * Wepaons have injury types which source from injury tables, armor has injury resistance
@@ -121,7 +121,7 @@ function findCommandHandler(commandName) {
   return null
 }
 
-// Synonyms used too braodly to search the registry every time
+// Synonyms used too broadly to search the registry every time
 const articleSynonyms = ["a", "an", "the"]
 const allSynonyms = ["all", "every", "each", "every one", "everyone"]
 const turnSynonyms = ["turn", "doturn", "taketurn"]
@@ -372,7 +372,7 @@ function handleCreateStep(text) {
           state.tempCharacter.stats.push(stat)
         }
 
-        state.createStep++
+        state.createStep = 100
       }
       return text
     case 100:
@@ -411,7 +411,7 @@ function handleCreateStep(text) {
         });
         // TODO: Update the presets to be proper items
         entity.inventory.forEach(item => {
-          putItemIntoInventory(character, {itemName:item.name}, item.quantity)
+          putItemIntoInventory(character, item.name, item.quantity)
         });
         state.tempCharacter.spells = entity.spells
       }
@@ -805,7 +805,7 @@ function doCreate(command) {
   resetTempCharacterSkills() // Why for skills and not for stats?
   state.tempCharacter.stats = []
   state.tempCharacter.spells = []
-  state.tempCharacter.inventory = [] // Anything that goes into the inventory must go through doTake()!
+  state.tempCharacter.inventory = [] // Use putIntoInventory() to add items
   state.tempCharacter.spellStat = null
   state.tempCharacter.meleeStat = "Strength"
   state.tempCharacter.rangedStat = "Dexterity"
@@ -1371,128 +1371,6 @@ function doEraseNote(command) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////// COMMAND FUNCTIONS - INVENTORY ///////////////////////////////////////////////
 
-const helpDialog_itemStoryCards = `
-<><> Item Story Cards <><>
-* Every item should be an "Item" type story card, and must include a category and rarity.
-* Format each item story card as follows:
-  -- Type: {{ Item - Category - Rarity }}
-  -- Title: The name of the item.
-  -- Entry: A brief description to help the AI understand what this item represents.
-  -- Keywords: For unique items only. Avoid common words or phrases!
-  -- Description: Use JSON to define item behavior and reward values.
-
-Example JSON format:
-{
-  "itemName": "Orange",
-  "minRewardAmount": 1,
-  "maxRewardAmount": 10,
-  "rewardChance": 1,
-  "worth": 100,
-  "dmgDice": "1d4",
-  "hitBonus": 0,
-  "ability":"none",
-  "acBonus": 0
-}`
-// NOTE: Needs to review all places where items are interacted with!
-// NOTE: Should not contain plurals
-// NOTE: could store category and rarity
-const defaultItemDetails = {
-    itemName: "Orange",
-    minRewardAmount: 1, // For #Reward command
-    maxRewardAmount: 1, // -- Restrict to one
-    rewardChance: 0,    // -- No chance
-    worth: 0,
-    dmgDice: "1d4", // Can be a number
-    hitBonus: 0,
-    ability: "none",
-    acBonus: 0,
-    quantity: 1 // Inventory value (or added upon taking)
-}
-const HelpDialog_createItem = `
-#createitem item_name
-#createitem (quantity) item_name
-#createitem (quantity) (ac_bonus) item_name
-#createitem (quantity) (damage_dice) (hit_bonus) (ability) item_name
-#createitem (quantity) (damage_dice) (hit_bonus) (ability) (ac_bonus) item_name
--- Creates a story card for an item using specified values, or use default ones.
--- If a story card with the same name already exists, then the create fails.
-
-Notes:
-- (damage_dice) can be a number (e.g. "4") or a dice string like "1d4".
-- Use quotes for item_name and ability if they contain spaces.
-
-To manually create your own item cards, type: #help "item story cards"
-`
-/**
-* Creates a story card for an item using specified values, or use default ones.
-* @function
-* @param {string} [command] #createitem item_name (quantity) (damage_dice) (hit_bonus) (ability) (ac_bonus)
-* @returns {string} Text containing the result fo the action, or an error with (state.show = "none")
-*/
-//TODO: This function would allow players to more easily create items, without having to manually create story cards
-// We could have this function command hold all the values, or we could step the player through a item creation form
-function doCreateItem(command) {
-  const args = getArguments(command)
-  let itemIndex = -1
-  state.show = "none" // Never display output after this input
-  if (!args.length) {
-    return ["\n[Error: No arguments provided. See #help]\n", false]
-  }
-
-  // New Item with default values!
-  let newItem = { ...defaultItemDetails }
-
-  // 6-arg format: Full description of the item
-  // #take (quantity) (damage_dice) (hit_bonus) (ability) (ac_bonus) item_name
-  if (args.length == 6) {
-    newItem.quantity = parseInt(args[0])
-    newItem.dmgDice = args[1]
-    newItem.hitBonus = parseInt(args[2])
-    newItem.ability = args[3]
-    newItem.acBonus = parseInt(args[4])
-    itemIndex = 5
-  }
-  // 5-arg format: Like #takeWeapon
-  // #take (quantity) (damage_dice) (hit_bonus) (ability) item_name
-  else if (args.length == 5) {
-    newItem.quantity = parseInt(args[0])
-    newItem.dmgDice = args[1]
-    newItem.hitBonus = parseInt(args[2])
-    newItem.ability = args[3]
-    itemIndex = 4
-  }
-  // 3-arg format: Like #takeArmor
-  // #take (quantity) (ac_bonus) item_name
-  else if (args.length === 3) {
-    newItem.quantity = parseInt(args[0])
-    newItem.acBonus = parseInt(args[1])
-    itemIndex = 2
-  }
-  // 2-arg format: #take X items
-  // #take (quantity) item_name
-  else if (args.length == 2) {
-    newItem.quantity = parseInt(args[0])
-    itemIndex = 1
-  }
-  // 1-arg format: #take item
-  // #take item_name
-  // itemIndex = 0
-
-  // Set the item name from the itemIndex
-  const argRemainder = getArgumentRemainder(command, itemIndex) // +1 is added to the index inside
-  const replacedArg = argRemainder.replace(/^((the)|(a)|(an))\s/i, "")
-  newItem.itemName = singularize(replacedArg, true) // Name assignment
-  if (!newItem.quantity || isNaN(newItem.quantity) || newItem.quantity < 1) {
-    newItem.quantity = 1
-  }
-  
-  // Check and build item
-  newItem = checkItemCards(newItem) // Returns an updated item (and builds story card if needed)
-  // TODO: Some kind of repsonse to the player
-  if (newItem) return [`${item.itemName} was succesfully created!`, true]
-  else return [`ERROR: ${item.itemName} was not created: A story card with that name already exists!`, false]
-}
-
 const HelpDialog_takeCommand = `
 #take item_name
 #take (quantity) item_name
@@ -1524,7 +1402,7 @@ function doTake(command) {
     return ["\n[Error: Invalid quantity or item_name. See #help]\n", false]
   }
 
-  const invItem = putItemIntoInventory(character, {itemName:itemName}, quantity)
+  const invItem = putItemIntoInventory(character, itemName, quantity)
   const displayItemName = singularize(itemName, quantity === 1)
   const displayHowMany = (quantity === 1) ? `the` : `${quantity}`;
 
@@ -1537,134 +1415,84 @@ function doTake(command) {
   return [text+`\n`, true]
 }
 
-// A helper function for creating items
-// TODO: Commented out until I find a use for this.
-// function createItem(itemName,
-//   minRewardAmount=defaultItemDetails.minRewardAmount,
-//   maxRewardAmount=defaultItemDetails.maxRewardAmount,
-//   rewardChance=defaultItemDetails.rewardChance,
-//   worth=defaultItemDetails.worth,
-//   dmgDice=defaultItemDetails.dmgDice,
-//   hitBonus=defaultItemDetails.hitBonus,
-//   ability=defaultItemDetails.ability,
-//   acBonus=defaultItemDetails.acBonus,
-//   quantity=defaultItemDetails.quantity,
-//   itemCategory = "Misc",
-//   itemRarity = "Uncommon",) {
-//   const newItem = {
-//       itemName: itemName,
-//       minRewardAmount: minRewardAmount, // For #Reward command
-//       maxRewardAmount: maxRewardAmount, // -- 
-//       rewardChance: rewardChance,       // -- 
-//       worth: worth,
-//       dmgDice: dmgDice, // Can be a number
-//       hitBonus: hitBonus,
-//       ability: ability,
-//       acBonus: acBonus,
-//       quantity: quantity // Inventory value (or added upon taking)
-//   }
-//   return checkItemCards(newItem)
-// }
-
-const helpDialog_lootStoryCards = `
-<><> Loot Table Story Cards <><>
-* Thematic loot tables control the quantity and chance of rewards.
-* Format each loot table story card as follows:
-  -- Type: {{ LootTable - Theme }}
-  -- Title: {{ LootTable - Theme }}
-  -- Entry: A short explanation of what this loot table thematically represents.
-  -- Keywords: Leave blank!
-  -- Description: A JSON array containing item story card JSONs.
-
-Example JSON format: #help "item story cards"
-Note: rewardChance is a float from 0 to 1.
-1 = 100% chance. 0.1 = 10% chance.`
-
 const HelpDialog_rewards = `
-#Reward Command Format: {{ (you|character) #reward (quantity) (theme) }}
--- Use this command to give the character random rewards from a loot table.
--- (quantity) is optional; defaults to 1.
+Command Format: {{ (you|character) #loot (theme) }}
+-- Randomly rolls a random item from a thematic loot table.
+-- Automaticallt adds to character's inventory.
 -- (theme) is optional; defualts to all story card items.
+-- (theme) may also be an item category.
+-- If (theme) is not found it defualts to all story card items.
 -- If the theme contains spaces, wrap it in quotes (e.g. "ancient ruins").
--- Special Case: If (theme = item), all items are used directly, skipping loot tables.
--- Cheat Case: You can filter directly using the follow as themes:
-     "item - (category)"
-     "item - (category) - (rarity)"
-
-To create your own:
-Type #help "item story cards"
-Type #help "loot story cards"
-`
+-- The word 'the' can be used e.g. "#loot the orchard"`
 /**
 * Use this command to give the character random rewards from a loot table, or a pool of all items.
 * @function
-* @param {string} [command] #Reward Command Format: {{ (you|character) #reward (quantity) (theme) }}
+* @param {string} [command] Command Format: {{ (you|character) #loot (theme) }}
 * @returns {string} Text containing the result fo the action, or an error with (state.show = "none")
 **/
-function doReward(command) {
+function doLoot(command) {
   let text = "\n"
   const character = getCharacter()
-  let rewardQuantity = getArgument(command, 0)
+  command = command.replaceAll(/\s+((the))\s+/g, " ")
+  let lootTheme = getArgumentRemainder(command, 0)
 
-  // Check the rewardQuantity argument, and get the rewardTheme
-  let rewardTheme = "Item -" // Defaults to all items later
-  if (isNaN(rewardQuantity)) { // rewardQuantity arg was the theme
-    rewardQuantity = 1
-    rewardTheme = getArgumentRemainder(command, 0)
-  } else { // else quantity was a number
-    rewardQuantity = parseInt(rewardQuantity, 10)
-    if (rewardQuantity < 1) {
-      rewardQuantity = 1
-    }
-    const nextArgument = getArgumentRemainder(command, 1)
-    rewardTheme =  nextArgument ? nextArgument.toLowerCase() : rewardTheme.toLowerCase()
+  /* <><> EXAMPLE OF Loot Table Story Card
+  // (description JSON format inside loot table story card)
+  [
+    {"item": "twig", "chance": 1, "quantity": 5},
+    {"item": "orange", "chance": 0.5, "quantity": 10},
+    {"item": "sturdy stick", "chance": 0.5, "quantity": 1}
+  ]
+  */
+
+  // Attempt to fill the loot table with items from a thematic loot table first
+  let lootTable = []
+  if (lootTheme) {
+    let lootTableCards = getStoryCardListByType("loot table - " + lootTheme, true)[0]
+    lootTable = lootTableCards ? JSON.parse(lootTableCards.description) : [];
   }
 
-  let lootTable = [];
-  if (rewardTheme.startsWith("item -")) { // use all "item" story cards as the lootTable
-    lootTable = getStoryCardListByType(rewardTheme, false).map(card => JSON.parse(card.description));
-  } else {
-    const lootCard = getStoryCardListByType("loot table - " + rewardTheme, true)[0];
-    if (!lootCard) {
-      return [`\n[Error: No loot tables found in the story cards with that theme.]\n`, false]
-    }
-    lootTable = JSON.parse(lootCard.description);
-  }
-
+  // Fallback in case the player loots something without a loot table, or provides no theme
   if (lootTable.length < 1) {
-    return [`\n[Error: There is no loot in the loot table.]\n`, false]
+    let itemCards = getStoryCardListByType("item - " + lootTheme, false); // try theme as item category
+    if (itemCards.length < 1) { // Still no items? default to all items cards
+      lootTheme = "area"
+      itemCards = getStoryCardListByType("item - ", false);
+    }
+    itemCards.forEach(itemCard => {
+      item = JSON.parse(itemCard.description);
+      randomQuantity = getRandomInteger(1, 10) // TODO: Base quantity on an item property or rarity
+      lootTable.push({
+        item: item.itemName, 
+        chance: item.rarity, 
+        quantity: randomQuantity
+      });
+    });
   }
+
+  // Sanity check
+  if (lootTable.length < 1) {
+    return [`\n[Error: There are not items in the loot table or story cards.]\n`, false]
+  }
+
+  // NOTE: Loot text entry should always logically follow the Textual prefix
+  const commandName = getCommandName(command) // "explore", "travel"
+  const displayCommandName = singularize(commandName, character.name == "You")
+  text += `${character.name} ${displayCommandName} the ${lootTheme} and found `
 
   // Time to roll the ~Loot!
-  const totalRewards = {};
-  for (let i = 0; i < rewardQuantity; i++) {
-    const roll = getRandomFloat(0, 1);
-    const possibleDrops = lootTable.filter(item => roll <= item.rewardChance);
-
-    if (possibleDrops.length > 0) {
-      const drop = possibleDrops[getRandomInteger(0, possibleDrops.length - 1)];
-      const randomAmount = getRandomInteger(drop.minRewardAmount, drop.maxRewardAmount);
-      const newAmount = (totalRewards[drop.itemName] ? totalRewards[drop.itemName].quantity : 0) + randomAmount
-      totalRewards[drop.itemName] = {item: drop, quantity: newAmount};
-    }
+  const roll = getRandomFloat(0, 1);
+  const possibleLoot = lootTable.filter(loot => roll <= loot.chance);
+  if (possibleLoot.length > 0) {
+    // TODO: Adjust for returning multiple items
+    const randomLoot = possibleLoot[getRandomInteger(0, possibleLoot.length - 1)]; // One item only
+    text += `${randomLoot.quantity} ${randomLoot.item}!`
+    putItemIntoInventory(character, randomLoot.item, randomLoot.quantity) // Add to inventory automatically
+  } else {
+    text += "nothing!"
   }
 
-  // Return text block and inventory add
-  text += `${character.name} found while searching ${rewardTheme.includes("item -") ? "for items" : "the " + rewardTheme}:`;
-
-  const rewardEntries = Object.entries(totalRewards)
-  if (rewardEntries.length < 1) return text += " nothing!";
-  rewardEntries.forEach(([itemKey, reward], index) => {
-    putItemIntoInventory(character, reward.item); // INVENTORY <---
-    if (reward.quantity > 1) {
-      text += ` ${reward.quantity} ${singularize(itemKey, false)}`;
-    } else {
-      const article = /^[aeiou]/i.test(itemKey) ? "an" : "a";
-      text += ` ${article} ${itemKey}`;
-    }
-    text += `${index < rewardEntries.length-1 ? "," : "."}`
-  })
-  return [text, true]
+  return [text+"\n", true]
 }
 
 const HelpDialog_doDrop = `
@@ -1768,7 +1596,7 @@ function doGive(command) {
   }
 
   // Now try to add the item to the other character's inventory, then printout
-  const addedItem = putItemIntoInventory(otherCharacter, {... removedItem}, removedQty)
+  const addedItem = putItemIntoInventory(otherCharacter, removedItem.itemName, removedQty)
 
   // Take text & Now have text
   text += `${character.name} ${displayCommandName} ${otherCharacter.name} ${displayHowMany} ${displayItemName}.`
@@ -1822,7 +1650,7 @@ function doBuy(command) {
   const displayHowManyBuy =  (buyQuantity === 1) ? `one` : `${buyQuantity}`;
 
   // You can't buy X if you don't have enough Y
-  const invItem = character.inventory.find((element) => element.itemName.toLowerCase() === sellItemName.toLowerCase())
+  const invItem = searchInventory(character, sellItemName)
   if (invItem?.quantity < sellQuantity) {
     const dontWord = character.name == "You" ? "don't" : "doesn't"
     return [`\n${character.name} tried to ${commandName} ${displayHowManyBuy} ${displayBuyItemName} for ${sellQuantity} ${displaySellItemName}, but ${dontWord} have enough ${displaySellItemName}.\n`, true]
@@ -1844,7 +1672,7 @@ function doBuy(command) {
   }
 
   // Now try to add the item to the other character's inventory, then printout
-  const addedItem = putItemIntoInventory(character, {itemName: buyItemName}, buyQuantity)
+  const addedItem = putItemIntoInventory(character, buyItemName, buyQuantity)
 
   // Take text & Now have text
   const displayCommandName = singularize(commandName, character.name == "You")
@@ -1928,9 +1756,9 @@ function doRenameItem(command) {
   let text = `\n[${possessiveName} ${original_name} ${hasWord} been renamed to ${new_name}]\n`
 
   // Attempt to rename item
-  const index = character.inventory.findIndex((element) => element.itemName.toLowerCase() == original_name.toLowerCase())
-  if (index >= 0 ) {
-    character.inventory[index].itemName = new_name
+  const invItem = searchInventory(character, original_name)
+  if (invItem) {
+    invItem.itemName = new_name
   } else {
     return [`\n[Error: ${character.name} ${hasWord} no item named "${original_name}". See #inventory]\n`, false]
   }
@@ -2199,20 +2027,54 @@ function doSpellbook(command) {
 ////////////////////////////////////////////////// COMMAND FUNCTIONS - COMBAT /////////////////////////////////////////////////
 
 /**
-* - 
+* Rolls a random encounter from a thematic encounter table.
 * @function
-* @param {string} [command] 
-* @returns {[string,boolean]}
+* @param {string} [command] Command string like "(you|character) #encounter theme"
+* @returns {[string,boolean]} Tuple where:
+*   - string: Narrative result of the encounter.
+*   - boolean: true if the command was processed, false if invalid.
 */
 function doEncounter(command) {
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    arg0 = "easy"
+  let text = "\n"
+  const character = getCharacter()
+  command = command.replaceAll(/\s+((the))\s+/g, " ")
+  const encounterTheme = getArgumentRemainder(command, 0)
+  if (!encounterTheme) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
-  var encounter = createEncounter(arg0)
-  var text = `\n${encounter.text}\n`
-  return [text, true]
+  const encounterTableCard = getStoryCardListByType("encounter table - " + encounterTheme, true);
+  if (encounterTableCard.length < 1) {
+    return [`\n[Error: No encounter tables found with that theme.]\n`, false]
+  }
+
+  /* <><> EXAMPLE OF Encounter Table Story Card
+  // (description JSON format inside story card)
+  [
+    {"encounter": "the city and finds a gold on the ground.", "chance": 0.5},
+    {"encounter": "the city and two suspicous individuals appraoch.", "chance": 0.5}
+  ]
+  */
+  let encounterTable = [];
+  encounterTable = JSON.parse(encounterTableCard[0].description);
+  if (encounterTable.length < 1) {
+    return [`\n[Error: There is no encounters in the loot table.]\n`, false]
+  }
+
+  // Time to roll the ~Encounter!
+  const roll = getRandomFloat(0, 1);
+  let randomEncounter = {encounter: "without issue.", chance: 1} // Default encounter if we roll none
+  const possibleEncounters = encounterTable.filter(encounter => roll <= encounter.chance);
+  if (possibleEncounters.length > 0) {
+    randomEncounter = possibleEncounters[getRandomInteger(0, possibleEncounters.length - 1)];
+  }
+
+  // NOTE: Encounter text entry should always logically follow the Textual prefix above
+  const commandName = getCommandName(command) // "explore", "travel"
+  const displayCommandName = singularize(commandName, character.name == "You")
+  text += `${character.name} ${displayCommandName} `+randomEncounter.encounter
+
+  return [text+"\n", true]
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

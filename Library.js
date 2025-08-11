@@ -14,6 +14,52 @@ const version = "Hashtag DnD v0.7.0 by Raeleus / Lite Edition by SirSheeply"
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////// CONFIG SETTINGS & VARIABLES /////////////////////////////////////////////////
+
+// TODO: Make config story card to souce these settings from
+let autoCreateItemCards = false;
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////// TEMPLATES & DEFAULTS ////////////////////////////////////////////////////
+
+const defaultItemTemplate = {
+    itemName: "orange",   // [string] Non-plural name of item
+    rarity: 0.0,          // [float] Rarity of the item expressed as a decimal
+    // Rarirty can be used to determine loot chance, and item worth.
+    // Loot chance examples: 0.0 = 0%, 0.5 = 50%, 1.0 = 100%
+    // Item worth example: --::TODO::--
+
+    // NOTE: could store category
+
+    // TODO: Consider remove these properties
+    quantity: 1 // Inventory value (or added upon taking)
+}
+
+const helpDialog_itemStoryCards = `
+<><> Item Story Cards <><>
+* Every item should be an "Item" type story card, and must include a category.
+* Format each item story card as follows:
+  -- Type: {{ Item - Category }}
+  -- Title: The name of the item.
+  -- Entry: A brief description to help the AI understand what this item represents.
+  -- Keywords: For unique items only. Avoid common words or phrases!
+  -- Description: Use JSON to define item behavior and reward values.
+
+Example JSON format: \n${defaultItemTemplate}\n`
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////// GENERAL CASE LIBRARY FUNCTIONS ////////////////////////////////////////////////
 
 /**
@@ -35,7 +81,7 @@ function getRandomInteger(min, max) {
 * @returns {number} A random float between min (inclusive) and max (exclusive).
 */
 function getRandomFloat(min, max) {
-  return Math.random() * (max - min + 1) + min;
+  return Math.random() * (max - min) + min;
 }
 
 /**
@@ -290,94 +336,6 @@ function calculateRoll(rolltext) {
   }
 
   return Math.max(0, score)
-}
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////// ENCOUNTER SYSTEM //////////////////////////////////////////////////////
-
-/**
-* - 
-* @function
-* @param {string} [command] 
-* @returns {}
-*/
-function createEncounter(listName) {
-  // Defualt Encounter
-  var encounter = {
-    text: "It's just a plesent day! Nothing happens.",
-    cr: 1
-  }
-  var multiplier = 1
-
-  if (listName == null) {
-    listName = "funny"
-  } else {
-    listName = listName.toLowerCase()
-  }
-
-  if (!isNaN(listName)) {
-    listName = parseInt(listName)
-    encounter.cr = listName
-    if (listName <= 0) {
-      listName = "funny"
-      if (encounter.cr == null) encounter.cr = 1
-      multiplier = 1
-    } else if (listName <= 4) {
-      listName = "easy"
-      if (encounter.cr == null) encounter.cr = 1
-      multiplier = 1 + (encounter.cr - 1) / 10
-    } else if (listName <= 8)  {
-      listName = "medium"
-      if (encounter.cr == null) encounter.cr = 5
-      multiplier = 1 + (encounter.cr - 5) / 10
-    } else if (listName <= 12) {
-      listName = "hard"
-      if (encounter.cr == null) encounter.cr = 9
-      multiplier = 1 + (encounter.cr - 9) / 10
-    } else if (listName <= 16) {
-      listName = "boss"
-      if (encounter.cr == null) encounter.cr = 13
-      multiplier = 1 + (encounter.cr - 13) / 10
-    } else {
-      listName = "god"
-      if (encounter.cr == null) encounter.cr = 17
-      multiplier = 1 + (encounter.cr - 17) / 10
-    }
-  }
-
-  // ~2300 lines of hard-coded encounters! That's dedication (I put it all in "mega switch.js")
-  // The rework here is to have all the encounters inside story cards, from which we can pull.
-  // This means players can create custom encounters, and we're not limited to X amount.
-
-  // Get a list of all the encounter cards with the listname type i.e. "encounter - funny"
-  const encounterIndexes = getStoryCardListByType("encounter - "+listName, true)
-  if (encounterIndexes.length <= 0) {
-    // Error no encounter cards for this case!
-    return encounter // Return default enconuter
-  }
-
-  //Pick a random encounter from the cards
-  const randomIndex = getRandomInteger(0, encounterIndexes.length-1)
-  const randomEncounter = encounterIndexes[randomIndex]
-  encounter.text = randomEncounter.entry
-
-  //-----
-
-  var characterName = toTitleCase(state.characters[getRandomInteger(0, state.characters.length-1)].name)
-  var characterNameAdjustedCase = characterName == "You" ? "you" : characterName
-  var possessiveName = getPossessiveName(characterName)
-  encounter.text = encounter.text.replaceAll("Character", characterName)
-  encounter.text = encounter.text.replaceAll("character", characterNameAdjustedCase)
-  encounter.text = encounter.text.replaceAll("character's", possessiveName)
-  encounter.text = encounter.text.replaceAll("Character's", toTitleCase(possessiveName))
-
-  return encounter
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -856,10 +814,11 @@ function buildStoryCard(title, entry = "", type = "", keys = "", description = "
 * @returns {array} An array containing all the story cards that match the type string (given above).
 **/
 function getStoryCardListByType(listType, exactType=true) {
+  const normalizedType = listType.toLowerCase()
   if (exactType) {
-    return storyCards.filter((element) => (element.type.toLowerCase() == listType.toLowerCase()));
+    return storyCards.filter((element) => (element.type.toLowerCase() == normalizedType));
   }
-  return storyCards.filter((element) => (element.type.toLowerCase().includes(listType.toLowerCase())));
+  return storyCards.filter((element) => (element.type.toLowerCase().includes(normalizedType)));
 }
 
 /***
@@ -870,7 +829,7 @@ function getStoryCardListByType(listType, exactType=true) {
 * @returns {array} An array containing all the story cards that match the title string (given above).
 **/
 function getStoryCardListByTitle(listTitle, exactTitle = true) {
-  const normalizedTitle = singularize(listTitle, true).toLowerCase()
+  const normalizedTitle = listTitle.toLowerCase()
   if (exactTitle) {
     return storyCards.filter((element) => singularize(element.title, true).toLowerCase() === normalizedTitle )
   }
@@ -890,24 +849,24 @@ function getStoryCardListByTitle(listTitle, exactTitle = true) {
 * - This function adds, or increases, an item in the character's inventory
 * @function
 * @param {character} [character] The character whose inventory is being manipulated
-* @param {item} [newItem] The item to be added or increased
+* @param {string} [itemName] Name of the item to be added or increased
 * @param {number} [quantity] The quantity of the item attempting to add
 * @returns {item} Returns the inventory item just added or increased
 **/
-function putItemIntoInventory(character, newItem, quantityOverride=null)
+function putItemIntoInventory(character, itemName, quantity)
 {
   // Check story cards (create one if needed), and make sure it's a complete item
-  newItem = checkItemCards(newItem, true)
+  const newItem = checkItemCards(itemName)
   // Has to be done after checkItemCards, so that new cards don't have the override quantity
-  newItem.quantity = (quantityOverride ?? newItem.quantity) // Enforce override quantity
+  newItem.quantity = quantity // Enforce override quantity
   // Update inventory
-  const index = character.inventory.findIndex((element) => compareWithoutPlural(newItem.itemName, element.itemName))
-  if (index == -1) {
+  const invItem = searchInventory(character, newItem.itemName)
+  if (!invItem) {
     character.inventory.push(newItem)
     return character.inventory[character.inventory.length-1]
   }
-  character.inventory[index].quantity += newItem.quantity
-  return character.inventory[index]
+  invItem.quantity += newItem.quantity
+  return invItem
 }
 
 /**
@@ -916,31 +875,33 @@ function putItemIntoInventory(character, newItem, quantityOverride=null)
 * 2) If the item exists, replace remaining default values with item card values!
 * 3) If the item does not exist, create a story card for one.
 * @function
-* @param {item} [newItem] The item to be checked.
+* @param {string} [newItem] Name of item to be checked.
 * @returns {item} Returns the newItem with updated details.
 **/
-function checkItemCards(newItem, buildCard=false) {
-  const itemName = singularize(newItem.itemName).toLowerCase()
-  const itemCards = getStoryCardListByTitle(itemName, true)
+function checkItemCards(itemName, buildCard=autoCreateItemCards) {
+  const newItem = JSON.parse(JSON.stringify(defaultItemTemplate));
+  newItem.itemName = singularize(itemName).toLowerCase()
+
+  const itemCards = getStoryCardListByTitle(newItem.itemName, true)
   const itemCard = itemCards.length > 0 ? itemCards[0] : null;
   if (itemCard) {
     const existingDetails = JSON.parse(itemCard.description)
     for (const key in existingDetails) {
-      if (newItem[key] === defaultItemDetails[key] && existingDetails[key] !== undefined) {
+      if (newItem[key] === defaultItemTemplate[key] && existingDetails[key] !== undefined) {
         newItem[key] = existingDetails[key]
       }
     }
   } else {
     // Make sure newItem is a complete item
-    for (const key in defaultItemDetails) {
+    for (const key in defaultItemTemplate) {
       if (newItem[key] === undefined) {
-        newItem[key] = defaultItemDetails[key]
+        newItem[key] = defaultItemTemplate[key]
       }
     }
     if (buildCard) {
       buildStoryCard(newItem.itemName, "", "Item - Misc - Uncommon", "", JSON.stringify(newItem))
     } else {
-      return null // null for error
+      return newItem // Return card as is
     }
   }
   return newItem
@@ -1027,6 +988,17 @@ function showInventory(character, dotPointChar=" ") {
     text += `* Inventory is empty!\n`
   }
   return text
+}
+
+/**
+* Searches the characters inventory for an item by name, and returns it.
+* @function
+* @param {character} [character] Character whose inventory to search.
+* @param {string} [itemName] Name of item to sreach for.
+* @returns {obejct|null} Item, if any, or null if not.
+**/
+function searchInventory(character, itemName) {
+  return character.inventory.find((element) => compareWithoutPlural(itemName, element.itemName)) ?? null
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

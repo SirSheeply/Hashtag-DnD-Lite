@@ -54,7 +54,7 @@ function doTest(command) {
     createCharacter("Sheep"); // create one
   // Add some items to our character
   character.inventory = [] // Reset inventory
-  putItemIntoInventory(character, {itemName:"item"}, 5)
+  putItemIntoInventory(character, "item", 5)
   
   const doGive_TestCases = [
     { command: `#give`,                   expected: "\n[Error: Target character does not exist. See #characters]\n" },
@@ -78,7 +78,7 @@ function doTest(command) {
   // --- Testing the Buy Command ---
   // Add some gold to our character
   character.inventory = [] // Reset inventory
-  putItemIntoInventory(character, {itemName:"gold"}, 4)
+  putItemIntoInventory(character, "gold", 4)
   
   const doBuy_TestCases = [
     //<>> Invlaid <<>
@@ -127,7 +127,7 @@ function doTest(command) {
   // --- Testing the Sell Command ---
   // Add some gold to our character
   character.inventory = [] // Reset inventory
-  putItemIntoInventory(character, {itemName:"item"}, 3)
+  putItemIntoInventory(character, "item", 3)
   
   const doSell_TestCases = [
     //<>> Invlaid <<>
@@ -179,19 +179,16 @@ function doTest(command) {
 
 function testerFunction (func, testCases) {
   for (const test_case of testCases) {
-    try {
-      let test_result, test_flag = null;
-      [test_result, test_flag] = func(extractCommand(test_case.command))
-      if (test_result !== test_case.expected) {
-        return (
-          `FAILED Test Case: ${test_case.command}\n` +
-          `--> Expected: ${test_case.expected}\n` +
-          `--> Received: ${test_result}`
-        )
-      }
-    } catch (err) {
-      return `ERROR in Test Case: ${test_case.command}\n--> ${err.message}`
+    let test_result, test_flag = null;
+    [test_result, test_flag] = func(extractCommand(test_case.command))
+    if (test_result !== test_case.expected) {
+      return (
+        `FAILED Test Case: ${test_case.command}\n` +
+        `--> Expected: ${test_case.expected}\n` +
+        `--> Received: ${test_result}`
+      )
     }
+    log(`SUCCESS: ${test_case.command}`)
   }
   return null
 }
