@@ -166,12 +166,11 @@ function DNDHash_input (text) {
   }
 
   state.characterName = getCharacterName(rawText)
-  text = sanitizeText(text)
 
   // Extracts "flavor text" after a newline.
   // Keeps the #command separated from the rest of the input.
   // This is later appended back after processing the command.
-  let lineBreakIndex = text.indexOf("\n")
+  let lineBreakIndex = text.indexOf(".")
   let flavorText = null
   if (lineBreakIndex > -1) {
     flavorText = text.substring(lineBreakIndex + 1)
@@ -180,6 +179,8 @@ function DNDHash_input (text) {
   } else {
     flavorText = null
   }
+
+  text = sanitizeText(text)
 
   // Extract the command portion of the input after #
   // Sanitize and extract just the base command phrase

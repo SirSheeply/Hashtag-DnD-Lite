@@ -36,7 +36,7 @@
     "value": "There are many encounters in the city, like gold, and suspicious people.",
     "type": "encounter table - city",
     "title": "City Encounters",
-    "description": "[\n    {\"encounter\": \"the city and finds a gold on the ground.\", \"chance\": 1},\n    {\"encounter\": \"the city and two suspicous individuals appraoch.\", \"chance\": 0.5}\n  ]",
+    "description": "[\n    {\"encounter\": \"the city, coming across a gold on the ground.\", \"chance\": 1},\n    {\"encounter\": \"the city and two suspicous individuals appraoch.\", \"chance\": 0.5}\n  ]",
     "useForCharacterCreation": false
   }
 ]
