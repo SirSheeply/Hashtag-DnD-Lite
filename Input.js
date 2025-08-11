@@ -37,8 +37,6 @@ const commandRegistry = [
     { handler: doRest,                  synonyms: ["rest", "longrest", "shortrest", "sleep", "nap"] },
     
     // System
-    { handler: doSetDefaultDifficulty,  synonyms: ["setdefaultdifficulty", "defaultdifficulty", "setdefaultdc", "defaultdc", "setdefaultac", "defaultac", "setdifficulty", "difficulty", "dc"] },
-    { handler: doShowDefaultDifficulty, synonyms: ["showdefaultdifficulty", "showdefaultdc", "showdefaultac"] },
     { handler: doReset,                 synonyms: ["reset", "cleandata", "cleardata", "resetdata", "resetsettings", "clearsettings", "profile"] },
     { handler: doVersion,               synonyms: ["version", "ver", "showversion"] },
     { handler: doHelp,                  synonyms: ["help"] },
@@ -237,21 +235,14 @@ function init() {
       inventory: [],
       spells: [],
       stats: [],
-      spellStat: null,
-      meleeStat: null,
-      rangedStat: null,
       experience: 0,
-      health: 10,
-      ac: 10,
-      damage: "1d6",
-      proficiency: 2
+      health: 10
     }
   }
   
   if (state.characters == null) state.characters = []
   if (state.notes == null) state.notes = []
   if (state.autoXp == null) state.autoXp = 0
-  if (state.defaultDifficulty == null) state.defaultDifficulty = 10
   if (state.day == null) state.day = 0
 
   state.show = null
@@ -488,10 +479,7 @@ function doTry(command) {
   if (getArguments(command).length <= 1) {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
-
-  const advantageNames = ["normal", "advantage", "disadvantage"]
-  const difficultyNames = ["impossible", "extreme", "hard", "medium", "easy", "effortless", "veryeasy", "very easy", "automatic", "auto"]
-  const difficultyScores = [30, 25, 20, 15, 10, 5, 5, 5, 0, 0]
+  
   var character = getCharacter()
   var textIndex = 3
   var failword = character.name == "You" ? "fail" : "fails"
@@ -516,7 +504,7 @@ function doTry(command) {
   difficultyPatternNames.push("\\d+")
   var arg2 = searchArgument(command, arrayToOrPattern(difficultyPatternNames))
   if (arg2 == null) {
-    arg2 = state.defaultDifficulty
+    arg2 = defaultDifficulty
     textIndex--
   }
   else arg2 = arg2.toLowerCase()
@@ -571,9 +559,6 @@ function doTry(command) {
  * @returns {[string, boolean]} Check result text and success flag.
  */
 function doCheck(command) {
-  const advantageNames = ["normal", "advantage", "disadvantage"]
-  const difficultyNames = ["impossible", "extreme", "hard", "medium", "easy", "effortless", "veryeasy", "very easy", "automatic", "auto"]
-  const difficultyScores = [30, 25, 20, 15, 10, 5, 5, 5, 0, 0]
   var character = getCharacter()
 
   var arg0 = null
@@ -589,7 +574,7 @@ function doCheck(command) {
   const difficultyPatternNames = [...new Set(difficultyNames)]
   difficultyPatternNames.push("\\d+")
   var arg2 = searchArgument(command, arrayToOrPattern(difficultyPatternNames))
-  if (arg2 == null) arg2 = state.defaultDifficulty
+  if (arg2 == null) arg2 = defaultDifficulty
   else arg2 = arg2.toLowerCase()
 
   var die1 = calculateRoll("1d20")
@@ -705,43 +690,6 @@ function doRest(command) {
 ////////////////////////////////////////////////// COMMAND FUNCTIONS - SYSTEM /////////////////////////////////////////////////
 
 /**
- * Sets the default difficulty level for spellcasting or checks.
- * @function
- * @param {string} [command] Command string containing the difficulty name or numeric value.
- * @returns {[string, boolean]} Confirmation message and success flag.
- */
-function doSetDefaultDifficulty(command) {
-  const difficultyNames = ["impossible", "extreme", "hard", "medium", "easy", "effortless", "veryeasy", "very easy", "automatic", "auto"]
-  const difficultyScores = [30, 25, 20, 15, 10, 5, 5, 5, 0, 0]
-
-  const difficultyPatternNames = [...new Set(difficultyNames)]
-  difficultyPatternNames.push("\\d+")
-  var difficulty = getArgument(command, 0)
-  if (difficulty == null) difficulty = "easy"
-
-  var difficultyIndex = difficultyNames.indexOf(difficulty)
-  if (difficultyIndex >= 0 && difficultyIndex < difficultyNames.length) {
-    difficulty = difficultyScores[difficultyIndex]
-  }
-
-  state.defaultDifficulty = Math.max(0, difficulty)
-
-  state.show = "none"
-  return [`\n[The default difficulty is set to ${state.defaultDifficulty}]\n`, true]
-}
-
-/**
- * Shows the current default difficulty setting.
- * @function
- * @param {string} [command] Command string (ignored).
- * @returns {[string, boolean]} Current difficulty message and success flag.
- */
-function doShowDefaultDifficulty(command) {
-  state.show = "none"
-  return [`\n[The default difficulty is set to ${state.defaultDifficulty}]\n`, true]
-}
-
-/**
  * Resets game state including notes, characters, difficulty, auto XP, and day.
  * @function
  * @param {string} [command] Command string (ignored).
@@ -750,7 +698,6 @@ function doShowDefaultDifficulty(command) {
 function doReset(command) {
   state.notes = []
   state.characters = []
-  state.defaultDifficulty = null
   state.autoXp = null
   state.day = null
 
@@ -1888,9 +1835,6 @@ function doForgetSpell(command) {
  *   - boolean: true if the command was processed, false if invalid.
  */
 function doCastSpell(command) {
-  const advantageNames = ["normal", "advantage", "disadvantage"]
-  const difficultyNames = ["impossible", "extreme", "hard", "medium", "easy", "effortless", "veryeasy", "very easy", "automatic", "auto"]
-  const difficultyScores = [30, 25, 20, 15, 10, 5, 5, 5, 0, 0]
   var character = getCharacter()
   const dontWord = character.name == "You" ? "don't" : "doesn't"
   const tryWord = character.name == "You" ? "try" : "tries"
@@ -1908,7 +1852,7 @@ function doCastSpell(command) {
   difficultyPatternNames.push("\\d+")
   var difficulty = searchArgument(command, arrayToOrPattern(difficultyPatternNames), spellIndex - 1)
   if (difficulty == null) {
-    difficulty = state.defaultDifficulty
+    difficulty = defaultDifficulty
     usingDefaultDifficulty = true
     spellIndex--
   }

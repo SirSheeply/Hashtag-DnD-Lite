@@ -14,10 +14,18 @@ const version = "Hashtag DnD v0.7.0 by Raeleus / Lite Edition by SirSheeply"
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///////////////////////////////////////////////// CONFIG SETTINGS & VARIABLES /////////////////////////////////////////////////
+///////////////////////////////////////////////// CONFIG SETTINGS & CONSTANTS /////////////////////////////////////////////////
 
 // TODO: Make config story card to souce these settings from
-let autoCreateItemCards = false;
+const autoCreateItemCards = false;
+const defaultDifficulty = 10;
+
+// CONSTANTS
+const argumentPattern = /("[^"\\]*(?:\\[\S\s][^"\\]*)*"|'[^'\\]*(?:\\[\S\s][^'\\]*)*'|\/[^\/\\]*(?:\\[\S\s][^\/\\]*)*\/[gimy]*(?=\s|$)|(?:\\\s|\S)+)/g
+const levelSplits = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000]
+const advantageNames = ["normal", "advantage", "disadvantage"]
+const difficultyNames = ["impossible", "extreme", "hard", "medium", "easy", "effortless", "veryeasy", "very easy", "automatic", "auto"]
+const difficultyScores = [30, 25, 20, 15, 10, 5, 5, 5, 0, 0]
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -104,8 +112,6 @@ function getRandom(seed) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////// PATTERN MATCHING & ARGUMENT PARSING /////////////////////////////////////////////
 
-const argumentPattern = /("[^"\\]*(?:\\[\S\s][^"\\]*)*"|'[^'\\]*(?:\\[\S\s][^'\\]*)*'|\/[^\/\\]*(?:\\[\S\s][^\/\\]*)*\/[gimy]*(?=\s|$)|(?:\\\s|\S)+)/g
-
 /**
 * Returns the command keyword in a command string
 * -- Assumes we have removed the '#' from the command keyword
@@ -172,7 +178,6 @@ function getArgumentRemainder(command, index) {
     }
   }
 }
-
 
 /**
  * Searches a command string for an argument matching a given regex pattern.
@@ -482,8 +487,6 @@ function getPossessiveName(name) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////// LEVELS, STATS, & SKILLS ///////////////////////////////////////////////////
-
-const levelSplits = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000]
 
 /**
 * Determines the current level of a character based on their experience points.
