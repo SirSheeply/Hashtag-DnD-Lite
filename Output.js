@@ -267,8 +267,6 @@ const helpTextCharacters = `
 <><> Levels & Experience <><>
 #setxp value -- Sets the character's experience to the specified value.
 #addxp (party) value -- Increases the character's experience by the specified value. The player is notified if there is a level up. If the parameter party is specified, xp will be added to the entire party instead. Parameters can be listed in any order.
-#setautoxp value -- Automatically increases the experience of all party members when a #try, #attack, or #cast is called. The amount of experience is scaled based on the difficulty class of the check with any check 20 or higher will result in the maximum specified by value. Set to 0 to disable.
-#showautoxp -- Shows the value of the auto xp.
 #levelup -- Increases the character's experience by the exact amount needed to reach the next level.
 `
 const helpTextChecks = `
@@ -278,13 +276,6 @@ const helpTextChecks = `
 
 #try (ability|skill) (advantage|disadvantage) (difficulty_class or automatic|effortless|easy|medium|hard|impossible) task
 -- Attempts to do the task based on the character's ability/skill against the specified difficulty. Quotes are not necessary.
-
-<><> Check Difficulty <><>
-#setdefaultdifficulty (difficulty_class or automatic|effortless|easy|medium|hard|impossible)
--- Sets the default difficulty for #check, #try, #attack, and #cast when a difficulty is not specified. The normal default is 10 (easy). If you do not pass any parameters, the default will be set to 10 (easy).
-
-#showdefaultdifficulty
--- Shows the default difficulty for #check, #try, #attack, and #cast when a difficulty is not specified. The normal default is 10 (easy).
 `
 const helpTextAbilities = `
 <><> Abilities <><>
@@ -305,9 +296,6 @@ const helpTextInventory = `
 #take (quantity) item
 -- Adds the specified quantity of item to the character's inventory. If a quantity is omitted, it's assumed to be 1. The words the, a, and an are ignored. Quotes are not necessary.
 
-#equip weapon_or_armor_name
--- Equips a weapon or armor and automatically changes the character's damage/weapon proficiency or armor class respectively. Shields should be equipped after equipping armor because shield AC is added to the total.
-
 #buy (buy_quantity) buy_item (sell_quantity) sell_item
 -- Adds the specified buy_quantity of the buy_item to the character's inventory and also removes the sell_quantity of sell_item. If quantities are omitted, they are assumed to be 1. Quotes are necessary for items with spaces in the name. The words for, with, the, a, and an are ignored.
 
@@ -320,7 +308,7 @@ const helpTextInventory = `
 #give other_character (quantity or all|every) item
 -- Removes the quantity of item from the character's inventory and adds it to the other_character's inventory. If a quantity is omitted, it's assumed to be 1. The words the, a, and an are ignored. Quotes are not necessary for the item.
 
-#reward (count) (default|weapons|armor|tools|gear|common|uncommon|rare|very rare|legendary|artifact)
+#loot (theme)
 -- Gives the character a random item selected from the given list. count determines how many rewards are drawn (default is 1). The default list has a weighted chance of drawing from any of the lists with increasing rarity.
 
 #renameitem original_name new_name
@@ -335,17 +323,21 @@ const helpTextInventory = `
 const helpTextSpells = `
 <><> Spells <><>
 #learnspell spell -- Adds the specified spell to the character's spellbook. Creates a story card if necessary. Quotes are not necessary.
+
 #forgetSpell spell -- Removes the specified spell from the character's spellbook. Quotes are not necessary.
+
 #clearspells -- Removes all spells from the character's spellbook.
+
 #spellbook -- Shows the list of spells that the character has learned.
 -- This opens the spell shop where characters can spend gold to purchase new spells. The selection is randomized based on the day and on the character's class and spell level. Full casters, such as bards, clerics, druids, sorcerers, warlocks, and wizards, have spell levels from 0-9. Half casters, such as paladins and rangers, have spell levels from 1-5. Include the argument "free" to not require gold to purchase the spell. Include the argument "all" to list all available spells for that level. Otherwise, the list is randomized and a selection of lower level spells are included.
+
+#cast (advantage|disadvantage) (difficulty_class or effortless|easy|medium|hard|impossible) spell(target)
+-- Character will cast the indicated spell if the spell is in their spellbook. It will be a targeted spell if a target is indicated. The roll is modified by the spell casting ability of the character. You may type a phrase without quotes for spell such as "cast fire bolt at the giant chicken". If the difficulty is not specified, the default difficulty or the AC of the opponent in combat will be used. The parameters can be listed in any order, except the target must be listed last. The target can include the name of the enemy or the word "enemy" and the number of the enemy as listed in #enemies. The target can also include a damage amount. If the damage is not specified, the character's default damage is used. Quotes are not necessary.
+-- Example: Astri #attack advantage The Evil Knight for 2d12+2 damage
 `
 const helpTextCombat = `
 <><> Combat <><>
 #encounter (funny|easy|medium|hard|boss|god or cr) -- Generate an encounter from the specified list. If a list is not specified, it will default to "easy" You can instead provide a number as a challenge rating which will scale encounters from the appropriate list and scale their difficulty.
-#cast (advantage|disadvantage) (difficulty_class or effortless|easy|medium|hard|impossible) spell(target)
--- Character will cast the indicated spell if the spell is in their spellbook. It will be a targeted spell if a target is indicated. The roll is modified by the spell casting ability of the character. You may type a phrase without quotes for spell such as "cast fire bolt at the giant chicken". If the difficulty is not specified, the default difficulty or the AC of the opponent in combat will be used. The parameters can be listed in any order, except the target must be listed last. The target can include the name of the enemy or the word "enemy" and the number of the enemy as listed in #enemies. The target can also include a damage amount. If the damage is not specified, the character's default damage is used. Quotes are not necessary.
--- Example: Astri #attack advantage The Evil Knight for 2d12+2 damage
 `
 
 // AI DUNGEON -- Don't modify this part

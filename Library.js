@@ -16,17 +16,54 @@ const version = "Hashtag DnD v0.7.0 by Raeleus / Lite Edition by SirSheeply"
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////// CONFIG SETTINGS & CONSTANTS /////////////////////////////////////////////////
 
-// TODO: Make config story card to souce these settings from
-const autoCreateItemCards = false;
-const defaultDifficulty = 10;
-
 // CONSTANTS
 const argumentPattern = /("[^"\\]*(?:\\[\S\s][^"\\]*)*"|'[^'\\]*(?:\\[\S\s][^'\\]*)*'|\/[^\/\\]*(?:\\[\S\s][^\/\\]*)*\/[gimy]*(?=\s|$)|(?:\\\s|\S)+)/g
 const levelSplits = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000]
 const advantageNames = ["normal", "advantage", "disadvantage"]
 const difficultyNames = ["impossible", "extreme", "hard", "medium", "easy", "effortless", "veryeasy", "very easy", "automatic", "auto"]
 const difficultyScores = [30, 25, 20, 15, 10, 5, 5, 5, 0, 0]
-const autoXp = 0;
+
+// CONFIGURATION
+const config = {
+  autoCreateItemCards: false,
+  defaultDifficulty: 10,
+  autoXp: 0
+}
+
+function enforceConfig() {
+  // Get config story card or create one
+  let configCard = getStoryCardListByTitle("#DND Lite Config")
+  if (configCard.length > 0) {
+    try {
+      const newSettings = JSON.parse(configCard[0].entry)
+      Object.keys(newSettings).forEach(key => {
+        config[key] = validateType(newSettings[key], config[key])
+      });
+    } catch (error) {
+      return false
+    }
+  }
+  // Refresh the config story card, or build one if none exists.
+  saveStoryCard("#DND Lite Config", {
+    entry: JSON.stringify(config, null, 2),
+    type: "CONFIG",
+    keys: ""
+  });
+  return true
+}
+
+function validateType(value, expectedValue) {
+  if (typeof value !== typeof expectedValue) {
+    if (typeof expectedType === "boolean") {
+      return Boolean(value) || expectedValue;
+    }
+    if (typeof expectedType === "number" && !isNaN(value)) {
+      return Number(value) || expectedValue;
+    }
+    return expectedValue
+  }
+  return value
+}
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -795,19 +832,42 @@ function buildStoryCard(title, entry = "", type = "", keys = "", description = "
   if (typeof title === "object" && title !== null && "title" in title) {
     ({ title, entry = entry, type = type, keys = keys, description = description } = title);
   }
-
   // Default key builder — keep only if you need it
   if (!keys) keys = ("" || title || "").trim();
 
-  const card = { type, title, keys, entry, description };
-
-  // Clamp insertion index
-  insertionIndex = Math.max(0, Math.min(insertionIndex, storyCards.length));
-
   // Insert card
+  const card = { type, title, keys, entry, description };
+  insertionIndex = Math.max(0, Math.min(insertionIndex, storyCards.length)); // Clamp insertion index
   storyCards.splice(insertionIndex, 0, card);
 
   return card;
+}
+
+/**
+ * Updates an existing story card in the `storyCards` array.
+ * - Finds the card by title (first match) and updates only provided properties.
+ * - If the card is not found, no changes are made.
+ * @function
+ * @param {string} title - The title of the story card to update.
+ * @param {object} updates - An object containing the fields to update. 
+ *                           Allowed keys: title, entry, type, keys, description.
+ * @returns {object|null} The updated story card object, or null if no card was found.
+ **/
+function saveStoryCard(title, updates) {
+  const updateCards = getStoryCardListByTitle(title);
+  if (updateCards.length < 1) {
+    if (!updates.title) updates.title = title;
+    return [buildStoryCard(updates)];
+  }
+
+  const allowedFields = ["title", "entry", "type", "keys", "description"];
+  allowedFields.forEach(field => {
+    if (field in updates && updates[field] !== undefined) {
+      updateCards[0][field] = updates[field];
+    }
+  });
+
+  return updateCards[0];
 }
 
 /**
@@ -829,15 +889,15 @@ function getStoryCardListByType(listType, exactType=true) {
 * The ultimate story card retrieval for any cards of X title
 * @function
 * @param {string} [listTitle] Title string to search story cards for.
-* @param {boolean} [exactTitle] Whether to search for exact title matches, or titles that include the string arg.
+* @param {boolean} [exactTitle] Search for exact title matches, or that include listTitle, true by default.
 * @returns {array} An array containing all the story cards that match the title string (given above).
 **/
 function getStoryCardListByTitle(listTitle, exactTitle = true) {
   const normalizedTitle = listTitle.toLowerCase()
   if (exactTitle) {
-    return storyCards.filter((element) => singularize(element.title, true).toLowerCase() === normalizedTitle )
+    return storyCards.filter((element) => element.title.toLowerCase() === normalizedTitle )
   }
-  return storyCards.filter((element) => singularize(element.title, true).toLowerCase().includes(normalizedTitle) )
+  return storyCards.filter((element) => element.title.toLowerCase().includes(normalizedTitle) )
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -882,7 +942,7 @@ function putItemIntoInventory(character, itemName, quantity)
 * @param {string} [newItem] Name of item to be checked.
 * @returns {item} Returns the newItem with updated details.
 **/
-function checkItemCards(itemName, buildCard=autoCreateItemCards) {
+function checkItemCards(itemName, buildCard=config.autoCreateItemCards) {
   const newItem = { itemName: singularize(itemName).toLowerCase() }
   const itemCards = getStoryCardListByTitle(newItem.itemName, true)
   const itemCard = itemCards.length > 0 ? itemCards[0] : null;
@@ -901,7 +961,7 @@ function checkItemCards(itemName, buildCard=autoCreateItemCards) {
       }
     }
     if (buildCard) {
-      buildStoryCard(newItem.itemName, "", "Item - Misc - Uncommon", "", JSON.stringify(newItem))
+      buildStoryCard(newItem.itemName, "", "Item - Misc - Uncommon", "", JSON.stringify(newItem, null, 2))
     } else {
       return newItem // Return card as is
     }

@@ -55,8 +55,6 @@ const commandRegistry = [
     { handler: doSetExperience,         synonyms: ["setexperience", "setexp", "setxp", "setexperiencepoints"] },
     { handler: doAddExperience,         synonyms: ["addexperience", "addexp", "addxp", "addexperiencepoints", "experience", "exp", "gainxp", "gainexperience", "xp", "experiencepoints"] },
     { handler: doLevelUp,               synonyms: ["levelup", "level"] },
-    { handler: doSetAutoXp,             synonyms: ["setautoxp", "autoxp"] },
-    { handler: doShowAutoXp,            synonyms: ["showautoxp"] },
     
     // <><> Abilities & Skills
     { handler: doSetStat,               synonyms: ["setstat", "setstatistic", "setattribute", "setability", "changestat", "changestatistic", "changeattribute", "changeability", "updatestat", "updatestatistic", "updateattribute", "updateability", "stat", "attribute", "ability"] },
@@ -147,6 +145,11 @@ const trySynonyms = ["try", "tryto", "tries", "triesto", "attempt", "attemptto",
 function DNDHash_input (text) {
   init() // Creates templates and inital values in state
   const rawText = text
+
+  if (!enforceConfig()) {// Loads configuration variables from story cards
+    state.show = "none"
+    return `\nERROR: Bad config file, please delete or fix!\n`
+  }
 
   // These handle steps don't have commands, we're inputing answers to form like questions.
   // E.g. Do you want to use a character preset? (y/n/q)
@@ -503,7 +506,7 @@ function doTry(command) {
   difficultyPatternNames.push("\\d+")
   var arg2 = searchArgument(command, arrayToOrPattern(difficultyPatternNames))
   if (arg2 == null) {
-    arg2 = defaultDifficulty
+    arg2 = config.defaultDifficulty
     textIndex--
   }
   else arg2 = arg2.toLowerCase()
@@ -546,7 +549,7 @@ function doTry(command) {
   if (score == 20) text += " Critical success! The action was extremely effective."
   else if (score == 1) text += " Critical failure! There are dire consequences for this action."
   
-  if (score + modifier >= target || score == 20) text += addXpToAll(Math.floor(autoXp * clamp(target, 1, 20) / 20)) + "\n"
+  if (score + modifier >= target || score == 20) text += addXpToAll(Math.floor(config.autoXp * clamp(target, 1, 20) / 20)) + "\n"
   return [text, true]
 }
 
@@ -573,7 +576,7 @@ function doCheck(command) {
   const difficultyPatternNames = [...new Set(difficultyNames)]
   difficultyPatternNames.push("\\d+")
   var arg2 = searchArgument(command, arrayToOrPattern(difficultyPatternNames))
-  if (arg2 == null) arg2 = defaultDifficulty
+  if (arg2 == null) arg2 = config.defaultDifficulty
   else arg2 = arg2.toLowerCase()
 
   var die1 = calculateRoll("1d20")
@@ -1818,7 +1821,7 @@ function doCastSpell(command) {
   difficultyPatternNames.push("\\d+")
   var difficulty = searchArgument(command, arrayToOrPattern(difficultyPatternNames), spellIndex - 1)
   if (difficulty == null) {
-    difficulty = defaultDifficulty
+    difficulty = config.defaultDifficulty
     usingDefaultDifficulty = true
     spellIndex--
   }
@@ -1894,7 +1897,7 @@ function doCastSpell(command) {
   else if (roll + modifier >= difficulty) text += ` The spell ${targetText != null ? "hits the target" : "is successful"}!`
   else text += ` The spell ${targetText != null ? "misses" : "fails"}!`
 
-  if (difficulty > 0 && (roll + modifier >= difficulty || roll == 20)) text += addXpToAll(Math.floor(autoXp * clamp(difficulty, 1, 20) / 20))
+  if (difficulty > 0 && (roll + modifier >= difficulty || roll == 20)) text += addXpToAll(Math.floor(config.autoXp * clamp(difficulty, 1, 20) / 20))
   return [`\n${text}\n`, true]
 }
 
