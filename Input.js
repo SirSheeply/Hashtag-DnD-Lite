@@ -242,7 +242,6 @@ function init() {
   
   if (state.characters == null) state.characters = []
   if (state.notes == null) state.notes = []
-  if (state.autoXp == null) state.autoXp = 0
   if (state.day == null) state.day = 0
 
   state.show = null
@@ -547,7 +546,7 @@ function doTry(command) {
   if (score == 20) text += " Critical success! The action was extremely effective."
   else if (score == 1) text += " Critical failure! There are dire consequences for this action."
   
-  if (score + modifier >= target || score == 20) text += addXpToAll(Math.floor(state.autoXp * clamp(target, 1, 20) / 20)) + "\n"
+  if (score + modifier >= target || score == 20) text += addXpToAll(Math.floor(autoXp * clamp(target, 1, 20) / 20)) + "\n"
   return [text, true]
 }
 
@@ -698,7 +697,6 @@ function doRest(command) {
 function doReset(command) {
   state.notes = []
   state.characters = []
-  state.autoXp = null
   state.day = null
 
   state.show = "reset"
@@ -997,38 +995,6 @@ function doLevelUp(command) {
   var level = getLevel(character.experience)
   var experience = level >= levelSplits.length ? 0 : levelSplits[level] - character.experience
   return doAddExperience(`${command} ${experience}`)
-}
-
-/**
- * Sets the automatic experience points gain value.
- * @function
- * @param {string} [command] Command string containing the auto XP amount.
- * @returns {[string, boolean]} Result message and success flag.
- */
-function doSetAutoXp(command) {
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-  if (isNaN(arg0)) {
-    return ["\n[Error: Expected a number. See #help]\n", false]
-  }
-
-  state.autoXp = Math.max(0, arg0)
-
-  state.show = "none"
-  return [state.autoXp <= 0 ? `\n[Auto XP is disabled]\n` : `\n[Auto XP is set to ${state.autoXp}]\n`, true]
-}
-
-/**
- * Shows the current auto experience points setting.
- * @function
- * @param {string} [command] Command string (ignored).
- * @returns {[string, boolean]} Result message and success flag.
- */
-function doShowAutoXp(command) {
-  state.show = "none"
-  return [state.autoXp <= 0 ? `\n[Auto XP is disabled]\n` : `\n[Auto XP is set to ${state.autoXp}]\n`, true]
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -1928,7 +1894,7 @@ function doCastSpell(command) {
   else if (roll + modifier >= difficulty) text += ` The spell ${targetText != null ? "hits the target" : "is successful"}!`
   else text += ` The spell ${targetText != null ? "misses" : "fails"}!`
 
-  if (difficulty > 0 && (roll + modifier >= difficulty || roll == 20)) text += addXpToAll(Math.floor(state.autoXp * clamp(difficulty, 1, 20) / 20))
+  if (difficulty > 0 && (roll + modifier >= difficulty || roll == 20)) text += addXpToAll(Math.floor(autoXp * clamp(difficulty, 1, 20) / 20))
   return [`\n${text}\n`, true]
 }
 

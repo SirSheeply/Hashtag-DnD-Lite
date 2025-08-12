@@ -26,6 +26,7 @@ const levelSplits = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000,
 const advantageNames = ["normal", "advantage", "disadvantage"]
 const difficultyNames = ["impossible", "extreme", "hard", "medium", "easy", "effortless", "veryeasy", "very easy", "automatic", "auto"]
 const difficultyScores = [30, 25, 20, 15, 10, 5, 5, 5, 0, 0]
+const autoXp = 0;
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
