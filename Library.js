@@ -30,6 +30,12 @@ const config = {
   autoXp: 0
 }
 
+/**
+ * Loads and applies configuration settings from the "#DND Lite Config" story card.
+ * - Validates types before applying.
+ * - Always saves the current config back to the story card.
+ * @returns {boolean} True if config was successfully processed, false if JSON parsing failed.
+ */
 function enforceConfig() {
   // Get config story card or create one
   let configCard = getStoryCardListByTitle("#DND Lite Config")
@@ -52,12 +58,22 @@ function enforceConfig() {
   return true
 }
 
+
+
+/**
+ * Ensures a value matches the type of an expected value.
+ * - Attempts type conversion for booleans and numbers when mismatched.
+ * - Falls back to the expected value if conversion fails.
+ * @param {*} value - The value to validate or convert.
+ * @param {*} expectedValue - A reference value to determine the expected type.
+ * @returns {*} The validated or converted value.
+ */
 function validateType(value, expectedValue) {
   if (typeof value !== typeof expectedValue) {
-    if (typeof expectedType === "boolean") {
+    if (typeof expectedValue === "boolean") {
       return Boolean(value) || expectedValue;
     }
-    if (typeof expectedType === "number" && !isNaN(value)) {
+    if (typeof expectedValue === "number" && !isNaN(value)) {
       return Number(value) || expectedValue;
     }
     return expectedValue
