@@ -20,7 +20,7 @@
     "value": "A lovely orange orchard.",
     "type": "loot table - orchard",
     "title": "Orchard - Loot Table",
-    "description": "  [\n    {\"item\": \"twig\", \"chance\": 1, \"quantity\": 5},\n    {\"item\": \"orange\", \"chance\": 0.5, \"quantity\": 10},\n    {\"item\": \"sturdy stick\", \"chance\": 0.5, \"quantity\": 1}\n  ]",
+    "description": "  [\n    {\"item\": \"twig\", \"rarity\": 1, \"quantity\": 5},\n    {\"item\": \"orange\", \"rarity\": 0.5, \"quantity\": 10},\n    {\"item\": \"sturdy stick\", \"rarity\": 0.5, \"quantity\": 1}\n  ]",
     "useForCharacterCreation": false
   },
   {
@@ -36,7 +36,7 @@
     "value": "There are many encounters in the city, like gold, and suspicious people.",
     "type": "encounter table - city",
     "title": "City Encounters",
-    "description": "[\n    {\"encounter\": \"the city, coming across a gold on the ground.\", \"chance\": 1},\n    {\"encounter\": \"the city and two suspicous individuals appraoch.\", \"chance\": 0.5}\n  ]",
+    "description": "[\n    {\"encounter\": \"the city, coming across a gold on the ground.\", \"rarity\": 1},\n    {\"encounter\": \"the city and two suspicous individuals appraoch.\", \"rarity\": 0.5}\n  ]",
     "useForCharacterCreation": false
   }
 ]

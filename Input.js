@@ -403,7 +403,6 @@ function handleCreateStep(text) {
             state.tempCharacter.skills.push({name: skill.name, stat:skill.stat, modifier: skill.modifier})
           }
         });
-        // TODO: Update the presets to be proper items
         entity.inventory.forEach(item => {
           putItemIntoInventory(state.tempCharacter, item.name, item.quantity)
         });
@@ -1356,9 +1355,9 @@ function doLoot(command) {
   /* <><> EXAMPLE OF Loot Table Story Card
   // (description JSON format inside loot table story card)
   [
-    {"item": "twig", "chance": 1, "quantity": 5},
-    {"item": "orange", "chance": 0.5, "quantity": 10},
-    {"item": "sturdy stick", "chance": 0.5, "quantity": 1}
+    {"item": "twig", "rarity": 1, "quantity": 5},
+    {"item": "orange", "rarity": 0.5, "quantity": 10},
+    {"item": "sturdy stick", "rarity": 0.5, "quantity": 1}
   ]
   */
 
@@ -1378,10 +1377,10 @@ function doLoot(command) {
     }
     itemCards.forEach(itemCard => {
       item = JSON.parse(itemCard.description);
-      randomQuantity = getRandomInteger(1, 10) // TODO: Base quantity on an item property or rarity
+      randomQuantity = getRandomInteger(1, item.quantity)
       lootTable.push({
         item: item.itemName, 
-        chance: item.rarity, 
+        rarity: item.rarity, 
         quantity: randomQuantity
       });
     });
@@ -1399,7 +1398,7 @@ function doLoot(command) {
 
   // Time to roll the ~Loot!
   const roll = getRandomFloat(0, 1);
-  const possibleLoot = lootTable.filter(loot => roll <= loot.chance);
+  const possibleLoot = lootTable.filter(loot => roll <= loot.rarity);
   if (possibleLoot.length > 0) {
     // TODO: Adjust for returning multiple items
     const randomLoot = possibleLoot[getRandomInteger(0, possibleLoot.length - 1)]; // One item only
@@ -1679,10 +1678,6 @@ function doRenameItem(command) {
   } else {
     return [`\n[Error: ${character.name} ${hasWord} no item named "${original_name}". See #inventory]\n`, false]
   }
-
-  // TODO: Rename items consideration
-  // Inventory items are instances of 'items'
-  // Should a renamed item create a new story card?
 
   state.show = "none"
   return [text, true]
@@ -1965,8 +1960,8 @@ function doEncounter(command) {
   /* <><> EXAMPLE OF Encounter Table Story Card
   // (description JSON format inside story card)
   [
-    {"encounter": "the city and finds a gold on the ground.", "chance": 0.5},
-    {"encounter": "the city and two suspicous individuals appraoch.", "chance": 0.5}
+    {"encounter": "the city and finds a gold on the ground.", "rarity": 0.5},
+    {"encounter": "the city and two suspicous individuals appraoch.", "rarity": 0.5}
   ]
   */
   let encounterTable = [];
@@ -1977,8 +1972,8 @@ function doEncounter(command) {
 
   // Time to roll the ~Encounter!
   const roll = getRandomFloat(0, 1);
-  let randomEncounter = {encounter: "without issue.", chance: 1} // Default encounter if we roll none
-  const possibleEncounters = encounterTable.filter(encounter => roll <= encounter.chance);
+  let randomEncounter = {encounter: "without issue.", rarity: 1} // Default encounter if we roll none
+  const possibleEncounters = encounterTable.filter(encounter => roll <= encounter.rarity);
   if (possibleEncounters.length > 0) {
     randomEncounter = possibleEncounters[getRandomInteger(0, possibleEncounters.length - 1)];
   }

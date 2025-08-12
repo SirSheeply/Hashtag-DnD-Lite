@@ -90,17 +90,13 @@ function validateType(value, expectedValue) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////// TEMPLATES & DEFAULTS ////////////////////////////////////////////////////
 
+// Rarirty is used to determine loot rarity, and item worth.
+// Loot rarity examples: 0.0 = 0%, 0.5 = 50%, 1.0 = 100%
 const defaultItemTemplate = {
-    itemName: "orange",   // [string] Non-plural name of item
-    rarity: 0.0,          // [float] Rarity of the item expressed as a decimal
-    // Rarirty can be used to determine loot chance, and item worth.
-    // Loot chance examples: 0.0 = 0%, 0.5 = 50%, 1.0 = 100%
-    // Item worth example: --::TODO::--
-
-    // NOTE: could store category
-
-    // TODO: Consider remove these properties
-    quantity: 1 // Inventory value (or added upon taking)
+    itemName: "item",     // [string] Non-plural name of item
+    rarity: 1.0,          // [float] Rarity of the item expressed as a decimal
+    quantity: 1           // Inventory value (or added upon taking)
+    // TODO: could store category
 }
 
 const helpDialog_itemStoryCards = `
@@ -664,7 +660,7 @@ function sanitizeText(text) {
 * @param {boolean} [makeSingle=true] - If true, convert to singular form; if false, convert to plural form.
 * @returns {string} The transformed word.
 */
-function singularize(word, makeSingle = true) { //TODO: Changed to default true from false, need to check all usage
+function singularize(word, makeSingle = true) {
   const pluralRules = {
     '(quiz)$': "$1zes",
     '^(ox)$': "$1en",

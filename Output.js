@@ -309,7 +309,7 @@ const helpTextInventory = `
 -- Removes the quantity of item from the character's inventory and adds it to the other_character's inventory. If a quantity is omitted, it's assumed to be 1. The words the, a, and an are ignored. Quotes are not necessary for the item.
 
 #loot (theme)
--- Gives the character a random item selected from the given list. count determines how many rewards are drawn (default is 1). The default list has a weighted chance of drawing from any of the lists with increasing rarity.
+-- Gives the character a random item selected from the given list. count determines how many rewards are drawn (default is 1). The default list has a weighted rarity of drawing from any of the lists with increasing rarity.
 
 #renameitem original_name new_name
 -- Renames the item indicated by original_name to the new_name. The quantity remains the same. Quotes are necessary for items with spaces in the name.
