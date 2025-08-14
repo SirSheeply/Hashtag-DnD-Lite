@@ -250,12 +250,6 @@ function init() {
   state.show = null
   state.prefix = null
   state.critical = null
-
-  state.characters.forEach(x => {
-    if (x.ac == null) x.ac = 10
-    if (x.damage == null) x.damage = "1d6"
-    if (x.proficiency == null) x.proficiency = 2
-  })
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -437,178 +431,142 @@ function handleCreateStep(text) {
 
 /**
  * Rolls dice with optional advantage or disadvantage.
+ * - #roll (advantage|disadvantage) (dice_value)
+ * - dice_value may be formatetd 5d20+6 or 5d20 or d20 or 20.
  * @function
  * @param {string} [command] Command string specifying roll type and dice.
  * @returns {[string, boolean]} Roll result text and success flag.
  */
 function doRoll(command) {
-  var rollType = searchArgument(command, /^(advantage)|(disadvantage)$/gi)
-  if (rollType == null) rollType = "normal"
-
-  var dice = searchArgument(command, /^.*\d.*$/gi)
-  if (dice == null) dice = "d20"
-  dice = formatRoll(dice)
-
-  var addition = getAddition(dice)
-  var roll = calculateRoll(dice) - addition
-  if (rollType == "advantage") roll = Math.max(roll, calculateRoll(dice) - addition)
-  if (rollType == "disadvantage") roll = Math.min(roll, calculateRoll(dice) - addition)
-  
   state.show = "none"
 
-  var text = `\n[You roll a ${dice}`
-  if (rollType != "normal") text += ` with ${rollType}`
-  text += `. Score: ${roll}`
-    
-  if (roll == 20) text += " Critical Success!"
-  else if (roll == 1) text += " Critical Failure!"
-  else if (addition > 0) text += ` + ${addition} = ${roll + addition}`
-  else if (addition < 0) text += ` - ${Math.abs(addition)} = ${roll + addition}`
+  // Determine if rolling with advantage, disadvantage, or not
+  let rollType = searchArgument(command, arrayToOrPattern(advantageNames)) ?? "normal"
 
-  text += "]\n"
+  // Try and determine rolling dice or default to d20
+  let dice = searchArgument(command, /^.*\d.*$/gi) // Any string that contains at least one digit anywhere.
+  if (dice == null) dice = "d20"
+  dice = formatRoll(dice) // Formats a roll notation string into a standardized dice roll format (e.g., "2d6+3").
+
+  // Time to roll
+  const { die1, die2, score } = performRoll(dice, rollType)
+  
+  // Deal with addtion
+  const addition = getAddition(dice) // E.g. the +3 from "2d6+3"
+  // const roll = score - addition // Remove addition for the raw dice roll
+
+  // Display text
+  const isD20 = dice.trim().toLowerCase() === "d20" || dice.trim().toLowerCase() === "1d20";
+  const text = `\n${printRoll(dice, rollType, addition, score, die1, die2, null, getCharacter(), null, null, isD20)}\n`
+
   return [text, true]
 }
 
 /**
  * Performs a skill or ability check with difficulty and advantage/disadvantage.
- * Grants XP on success. Provides descriptive success/failure messages.
+ * - Grants autoXP on success. Provides descriptive success/failure messages.
+ * - #try (ability|skill) (advantage|disadvantage) (number or automatic|effortless|easy|medium|hard|impossible) task
+ * -- Attempts to do the task based on the character's ability/skill against the specified difficulty.
  * @function
  * @param {string} [command] Command string specifying ability/skill, advantage, difficulty, and description.
  * @returns {[string, boolean]} Result text and success flag.
  */
 function doTry(command) {
-  if (getArguments(command).length <= 1) {
+  if (getArguments(command).length <= 1) { // Minimum form of command #try plus one optional argument (not including task)
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
+
+  // ARGUMENT SREACHING -- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+  const character = getCharacter()
+  const dice = "d20" // Checks always use a d20
+  let textIndex = 3 // Used to find the starting position of task text
+
+  // Argument 0: Ability or Skill
+  const checkArg = searchArgument(command, statsToOrPattern([...character.stats, ...character.skills]))?.toLowerCase()
+  const checkSkill = character.skills.find(x => x.name.toLowerCase() === checkArg) ?? null
+  const checkAbility = character.stats.find(x => x.name.toLowerCase() === checkArg) ?? null
+  if (checkArg == null) textIndex--;
   
-  var character = getCharacter()
-  var textIndex = 3
-  var failword = character.name == "You" ? "fail" : "fails"
+  // Argument 1: Advantage or Disadvantage
+  let rollType = searchArgument(command, arrayToOrPattern(advantageNames))
+  if (rollType == null) textIndex--;
+  rollType = (rollType ?? "normal").toLowerCase()
 
-  var arg0 = null
-  if (character.stats.length > 0) arg0 = searchArgument(command, statsToOrPattern(character.stats))
-  if (arg0 == null && character.skills.length > 0) arg0 = searchArgument(command, statsToOrPattern(character.skills))
-  if (arg0 == null) {
-    arg0 = "Ability"
-    textIndex--
-  }
-  arg0 = toTitleCase(arg0)
-  
-  var arg1 = searchArgument(command, arrayToOrPattern(advantageNames))
-  if (arg1 == null) {
-    arg1 = "normal"
-    textIndex--
-  }
-  else arg1 = arg1.toLowerCase()
+  // Argument 2: Difficulty number or word
+  const difficultyPattern = [...new Set(Object.keys(difficultyScale))].concat(["\\d+"]) // Matches difficulty name or a number
+  let difficulty = searchArgument(command, arrayToOrPattern(difficultyPattern))
+  if (difficulty == null) textIndex--;
 
-  const difficultyPatternNames = [...new Set(difficultyNames)]
-  difficultyPatternNames.push("\\d+")
-  var arg2 = searchArgument(command, arrayToOrPattern(difficultyPatternNames))
-  if (arg2 == null) {
-    arg2 = config.defaultDifficulty
-    textIndex--
-  }
-  else arg2 = arg2.toLowerCase()
-
-  var arg3 = getArgumentRemainder(command, textIndex)
-  var toMatches = arg3.match(/^to\s+/gi)
-  if (toMatches != null) arg3 = arg3.substring(toMatches[0].length)
-  if (!/^.*(\.|!|\?)$/gi.test(arg3)) arg3 += "."
-
-  var die1 = calculateRoll("1d20")
-  var die2 = calculateRoll("1d20")
-  var score = arg1 == "advantage" ? Math.max(die1, die2) : arg1 == "disadvantage" ? Math.min(die1, die2) : die1
-
-  var modifier = 0
-
-  var skill = character.skills.find(x => x.name.toLowerCase() == arg0.toLowerCase())
-  if (skill != null) {
-    var stat = character.stats.find(x => x.name.toLowerCase() == skill.stat.toLowerCase())
-    if (stat != null) modifier = skill.modifier + getModifier(stat.value)
+  if (difficulty == null || isNaN(difficulty)) { // Converting between difficulty name & score
+    difficulty = difficultyScale[String(difficulty).toLowerCase()] ?? config.defaultDifficulty
   } else {
-    var stat = character.stats.find(x => x.name.toLowerCase() == arg0.toLowerCase())
-    if (stat != null) modifier = getModifier(stat.value)
+    difficulty = Number(difficulty)
   }
 
-  var target = 15
-  if (/^\d+$/.test(arg2)) target = arg2
-  else {
-    var targetIndex = difficultyNames.indexOf(arg2)
-    if (targetIndex >= 0 && targetIndex < difficultyNames.length) target = difficultyScores[targetIndex]
+  // Argument 3: Narrative task text
+  let taskText = getArgumentRemainder(command, textIndex)
+  const toMatches = taskText.match(/^to\s+/gi)
+  if (toMatches != null) taskText = taskText.substring(toMatches[0].length)
+  if (!/^.*(\.|!|\?)$/gi.test(taskText)) taskText += "."
+
+  // TIME TO ROLL THE DICE --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+  const { die1, die2, score, modifier } = performRoll(dice, rollType, character, checkSkill, checkAbility)
+
+  // PRINTING LOGIC - --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+  let text = "\n"
+  state.show = "prefix" // Will print whatever is saved in state.prefix, along with regular AI Dungeon output
+  const failword = character.name == "You" ? "fail" : "fails"
+
+  // Essentially the same as doCheck (Prefixes rolling result into the printed output)
+  state.prefix = `\n${printRoll(dice, rollType, modifier, score, die1, die2, difficulty, character, checkSkill, checkAbility)}\n`
+
+  const critText2 = (score == 20) ? " Critical Success! The action was extremely effective." : (score == 1) ? " Critical Failure! There are dire consequences for this action." : ""
+  text += `${character.name} ${score + modifier >= difficulty ? "successfully" : failword + " to"} ${taskText}${critText2}`
+
+  // Adding of autoXp to all party members!
+  if (score + modifier >= difficulty || score == 20) {
+    text += addXpToAll(Math.floor(config.autoXp * clamp(difficulty, 1, 20) / 20))
   }
 
-  var dieText = arg1 == "advantage" || arg1 == "disadvantage" ? `${arg1}(${die1},${die2})` : die1
-
-  state.show = "prefix"
-  if (score == 20) state.prefix = `\n[${arg0} check DC: ${target} roll: ${dieText}]\n`
-  else if (score == 1) state.prefix = `\n[${arg0} check DC: ${target} roll: ${dieText}]\n`
-  else if (modifier != 0) state.prefix = `\n[${arg0} check DC: ${target} roll: ${dieText}${modifier > 0 ? "+" + modifier : modifier}=${score + modifier}. ${score + modifier >= target ? "Success!" : "Failure!"}]\n`
-  else state.prefix = `\n[${arg0} check DC: ${target} roll: ${dieText}. ${score >= target ? "Success!" : "Failure!"}]\n`
-  var text = `\n${character.name} ${score + modifier >= target ? "successfully" : failword + " to"} ${arg3}`
-  if (score == 20) text += " Critical success! The action was extremely effective."
-  else if (score == 1) text += " Critical failure! There are dire consequences for this action."
-  
-  if (score + modifier >= target || score == 20) text += addXpToAll(Math.floor(config.autoXp * clamp(target, 1, 20) / 20)) + "\n"
-  return [text, true]
+  return [text+"\n", true]
 }
 
 /**
  * Performs a skill or ability check with difficulty and advantage/disadvantage.
- * Returns check result summary.
+ * - #check (ability|skill) (advantage|disadvantage) (number or automatic|effortless|easy|medium|hard|impossible)
+ * - Rolls a d20 and compares the result (modified by the character's ability/skill) to the specified difficulty.
+ * - The parameters can be listed in any order.
  * @function
  * @param {string} [command] Command string specifying ability/skill, advantage, and difficulty.
  * @returns {[string, boolean]} Check result text and success flag.
  */
 function doCheck(command) {
-  var character = getCharacter()
-
-  var arg0 = null
-  if (character.stats.length > 0) arg0 = searchArgument(command, statsToOrPattern(character.stats))
-  if (arg0 == null && character.skills.length > 0) arg0 = searchArgument(command, statsToOrPattern(character.skills))
-  if (arg0 == null) arg0 = "Ability"
-  arg0 = toTitleCase(arg0)
-  
-  var arg1 = searchArgument(command, arrayToOrPattern(advantageNames))
-  if (arg1 == null) arg1 = "normal"
-  else arg1 = arg1.toLowerCase()
-
-  const difficultyPatternNames = [...new Set(difficultyNames)]
-  difficultyPatternNames.push("\\d+")
-  var arg2 = searchArgument(command, arrayToOrPattern(difficultyPatternNames))
-  if (arg2 == null) arg2 = config.defaultDifficulty
-  else arg2 = arg2.toLowerCase()
-
-  var die1 = calculateRoll("1d20")
-  var die2 = calculateRoll("1d20")
-  var score = arg1 == "advantage" ? Math.max(die1, die2) : arg1 == "disadvantage" ? Math.min(die1, die2) : die1
-
-  var modifier = 0
-
-  var skill = character.skills.find(x => x.name.toLowerCase() == arg0.toLowerCase())
-  if (skill != null) {
-    var stat = character.stats.find((element) => element.name.toLowerCase() == skill.stat.toLowerCase())
-    if (stat != null) modifier = skill.modifier + getModifier(stat.value)
-  } else {
-    var stat = character.stats.find((element) => element.name.toLowerCase() == arg0.toLowerCase())
-    if (stat != null) modifier = getModifier(stat.value)
-  }
-
-  var target = 15
-  if (/^\d+$/.test(arg2)) target = arg2
-  else {
-    var targetIndex = difficultyNames.indexOf(arg2)
-    if (targetIndex >= 0 && targetIndex < difficultyNames.length) target = difficultyScores[targetIndex]
-  }
-  
   state.show = "none"
+  const character = getCharacter()
+  const dice = "d20" // Checks always use a d20
 
-  var dieText = arg1 == "advantage" || arg1 == "disadvantage" ? `${arg1}(${die1},${die2})` : die1
+  // Look for an ability or skill argument in the command
+  const checkArg = searchArgument(command, statsToOrPattern([...character.stats, ...character.skills]))?.toLowerCase()
+  const checkSkill = character.skills.find(x => x.name.toLowerCase() === checkArg) ?? null
+  const checkAbility = character.stats.find(x => x.name.toLowerCase() === checkArg) ?? null
+  
+  // Look for rolling wiht advantage, disadvantage, or normal
+  const rollType = (searchArgument(command, arrayToOrPattern(advantageNames)) ?? "normal").toLocaleLowerCase()
 
-  var text
-  if (score == 20) text = `\n[${arg0} check DC: ${target} roll: ${dieText}. Critical Success!]\n`
-  else if (score == 1) text = `\n[${arg0} check DC: ${target} roll: ${dieText}. Critical Failure!]\n`
-  else if (modifier != 0) text = `\n[${arg0} check DC: ${target} roll: ${dieText}${modifier > 0 ? "+" + modifier : modifier}=${score + modifier}. ${score + modifier >= target ? "Success!" : "Failure!"}]\n`
-  else text = `\n[${arg0} check DC: ${target} roll: ${dieText}. ${score >= target ? "Success!" : "Failure!"}]\n`
+  // Look for the difficulty of the check, if provided
+  let difficulty = searchArgument(command, arrayToOrPattern([...new Set(Object.keys(difficultyScale))]))
+  if (difficulty == null || isNaN(difficulty)) { // Converting between difficulty name & score
+    difficulty = difficultyScale[String(difficulty).toLowerCase()] ?? config.defaultDifficulty
+  } else {
+    difficulty = Number(difficulty)
+  }
+
+  // Time to roll
+  const { die1, die2, score, modifier } = performRoll(dice, rollType, character, checkSkill, checkAbility)
+
+  // Print Display
+  const text = `\n${printRoll(dice, rollType, modifier, score, die1, die2, difficulty, character, checkSkill, checkAbility)}\n`
+
   return [text, true]
 }
 

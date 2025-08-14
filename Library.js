@@ -20,8 +20,21 @@ const version = "Hashtag DnD v0.7.0 by Raeleus / Lite Edition by SirSheeply"
 const argumentPattern = /("[^"\\]*(?:\\[\S\s][^"\\]*)*"|'[^'\\]*(?:\\[\S\s][^'\\]*)*'|\/[^\/\\]*(?:\\[\S\s][^\/\\]*)*\/[gimy]*(?=\s|$)|(?:\\\s|\S)+)/g
 const levelSplits = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000]
 const advantageNames = ["normal", "advantage", "disadvantage"]
+
 const difficultyNames = ["impossible", "extreme", "hard", "medium", "easy", "effortless", "veryeasy", "very easy", "automatic", "auto"]
 const difficultyScores = [30, 25, 20, 15, 10, 5, 5, 5, 0, 0]
+const difficultyScale = {
+  "impossible": 30,
+  "extreme": 25,
+  "hard": 20,
+  "medium": 15,
+  "easy": 10,
+  "effortless": 5,
+  "veryeasy": 5,
+  "very easy": 5,
+  "automatic": 0,
+  "auto": 0
+}
 
 // CONFIGURATION
 const config = {
@@ -57,8 +70,6 @@ function enforceConfig() {
   });
   return true
 }
-
-
 
 /**
  * Ensures a value matches the type of an expected value.
@@ -346,29 +357,36 @@ function getAddition(rolltext) {
   if (matches != null) {
     return parseInt(matches[0].replaceAll(/\s*/g, ""))
   }
-
   return 0
 }
 
 /**
 * Formats a roll notation string into a standardized dice roll format (e.g., "2d6+3").
-* If only a number is found, formats it as "d<number>". Defaults to "d20".
+* If only a number is found, formats as "d" for dice followed by the number. Defaults to "d20".
 * @function
 * @param {string} [text] - The raw text containing a dice roll notation.
 * @returns {string} A standardized roll notation string.
 */
 function formatRoll(text) {
-  var matches = text.match(/(?<=.*)\d*d\d+(?=.*)(\s*(\+|-)\s*\d+)?/gi)
+  /*
+             \d*d\d+ --> Matches something like d20, 2d6, 10d8 (optional number before the d).
+  (\s*(\+|-)\s*\d+)? --> Optionally matches a modifier like +3 or -2, allowing spaces anywhere.
+  (?<=.*) and (?=.*) --> lookbehinds/lookaheads that basically say “match anywhere in the string”
+                  gi --> Case-insensitive, global search.
+  */
+  let matches = text.match(/(?<=.*)\d*d\d+(?=.*)(\s*(\+|-)\s*\d+)?/gi)
   if (matches != null) {
-    return matches[0].replaceAll(/\s*\+\s*/g, "+").replaceAll(/\s*-\s*/g, "-")
+    return matches[0].replaceAll(/\s*\+\s*/g, "+") // remove spaces around +
+                     .replaceAll(/\s*-\s*/g, "-") // remove spaces around -
   }
 
+  // If no dice format was found, it looks for fist number in the text.
   matches = text.match(/\d+/)
   if (matches != null) {
     return "d" + matches[0]
   }
 
-  return "d20"
+  return "d20" //defaults to d20
 }
 
 /**
@@ -381,16 +399,80 @@ function formatRoll(text) {
 function calculateRoll(rolltext) {
   rolltext = rolltext.toLowerCase()
   
-  var dice = getDice(rolltext)
-  var sides = getSides(rolltext)
-  var addition = getAddition(rolltext)
+  const dice = getDice(rolltext)         // Number of dice to roll        | 2
+  const sides = getSides(rolltext)       // Sides of the dice to roll     | d8 = 8
+  const addition = getAddition(rolltext) // Any additions or subtrations  | +3
 
-  var score = addition;
+  let score = addition;
   for (i = 0; i < dice; i++) {
     score += getRandomInteger(1, sides)
   }
 
   return Math.max(0, score)
+}
+
+/**
+ * Rolls one or two dice based on roll type and calculates modifiers.
+ * @param {number} dice Number of sides on the die (e.g., 20 for d20).
+ * @param {string} [rollType="normal"] Roll type: "normal", "advantage", or "disadvantage".
+ * @param {object|null} [character=null] Character object containing stats and skills.
+ * @param {object|null} [checkSkill=null] Skill object with modifier and linked stat.
+ * @param {object|null} [checkAbility=null] Ability object with value.
+ * @returns {{ die1: number, die2: number, score: number, modifier: number }}
+ */
+function performRoll(dice, rollType, character=null, checkSkill=null, checkAbility=null) {
+  let modifier = 0
+  const die1 = calculateRoll(dice)
+  const die2 = calculateRoll(dice)
+  const score = rollType == "advantage" ? Math.max(die1, die2) : rollType == "disadvantage" ? Math.min(die1, die2) : die1
+
+  if (character) {
+    if (checkSkill) {
+      modifier += checkSkill.modifier
+      const stat = character.stats.find(x => x.name.toLowerCase() == checkSkill.stat.toLowerCase())
+      if (stat) modifier += getModifier(stat.value)
+    } else if (checkAbility) {
+      modifier += getModifier(checkAbility.value)
+    }
+  }
+
+  return { die1, die2, score, modifier };
+}
+
+/**
+ * Generates a formatted string describing the result of a dice roll.
+ * Can handle raw rolls or skill/ability checks, including modifiers,
+ * advantage/disadvantage, and optional success/critical text.
+ *
+ * @param {string} rollType - Type of roll: "normal", "advantage", or "disadvantage".
+ * @param {number} modifier - Total modifier to add to the roll (from skill/ability).
+ * @param {number} score - The result of the dice roll before adding the modifier.
+ * @param {number} die1 - First die result (used for advantage/disadvantage display).
+ * @param {number} die2 - Second die result (used for advantage/disadvantage display).
+ * @param {object|null} [character=null] Character object containing a name.
+ * @param {number|null} [difficulty=null] - The target DC for skill/ability checks. Optional for raw rolls.
+ * @param {object|null} [checkSkill=null] - Skill object used for the check, if any.
+ * @param {object|null} [checkAbility=null] - Ability object used for the check, if any.
+ * @param {boolean} [showCrit=true] - Whether to include critical/success/failure text.
+ *
+ * @returns {string} Formatted roll text including dice, modifiers, and check result.
+ */
+
+function printRoll(dice, rollType, modifier, score, die1, die2, difficulty=null, character=null, checkSkill=null, checkAbility=null, showCrit=true) {
+  const modText = (modifier >= 0) ? "+ " + modifier : "- "+Math.abs(modifier)
+  const modifierText = (modifier != 0) ? ` ${modText} = ${score + modifier}` : ""
+  const dieText = (rollType == "advantage" || rollType == "disadvantage") ? `${rollType} (${die1}, ${die2})` : die1
+
+  const successText = (score + modifier >= difficulty) ? " Success!" : " Failure!"
+  const critText = (score == 20) ? " Critical Success!" : (score == 1) ? " Critical Failure!" : successText
+
+  if (checkSkill == null && checkAbility == null) {
+    return `[${character ? character.name+" r" : " R"}olled ${dice} for a score of: ${dieText}${modifierText}.${difficulty != null ? (showCrit ? critText : successText) : ""}]`
+  }
+
+  const checkType = checkSkill?.name ?? checkAbility?.name ?? "Ability"
+
+  return `[DC ${difficulty} ${checkType} check: ${character ? character.name+" r" : " R"}olled ${dice} for a score of: ${dieText}${modifierText}.${showCrit ? critText : ""}]`
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
