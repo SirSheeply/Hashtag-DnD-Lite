@@ -21,8 +21,6 @@ const argumentPattern = /("[^"\\]*(?:\\[\S\s][^"\\]*)*"|'[^'\\]*(?:\\[\S\s][^'\\
 const levelSplits = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000]
 const advantageNames = ["normal", "advantage", "disadvantage"]
 
-const difficultyNames = ["impossible", "extreme", "hard", "medium", "easy", "effortless", "veryeasy", "very easy", "automatic", "auto"]
-const difficultyScores = [30, 25, 20, 15, 10, 5, 5, 5, 0, 0]
 const difficultyScale = {
   "impossible": 30,
   "extreme": 25,
@@ -264,6 +262,11 @@ function searchArgument(command, pattern, limit) {
  * @returns {number} - The index of the matching argument, or -1 if none found.
  */
 function searchArgumentIndex(command, pattern) {
+  // Ensure pattern is case-insensitive
+  if (!(pattern.flags || "").includes("i")) {
+    pattern = new RegExp(pattern.source, pattern.flags + "i");
+  }
+
   var args = getArguments(command)
   if (args.length <= 1) return -1
   args.splice(0, 1)

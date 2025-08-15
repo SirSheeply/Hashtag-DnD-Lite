@@ -27,6 +27,7 @@ const modifier = (text) => {
 
 const commandRegistry = [
     // <><> General
+    // TODO: A check command that uses AI Dungeon to determine the difficulty &/or skill (would have to be a state + continue action)
     { handler: doRoll,                  synonyms: ["roll"] },
     { handler: doTry,                   synonyms: ["try", "tryto", "tries", "triesto", "attempt", "attemptto", "attemptsto", "do"] },
     { handler: doCheck,                 synonyms: ["check", "checkstat", "checkstatistic", "checkattribute", "checkability", "checkskill", "skillcheck", "abilitycheck"] },
@@ -187,7 +188,9 @@ function DNDHash_input (text) {
   // Sanitize and extract just the base command phrase
   let command = text.substring(text.search(/#/) + 1)
   let commandName = getCommandName(command)?.toLowerCase().replaceAll(/[^a-z0-9\s]*/gi, "").trim()
-  if (!commandName) {
+  const handler = findCommandHandler(commandName)
+  if (!commandName || !handler) {
+    state.show = "none"
     text = "\n[Error: Invalid or missing command.]\n"
     return text
   }
@@ -197,7 +200,6 @@ function DNDHash_input (text) {
   const isCreateCommand = createSynonyms.includes(commandName)
   const hasChar = state.characterName != null
   const exists = hasChar && hasCharacter(state.characterName)
-  const handler = findCommandHandler(commandName)
 
   if (!exists && !isCreateCommand) {
     state.show = "none"
@@ -212,7 +214,6 @@ function DNDHash_input (text) {
     text = youNeedACharacter
     return text
   }
-  // ------
   
   // Command Processing Block
   let commandResult, commandSuccess = null;
@@ -712,12 +713,6 @@ function doCreate(command) {
   state.tempCharacter.stats = []
   state.tempCharacter.spells = []
   state.tempCharacter.inventory = [] // Use putIntoInventory() to add items
-  state.tempCharacter.spellStat = null
-  state.tempCharacter.meleeStat = "Strength"
-  state.tempCharacter.rangedStat = "Dexterity"
-  state.tempCharacter.ac = 10
-  state.tempCharacter.damage = "1d6"
-  state.tempCharacter.proficiency = 2
   
   state.show = "create"
   return [" ", true]
@@ -1692,21 +1687,25 @@ function doClearInventory(command) {
  *   - boolean: true if the command was processed, false if invalid.
  */
 function doLearnSpell(command) {
-  var arg0 = getArgumentRemainder(command, 0)
-  if (arg0 == "") {
+  const spellName = getArgumentRemainder(command, 0)
+  if (spellName == "") {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
-  var character = getCharacter()
-  var tryWord = character.name == "You" ? "try" : "tries"
+  let text = "\n"
+  const character = getCharacter()
+  const tryWord = character.name == "You" ? "try" : "tries"
+  const found = character.spells.find((element) => element == spellName)
 
-  var found = character.spells.find((element) => element == arg0)
-  if (found != null) return [`\n[${character.name} ${tryWord} to learn the spell ${arg0}, but already knows it]\n`, true]
+  if (found != null) {
+    state.show = "none" 
+    text += `[${character.name} ${tryWord} to learn the spell ${spellName}, but already knows it.]`
+  } else {
+    character.spells.push(spellName)
+    text += `${character.name} learned the spell ${toTitleCase(spellName)}.`
+  }
 
-  character.spells.push(arg0)
-  addStoryCard(arg0, "", "spell")
-
-  return [`\n${character.name} learned the spell ${toTitleCase(arg0)}.\n`, true]
+  return [text+="\n", true]
 }
 
 /**
@@ -1720,137 +1719,112 @@ function doLearnSpell(command) {
  *   - boolean: true if the command was processed, false if invalid.
  */
 function doForgetSpell(command) {
-  var character = getCharacter()
-  var arg0 = getArgumentRemainder(command, 0)
-  if (arg0 == "") {
+  const spellName = getArgumentRemainder(command, 0)
+  if (spellName == "") {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
-  var dontWord = character.name == "You" ? "don't" : "doesn't"
-  var tryWord = character.name == "You" ? "try" : "tries"
 
-  var found = character.spells.find(x => x.toLowerCase() == arg0.toLowerCase())
+  const text = "\n"
+  const character = getCharacter()
+  const dontWord = character.name == "You" ? "don't" : "doesn't"
+  const tryWord = character.name == "You" ? "try" : "tries"
+  const found = character.spells.find(x => x.toLowerCase() == spellName.toLowerCase())
+
   if (found == null) {
-    state.show = "none"
-    return [`\n[${character.name} ${tryWord} to forget the spell ${arg0}, but ${character.name} ${dontWord} even know it]\n`, true]
+    text += `[${character.name} ${tryWord} to forget the spell ${spellName}, but ${character.name} ${dontWord} even know it.]`
+  } else {
+    const index = character.spells.findIndex(x => x.toLowerCase() == spellName.toLowerCase())
+    text += `[${character.name} forgot the spell ${spellName}.]`
+    character.spells.splice(index, 1)
   }
-  
-  var index = character.spells.findIndex(x => x.toLowerCase() == arg0.toLowerCase())
-  character.spells.splice(index, 1)
 
   state.show = "none"
-  return [`\n[${character.name} forgot the spell ${arg0}]\n`, true]
+  return [text+"\n", true]
 }
 
 /**
  * Attempts to cast a known spell, applying difficulty and advantage rules.
  * Performs a d20 roll (with modifiers) and determines success or failure.
- * Can optionally calculate and apply damage if a target is specified.
+ * #cast (advantage|disadvantage) (number or effortless|easy|medium|hard|impossible) (abiliity) spellName
  * 
  * @function
  * @param {string} [command] The command text containing:
- *   - spell name
+ *   - Required name of spell to cast (must have quotes for names with spaces)
  *   - optional advantage/disadvantage
  *   - optional difficulty rating (name or numeric)
- *   - optional target
+ *   - optional ability name for modifier
  * @returns {[string, boolean]} Tuple where:
  *   - string: Narrative result of the casting attempt.
  *   - boolean: true if the command was processed, false if invalid.
  */
 function doCastSpell(command) {
-  var character = getCharacter()
-  const dontWord = character.name == "You" ? "don't" : "doesn't"
-  const tryWord = character.name == "You" ? "try" : "tries"
-  var usingDefaultDifficulty = false
-
-  var spellIndex = 2;
-
-  var advantage = searchArgument(command, arrayToOrPattern(advantageNames), spellIndex - 1)
-  if (advantage == null) {
-    advantage = "normal"
-    spellIndex--
-  }
-
-  const difficultyPatternNames = [...new Set(difficultyNames)]
-  difficultyPatternNames.push("\\d+")
-  var difficulty = searchArgument(command, arrayToOrPattern(difficultyPatternNames), spellIndex - 1)
-  if (difficulty == null) {
-    difficulty = config.defaultDifficulty
-    usingDefaultDifficulty = true
-    spellIndex--
-  }
-  var difficultyIndex = difficultyNames.indexOf(difficulty)
-  if (difficultyIndex >= 0 && difficultyIndex < difficultyNames.length) {
-    difficulty = difficultyScores[difficultyIndex]
-  }
-
-  var spell = getArgument(command, spellIndex)
-  if (spell == null) {
+  if (getArguments(command).length <= 1) { // Minimum form of command #cast plus one optional argument (not including spell)
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
-  var targetText = null
 
-  var found = character.spells.find(x => x.toLowerCase() == spell.toLowerCase())
-  if (found != null) {
-    targetText = getArgumentRemainder(command, spellIndex + 1)
-    if (targetText != null) {
-      targetText = targetText.trim()
-      if (!/^((at)|(on))\s+.*/.test(targetText)) targetText = "at " + targetText
-    }
-  } else {
-    var remainder = getArgumentRemainder(command, spellIndex)
-    if (/.*\s((at)|(on))\s.*/i.test(remainder)) {
-      spell = remainder.replace(/\s+((at)|(on)).*/i, "").trim()
-      targetText = remainder.replace(/^.*\s+(?=(at)|(on))/i, "").trim()
-    } else {
-      spell = getArgumentRemainder(command, spellIndex).trim()
-    }
-
-    found = character.spells.find(x => x.toLowerCase() == spell.toLowerCase())
-  }
-
-  if (found == null) {
-    state.show = "none"
-    return [`\n[${toTitleCase(character.name)} ${tryWord} to cast the spell ${spell}, but ${character.name == "You" ? "you" : toTitleCase(character.name)} ${dontWord} know it]\n`, true]
-  }
-
-  var text = `${character.name} cast the spell ${spell}${advantage != "normal" ? " with " + advantage : ""}${targetText == null ? "" : " " + targetText}.`
-
-  var modifier = 0
-  if (character.spellStat != null) {
-    var stat = character.stats.find((element) => element.name.toLowerCase() == character.spellStat.toLowerCase())
-    if (stat != null) modifier = getModifier(stat.value)
-  }
-
-  var roll1 = calculateRoll("d20")
-  var roll2 = calculateRoll("d20")
-  var roll = advantage == "advantage" ? Math.max(roll1, roll2) : advantage == "disadvantage" ? Math.min(roll1, roll2) : roll1
-
-  if (targetText != null) {
-    var damage = roll == 20 ? calculateRoll("2d6") + calculateRoll("2d6") : calculateRoll("2d6")
-
-    var damageMatches = targetText.match(/\d*d\d+((\+|-)d+)?/gi)
-    if (damageMatches != null) damage = roll == 20 ? calculateRoll(damageMatches[0]) + calculateRoll(damageMatches[0]) : calculateRoll(damageMatches[0])
-    else {
-      damageMatches = targetText.match(/\d+/g)
-      if (damageMatches != null) damage = roll == 20 ? parseInt(damageMatches[damageMatches.length - 1]) * 2 : parseInt(damageMatches[damageMatches.length - 1])
-    }
-  }
-
-  state.show = "prefix"
-  var dieText = advantage == "advantage" || advantage == "disadvantage" ? `${advantage}(${roll1},${roll2})` : roll1
-  var difficultyWord = targetText == null ? "Difficulty" : "Armor"
-  if (difficulty == 0) state.prefix = ""
-  else if (roll == 20) state.prefix = `\n[${difficultyWord} Class: ${difficulty}. Roll: ${dieText}. Critcal Success!]\n`
-  else if (roll == 1) state.prefix = `\n[${difficultyWord} Class: ${difficulty}. Roll: ${dieText}. Critcal Failure!]\n`
-  else if (modifier != 0) state.prefix = `\n[${difficultyWord} Class: ${difficulty}. Roll: ${dieText}${modifier > 0 ? "+" + modifier : modifier}=${roll + modifier}. ${roll + modifier >= difficulty ? "Success!" : "Failure!"}]\n`
-  else state.prefix = `\n[${difficultyWord} Class: ${difficulty}. Roll: ${dieText}. ${roll + modifier >= difficulty ? "Success!" : "Failure!"}]\n`
+  // ARGUMENT SREACHING -- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+  const character = getCharacter()
+  const dice = "d20" // Checks always use a d20
+  let spellIndex = 3
   
-  if (roll == 20) text += ` Critical success!`
-  else if (roll == 1) text += ` Critical failure! The spell ${targetText != null ? "misses" : "fails"} in a spectacular way.`
-  else if (roll + modifier >= difficulty) text += ` The spell ${targetText != null ? "hits the target" : "is successful"}!`
-  else text += ` The spell ${targetText != null ? "misses" : "fails"}!`
+  // Argument 0: Advantage or Disadvantage
+  const rollType = (searchArgument(command, arrayToOrPattern(advantageNames)) ?? "normal").toLowerCase()
+  if (rollType == null) spellIndex--;
 
-  if (difficulty > 0 && (roll + modifier >= difficulty || roll == 20)) text += addXpToAll(Math.floor(config.autoXp * clamp(difficulty, 1, 20) / 20))
+  // Argument 1: Difficulty number or word
+  const difficultyPattern = [...new Set(Object.keys(difficultyScale))].concat(["\\d+"]) // Matches difficulty name or a number
+  let difficulty = searchArgument(command, arrayToOrPattern(difficultyPattern))
+  if (difficulty == null) spellIndex--;
+  if (difficulty == null || isNaN(difficulty)) { // Converting between difficulty name & score
+    difficulty = difficultyScale[String(difficulty).toLowerCase()] ?? config.defaultDifficulty
+  } else {
+    difficulty = Number(difficulty)
+  }
+
+  // Argument 2: Ability text
+  // TODO: default to character/spell casting ability if re-introduced later
+  const abilityPattern = [... new Set(character.stats)]
+  const abilityArg = searchArgument(command, arrayToOrPattern(abilityPattern))
+  const castAbility = character.stats.findIndex(x => x.name.toLowerCase() === abilityArg.toLowerCase())
+  if (castAbility == null) spellIndex--;
+
+  // Argument 3: Narrative spell text
+  const spellsPattern = [... new Set(character.spells)]
+  const spellCast = searchArgument(command, arrayToOrPattern(spellsPattern))
+
+  if (spellCast == null) {
+    const dontWord = character.name == "You" ? "don't" : "doesn't"
+    const tryWord = character.name == "You" ? "try" : "tries"
+
+    state.show = "none" // We don't need AI Dungeon making some awkward comment
+    return [`\n[${character.name} ${tryWord} to cast, but ${character.name} ${dontWord} know that spell.]\n`, true]
+  }
+
+  // TIME TO ROLL THE DICE --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+  const { die1, die2, score, modifier} = performRoll(dice, rollType, character, null, character.stats[castAbility])
+
+  // PRINTING LOGIC - --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+
+  const successText = (score + modifier >= difficulty) ? " The spell is successful!" : " The spell misses or fails!"
+  const failText = (score == 1) ? " Critical Failure! The spell misses or fails in a spectacular way." : successText
+  const critText = (score == 20) ? " Critical Success!" : failText
+
+  const modText = (modifier >= 0) ? "+ " + modifier : "- "+Math.abs(modifier)
+  const modifierText = (modifier != 0) ? ` ${modText} = ${score + modifier}` : ""
+  const dieText = rollType == "advantage" || rollType == "disadvantage" ? `${rollType}(${die1},${die2})` : die1
+
+  // Input text
+  let text = `${character.name} cast the spell ${spellCast}${rollType != "normal" ? " with " + rollType : ""}.${critText}`
+
+  // Output text prefix
+  state.show = "prefix"
+  state.prefix = `\n[Difficulty Class: ${difficulty}. Roll: ${dieText}${modifierText}.${critText}]`
+  if (difficulty == 0) state.prefix = ""
+  
+  // Add autoXp to party!
+  if (difficulty > 0 && (score + modifier >= difficulty || score == 20)) {
+    text += addXpToAll(Math.floor(config.autoXp * clamp(difficulty, 1, 20) / 20))
+  }
   return [`\n${text}\n`, true]
 }
 
