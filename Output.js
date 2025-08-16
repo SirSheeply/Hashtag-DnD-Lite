@@ -81,6 +81,7 @@ function DNDHash_output(text) {
       character.stats.forEach(function(x) {
         text += `* ${toTitleCase(x.name)} ${x.value}\n`
       })
+      text += `Unspent Stat Points = ${character.statPoints}\n`
 
       text += `----\n\n`
       text += `-SKILLS-\n`
@@ -98,6 +99,7 @@ function DNDHash_output(text) {
 
         text += `* ${toTitleCase(x.name)} ${totalModifier} = ${toTitleCase(x.stat)} ${statModifier} Proficiency ${modifier}\n`
       })
+      text += `Unspent Skill Points = ${character.skillPoints}\n`
 
       text += `----\n\n`
       if (character.spellStat != null) {
@@ -164,6 +166,7 @@ function DNDHash_output(text) {
       } else {
         text += `${character.name} has no abilities!\n`
       }
+      text += `Unspent Stat Points = ${character.statPoints}\n`
       text += "******************\n\n"
       break
     case "skills":
@@ -185,6 +188,7 @@ function DNDHash_output(text) {
       } else {
         text += `${character.name} has no skills!\n`
       }
+      text += `Unspent Skill Points = ${character.skillPoints}\n`
       text += "******************\n\n"
       break
     case "none":

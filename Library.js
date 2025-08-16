@@ -38,11 +38,16 @@ const difficultyScale = {
 const config = {
   autoCreateItemCards: false, // Automaticall creates item cards when put into the inventory
   defaultDifficulty: 10,      // Difficulty of checks when not specified in commands
-  autoXp: 0,                  // XP a character gains after a successful check
+  autoXp: 100,                // XP a character gains after a successful check
   showRolls: false,           // Enables/Disables the dice result of rolls being displayed for #try, #cast
-  critFailProtect: 0,         // Rerolls critical fails X checks after last critical fail
+  critFailProtect: 20,        // Rerolls critical fails X checks after last critical fail
   xpShare: false              // Enables/disables auto xp sharing among party characters
 }
+
+//TODO: Place in config later
+const skillsPerLevel = 1  // Skill points awarded per levelup event
+const levelsPerASI = 4    // How many levels award an ASI
+const statsPerASI = 2     // Stat points awarded per ASI event
 
 /**
  * Loads and applies configuration settings from the "#DND Lite Config" story card.
@@ -551,6 +556,8 @@ function createCharacter(name) {
     existingCharacter.skills = []
     existingCharacter.experience = 0
     existingCharacter.health = 10
+    existingCharacter.skillPoints = 0
+    existingCharacter.statPoints = 0
     return existingCharacter
   }
 
@@ -562,7 +569,9 @@ function createCharacter(name) {
     stats: [],
     skills: [],
     experience: 0,
-    health: 10
+    health: 10,
+    skillPoints: 0,
+    statPoints: 0
   }
   state.characters.push(character)
   return character
@@ -585,6 +594,8 @@ function copyCharacter(fromCharacter, toCharacter) {
     toCharacter.skills = [...new Set(fromCharacter.skills)]
     toCharacter.experience = fromCharacter.experience
     toCharacter.health = fromCharacter.health
+    toCharacter.skillPoints = fromCharacter.skillPoints
+    toCharacter.statPoints = fromCharacter.statPoints
     return toCharacter
   }
 }
@@ -647,19 +658,26 @@ function getPossessiveName(name) {
 /////////////////////////////////////////////////// LEVELS, STATS, & SKILLS ///////////////////////////////////////////////////
 
 /**
+* Gets the required experience points for the character's next level.
+* @function
+* @param {number} level - The total current level of the character.
+* @returns {number} The XP threshold for the next level
+*/
+function getExpForLevel(level) {
+  // Gives the level progression of: 1=300, 2=1000, 3=2200, 5=7700, 10=53000, 20=406000
+  return Math.floor(Math.round((level ** 3) * 50 + (level*300)) / 100)*100;
+}
+
+/**
 * Determines the current level of a character based on their experience points.
-* Levels are determined by the `levelSplits` array thresholds.
 * @function
 * @param {number} experience - The total experience points of the character.
-* @returns {number} The current level (0-based index into `levelSplits`).
+* @returns {number} The current level
 */
 function getLevel(experience) {
   if (experience < 0) experience = 0
-  
-  var level
-  for (level = 0; level < levelSplits.length; level++) {
-    if (experience < levelSplits[level]) break
-  }
+  let level = 1
+  while (getExpForLevel(level) <= experience) { level++ }
   return level
 }
 
@@ -667,16 +685,12 @@ function getLevel(experience) {
 * Gets the required experience points for the character's next level.
 * @function
 * @param {number} experience - The total experience points of the character.
-* @returns {number} The XP threshold for the next level, or -1 if max level is reached.
+* @returns {number} The XP threshold for the next level
 */
 function getNextLevelXp(experience) {
   if (experience < 0) experience = 0
-  
-  var level
-  for (level = 0; level < levelSplits.length; level++) {
-    if (experience < levelSplits[level]) return levelSplits[level]
-  }
-  return -1
+  const level = getLevel(experience)
+  return getExpForLevel(level)
 }
 
 /**
@@ -688,12 +702,15 @@ function getNextLevelXp(experience) {
 function addXpToAll(experience) {
   if (experience == 0) return ""
   let leveledUp = `\n[The party has gained ${experience} experience!]`
-  state.characters.forEach(x => {
-    const haveWord = x.name == "You" ? "have" : "has"
-    const oldLevel = getLevel(x.experience)
-    x.experience += experience
-    const newLevel = getLevel(x.experience)
-    if (newLevel > oldLevel) leveledUp += `\n[${x.name} ${haveWord} leveled up to ${newLevel}!]`
+  state.characters.forEach(character => {
+    const haveWord = character.name == "You" ? "have" : "has"
+    const oldLevel = getLevel(character.experience)
+    character.experience += experience
+    const newLevel = getLevel(character.experience)
+    if (newLevel > oldLevel) {
+      levelupEvent(character, oldLevel, newLevel)
+      leveledUp += `\n[${character.name} ${haveWord} leveled up to ${newLevel}!]`
+    }
   })
   return leveledUp
 }
@@ -713,8 +730,24 @@ function addXpToCharacter(experience) {
   const newLevel = getLevel(character.experience)
 
   leveledUp += `\n[${character.name} ${haveWord} gained ${experience} experience!]`
-  if (newLevel > oldLevel) leveledUp += `\n[${character.name} ${haveWord} leveled up to ${newLevel}!]`
+  if (newLevel > oldLevel) {
+    levelupEvent(character, oldLevel, newLevel)
+    leveledUp += `\n[${character.name} ${haveWord} leveled up to ${newLevel}!]`
+  }
   return leveledUp
+}
+
+/**
+* Adds skill/stat points on level-ups.
+* @function
+* @param {character} character - The character leveling up
+* @param {number} oldLevel - The previous level they had
+* @param {number} newLevel - The new level they reached
+*/
+function levelupEvent(character, oldLevel, newLevel) {
+  character.skillPoints += skillsPerLevel*(newLevel-oldLevel)
+  const modLevels = Math.floor(newLevel / levelsPerASI)-Math.floor(oldLevel / levelsPerASI)
+  character.statPoints += statsPerASI*modLevels
 }
 
 /**
@@ -730,11 +763,11 @@ function addXpToCharacter(experience) {
 function getHealthMax(character) {
   if (character == null) character = getCharacter() // Does this work without a name argument?
   
-  var modifier = 0
-  var stat = character.stats.find((element) => element.name.toLowerCase() == "constitution")
+  let modifier = 0
+  const stat = character.stats.find((element) => element.name.toLowerCase() == "constitution")
   if (stat != null) modifier = getModifier(stat.value)
 
-  var level = getLevel(character.experience)
+  const level = getLevel(character.experience)
   return 10 + level * (6 + modifier)
 }
 

@@ -57,14 +57,19 @@ const commandRegistry = [
     { handler: doAddExperience,         synonyms: ["addexperience", "addexp", "addxp", "addexperiencepoints", "experience", "exp", "gainxp", "gainexperience", "xp", "experiencepoints"] },
     { handler: doLevelUp,               synonyms: ["levelup", "level"] },
     
-    // <><> Abilities & Skills
-    { handler: doSetStat,               synonyms: ["setstat", "setstatistic", "setattribute", "setability", "changestat", "changestatistic", "changeattribute", "changeability", "updatestat", "updatestatistic", "updateattribute", "updateability", "stat", "attribute", "ability"] },
-    { handler: doShowStats,             synonyms: ["showstats", "stats", "viewstats", "showabilities", "abilities", "viewabilities", "showstatistics", "statistics", "viewstatistics", "showattributes", "attributes", "viewattributes"] },
-    { handler: doRemoveStat,            synonyms: ["removestat", "deletestat", "cancelstat", "removeability", "deleteability", "cancelAbility", "removestatistic", "deletestatistic", "cancelstatistic", "removeattribute", "deleteattribute", "cancelattribute"] },
-    { handler: doClearStats,            synonyms: ["clearstats", "clearabilities", "clearstatistics", "clearattributes"] },
-    { handler: doSetSkill,              synonyms: ["setskill", "changeskill", "updateskill", "skill"] },
+    // <><> Abilities/Attributes/Stats
+    // TODO: Clear up stat terminology to use only one of the above
+    { handler: doSetStat,               synonyms: ["setstat", "setattribute", "setability"] },
+    { handler: doAddSkill,              synonyms: ["addstat", "upgradestat", "updatestat"] },
+    { handler: doShowStats,             synonyms: ["showstats", "stats", "viewstats", "showabilities", "abilities", "viewabilities", "showattributes", "attributes", "viewattributes"] },
+    { handler: doRemoveStat,            synonyms: ["removestat", "deletestat", "removeability", "deleteability", "removeattribute", "deleteattribute"] },
+    { handler: doClearStats,            synonyms: ["clearstats", "clearabilities", "clearattributes"] },
+    
+    // <><> Skills
+    { handler: doSetSkill,              synonyms: ["setskill"] },
+    { handler: doAddSkill,              synonyms: ["addskill", "upgradeskill", "updateskill"] },
     { handler: doShowSkills,            synonyms: ["showskills", "skills"] },
-    { handler: doRemoveSkill,           synonyms: ["removeskill", "deleteskill", "cancelskill"] },
+    { handler: doRemoveSkill,           synonyms: ["removeskill", "deleteskill"] },
     { handler: doClearSkills,           synonyms: ["clearskills"] },
     
     // <><> Notes
@@ -239,8 +244,11 @@ function init() {
       inventory: [],
       spells: [],
       stats: [],
+      skills: [],
       experience: 0,
-      health: 10
+      health: 10,
+      statPoints: 0,
+      skillPoints: 0
     }
   }
   
@@ -407,6 +415,8 @@ function handleCreateStep(text) {
       character.skills = [...state.tempCharacter.skills]
       character.spells = [...state.tempCharacter.spells]
       character.health = getHealthMax()
+      character.statPoints = 0
+      character.skillPoints = 0
       break
   }
   return text
@@ -708,7 +718,7 @@ function doCreate(command) {
   resetTempCharacterSkills()
   resetTempCharacterStats()
   state.tempCharacter.spells = []
-  state.tempCharacter.inventory = [] // Use putIntoInventory() to add items
+  state.tempCharacter.inventory = [] // Use putIntoInventory() to add items\
   
   state.show = "create"
   return [" ", true]
@@ -911,8 +921,8 @@ function doSetExperience(command) {
  * @returns {[string, boolean]} Result message and success flag.
  */
 function doAddExperience(command) {
-  var character = getCharacter()
-  var arg0 = getArgument(command, 0)
+  const character = getCharacter()
+  let arg0 = getArgument(command, 0)
   if (arg0 == null) {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
@@ -923,7 +933,7 @@ function doAddExperience(command) {
   }
   arg0 = parseInt(arg0)
 
-  var arg1 = searchArgument(command, /party/gi)
+  const arg1 = searchArgument(command, /party/gi)
 
   if (arg1 == null && character == null) {
     return [`\n[Error: Character name not specified. Use the "do" or "say" modes. Alternatively, use "story" mode in the following format without quotes: "charactername #hashtag"]\n`, false]
@@ -935,14 +945,17 @@ function doAddExperience(command) {
 
   state.prefix = "\n"
   characters = arg1 == null ? [character] : state.characters
-  for (var c of characters) {
-    var possessiveName = getPossessiveName(c.name)
+  for (const c of characters) {
+    const possessiveName = getPossessiveName(c.name)
 
-    var level = getLevel(c.experience)
+    const level = getLevel(c.experience)
     c.experience += arg0
-    var newLevel = getLevel(c.experience)
+    const newLevel = getLevel(c.experience)
 
-    if (newLevel > level) state.prefix += `[${possessiveName} experience is increased to ${c.experience}. LEVEL UP! Level: ${newLevel}, Health Max: ${getHealthMax(c)}. Next level at ${getNextLevelXp(c.experience)}]\n`
+    if (newLevel > level) {
+      levelupEvent(c, level, newLevel)
+      state.prefix += `[${possessiveName} experience is increased to ${c.experience}. LEVEL UP! Level: ${newLevel}, Health Max: ${getHealthMax(c)}. Next level at ${getNextLevelXp(c.experience)}]\n`
+    }
     else state.prefix += `[${possessiveName} experience is increased to ${c.experience}. Next level at ${getNextLevelXp(c.experience)}]\n`
   }
 
@@ -957,9 +970,9 @@ function doAddExperience(command) {
  * @returns {[string, boolean]} Result message and success flag.
  */
 function doLevelUp(command) {
-  var character = getCharacter()
-  var level = getLevel(character.experience)
-  var experience = level >= levelSplits.length ? 0 : levelSplits[level] - character.experience
+  const character = getCharacter()
+  const level = getLevel(character.experience)
+  const experience = getExpForLevel(level) - character.experience
   return doAddExperience(`${command} ${experience}`)
 }
 
@@ -980,29 +993,58 @@ function doLevelUp(command) {
  * @returns {[string, boolean]} Confirmation message and success status.
  */
 function doSetStat(command) {
-  var character = getCharacter()
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
+  const character = getCharacter()
+  const statName = getArgument(command, 0)
+  if (statName == null) {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
-  var arg1 = clamp(parseInt(getArgument(command, 1)), 1, 100)
-  var possessiveName = getPossessiveName(character.name)
+  const statValue = Math.abs(parseInt(getArgument(command, 1)))
+  const possessiveName = getPossessiveName(character.name)
 
   const stat = {
-    name: arg0,
-    value: arg1
+    name: statName,
+    value: statValue
   }
 
-  var index = character.stats.findIndex((element) => element.name.toLowerCase() == stat.name.toLowerCase())
+  const index = character.stats.findIndex((element) => element.name.toLowerCase() == stat.name.toLowerCase())
   if (index == -1) {
     character.stats.push(stat)
   } else {
-    var existingStat = character.stats[index]
-    existingStat.value = parseInt(stat.value)
+    character.stats[index].value = statValue
   }
 
   state.show = "none"
-  return [`\n[${possessiveName} ${toTitleCase(arg0)} ability is now ${arg1}]\n`, true]
+  return [`\n[${possessiveName} ${toTitleCase(statName)} ability is now ${statValue}]\n`, true]
+}
+
+/**
+ * Sets or updates a character's stat with a specified value (1-100).
+ * 
+ * @function
+ * @param {string} [command] Command text containing stat name and value.
+ * @returns {[string, boolean]} Confirmation message and success status.
+ */
+function doAddStat(command) {
+  const character = getCharacter()
+  const statName = getArgument(command, 0)
+  if (statName == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+  const statValue = Math.abs(parseInt(getArgument(command, 1)))
+  const possessiveName = getPossessiveName(character.name)
+  if (character.statPoints < statValue) {
+    return [`\n[Error: ${character.name} does not have enough stat points for this. See #help]\n`, false]
+  }
+
+  const index = character.stats.findIndex((element) => element.name.toLowerCase() == stat.name.toLowerCase())
+  if (index == -1) {
+    return [`\n[Error: ${statName} is not in ${possessiveName} stats. See #help]\n`, false]
+  } else {
+    character.stats[index].value += statValue
+  }
+
+  state.show = "none"
+  return [`\n[${possessiveName} ${toTitleCase(statName)} ability is now ${character.stats[index].value}]\n`, true]
 }
 
 /**
@@ -1025,21 +1067,21 @@ function doShowStats(command) {
  * @returns {[string, boolean]} Confirmation or error message and success status.
  */
 function doRemoveStat(command) {
-  var character = getCharacter()
-  var arg0 = getArgumentRemainder(command, 0)
-  if (arg0 == "") {
+  const character = getCharacter()
+  const statName = getArgumentRemainder(command, 0)
+  if (statName == "") {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
-  var dontWord = character.name == "You" ? "don't" : "doesn't"
-  var tryWord = character.name == "You" ? "try" : "tries"
+  const dontWord = character.name == "You" ? "don't" : "doesn't"
+  const tryWord = character.name == "You" ? "try" : "tries"
 
-  var found = character.stats.find((element) => element == arg0)
-  if (found == null) return [`\n[${character.name} ${tryWord} to remove the ability ${arg0}, but ${character.name} ${dontWord} even know it]\n`, true]
+  const found = character.stats.find((element) => element == statName)
+  if (found == null) return [`\n[${character.name} ${tryWord} to remove the ability ${statName}, but ${character.name} ${dontWord} even know it]\n`, true]
   
-  var index = character.stats.findIndex((element) => element.toLowerCase() == arg0.toLowerCase())
+  const index = character.stats.findIndex((element) => element.toLowerCase() == statName.toLowerCase())
   character.stats.splice(index, 1)
 
-  return [`\n[${character.name} removed the ability ${arg0}]\n`, true]
+  return [`\n[${character.name} removed the ability ${statName}]\n`, true]
 }
 
 /**
@@ -1050,7 +1092,7 @@ function doRemoveStat(command) {
  * @returns {[string, boolean]} Placeholder string and success status.
  */
 function doClearStats(command) {
-  var character = getCharacter()
+  const character = getCharacter()
   character.stats = []
   state.show = "clearStats"
   return [" ", true]
@@ -1064,48 +1106,78 @@ function doClearStats(command) {
  * @returns {[string, boolean]} Confirmation message or error and success status.
  */
 function doSetSkill(command) {
-  var character = getCharacter()
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
+  const character = getCharacter()
+  const skillName = getArgument(command, 0)
+  if (skillName == null) {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
-  var arg1 = getArgument(command, 1)
-  if (arg1 == null) {
+  let skillStat = getArgument(command, 1)
+  if (skillStat == null) {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
-  var arg2 = getArgument(command, 2)
-  if (arg2 == null) {
-    arg2 = (clamp(parseInt(arg1, 1, 100)))
-    arg1 = null
+  let skillValue = getArgument(command, 2)
+  if (skillValue == null) {
+    skillValue = Math.abs(parseInt(skillStat))
+    skillStat = null
   } else {
-    arg2 = clamp(parseInt(arg2), 1, 100)
+    skillValue = Math.abs(parseInt(skillValue))
   }
 
-  var possessiveName = getPossessiveName(character.name)
+  const possessiveName = getPossessiveName(character.name)
 
   const skill = {
-    name: arg0,
-    stat: arg1,
-    modifier: arg2
+    name: skillName,
+    stat: skillStat,
+    modifier: skillValue
   }
 
-  var index = character.skills.findIndex((element) => element.name.toLowerCase() == skill.name.toLowerCase())
+  const index = character.skills.findIndex((element) => element.name.toLowerCase() == skill.name.toLowerCase())
   if (index == -1) {
-    if (arg1 == null) {
+    if (skillStat == null) {
       return ["\n[Error: New skills must have an ability specified. See #help]\n", false]
     }
     
     character.skills.push(skill)
   } else {
-    var existingSkill = character.skills[index]
+    const existingSkill = character.skills[index]
     existingSkill.modifier = parseInt(skill.modifier)
-    if (arg1 != null) existingSkill.stat = skill.stat
+    if (skillStat != null) existingSkill.stat = skill.stat
   }
 
   state.show = "none"
-  return [`\n[${possessiveName} ${toTitleCase(arg0)} skill is now ${arg2 >= 0 ? "+" + arg2 : "-" + arg2} and based on ${toTitleCase(arg1)}]\n`, true]
+  return [`\n[${possessiveName} ${toTitleCase(skillName)} skill is now ${skillValue >= 0 ? "+" + skillValue : "-" + skillValue} and based on ${toTitleCase(skillStat)}]\n`, true]
+}
+
+/**
+ * Sets or updates a character's skill with a specified value (1-100).
+ * 
+ * @function
+ * @param {string} [command] Command text containing skill name and value.
+ * @returns {[string, boolean]} Confirmation message and success skillus.
+ */
+function doAddSkill(command) {
+  const character = getCharacter()
+  const skillName = getArgument(command, 0)
+  if (skillName == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+  const skillValue = Math.abs(parseInt(getArgument(command, 1)))
+  const possessiveName = getPossessiveName(character.name)
+  if (character.skillPoints < skillValue) {
+    return [`\n[Error: ${character.name} does not have enough skill points for this. See #help]\n`, false]
+  }
+
+  const index = character.skills.findIndex((element) => element.name.toLowerCase() == skill.name.toLowerCase())
+  if (index == -1) {
+    return [`\n[Error: ${skillName} is not in ${possessiveName} skills. See #help]\n`, false]
+  } else {
+    character.skills[index].value += skillValue
+  }
+
+  skille.show = "none"
+  return [`\n[${possessiveName} ${toTitleCase(skillName)} skill bonus is now ${character.skills[index].value}]\n`, true]
 }
 
 /**
@@ -1128,21 +1200,21 @@ function doShowSkills(command) {
  * @returns {[string, boolean]} Confirmation or error message and success status.
  */
 function doRemoveSkill(command) {
-  var character = getCharacter()
-  var arg0 = getArgumentRemainder(command, 0)
-  if (arg0 == "") {
+  const character = getCharacter()
+  const skillName = getArgumentRemainder(command, 0)
+  if (skillName == "") {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
-  var dontWord = character.name == "You" ? "don't" : "doesn't"
-  var tryWord = character.name == "You" ? "try" : "tries"
+  const dontWord = character.name == "You" ? "don't" : "doesn't"
+  const tryWord = character.name == "You" ? "try" : "tries"
 
-  var found = character.skills.find((element) => element == arg0)
-  if (found == null) return [`\n[${character.name} ${tryWord} to remove the skill ${arg0}, but ${character.name} ${dontWord} even know it]\n`, true]
+  const found = character.skills.find((element) => element == skillName)
+  if (found == null) return [`\n[${character.name} ${tryWord} to remove the skill ${skillName}, but ${character.name} ${dontWord} even know it]\n`, true]
   
-  var index = character.skills.findIndex((element) => element.toLowerCase() == arg0.toLowerCase())
+  const index = character.skills.findIndex((element) => element.toLowerCase() == skillName.toLowerCase())
   character.skills.splice(index, 1)
 
-  return [`\n[${character.name} removed the skill ${arg0}]\n`, true]
+  return [`\n[${character.name} removed the skill ${skillName}]\n`, true]
 }
 
 /**
@@ -1153,7 +1225,7 @@ function doRemoveSkill(command) {
  * @returns {[string, boolean]} Placeholder string and success status.
  */
 function doClearSkills(command) {
-  var character = getCharacter()
+  const character = getCharacter()
   character.skills = []
   state.show = "clearSkills"
   return [" ", true]
