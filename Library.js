@@ -36,9 +36,12 @@ const difficultyScale = {
 
 // CONFIGURATION
 const config = {
-  autoCreateItemCards: false,
-  defaultDifficulty: 10,
-  autoXp: 0
+  autoCreateItemCards: false, // Automaticall creates item cards when put into the inventory
+  defaultDifficulty: 10,      // Difficulty of checks when not specified in commands
+  autoXp: 0,                  // XP a character gains after a successful check
+  showRolls: false,           // Enables/Disables the dice result of rolls being displayed for #try, #cast
+  critFailProtect: 0,         // Rerolls critical fails X checks after last critical fail
+  xpShare: false              // Enables/disables auto xp sharing among party characters
 }
 
 /**
@@ -425,8 +428,28 @@ function calculateRoll(rolltext) {
  */
 function performRoll(dice, rollType, character=null, checkSkill=null, checkAbility=null) {
   let modifier = 0
-  const die1 = calculateRoll(dice)
-  const die2 = calculateRoll(dice)
+  let die1 = calculateRoll(dice)
+  let die2 = calculateRoll(dice)
+
+  // Critical Fail Protection
+  if (dice == "d20" || dice == "1d20") {
+    state.lastFail = state.lastFail ?? 0
+    if (state.lastFail <= config.critFailProtect) {
+      if (die1 == 1) {
+        state.lastFail = 0
+        die1 = calculateRoll(dice)
+        if (die1 == 1) die1++
+      }
+      if (die2 == 1 && rollType == "disadvantage") {
+        state.lastFail = 0
+        die2 = calculateRoll(dice)
+        if (die2 == 1) die2++
+      }
+    } else {
+      state.lastFail++
+    }
+  }
+
   const score = rollType == "advantage" ? Math.max(die1, die2) : rollType == "disadvantage" ? Math.min(die1, die2) : die1
 
   if (character) {
@@ -664,14 +687,33 @@ function getNextLevelXp(experience) {
 */
 function addXpToAll(experience) {
   if (experience == 0) return ""
-  var leveledUp = `\n[The party has gained ${experience} experience!]`
+  let leveledUp = `\n[The party has gained ${experience} experience!]`
   state.characters.forEach(x => {
-    var haveWord = x.name == "You" ? "have" : "has"
+    const haveWord = x.name == "You" ? "have" : "has"
     const oldLevel = getLevel(x.experience)
     x.experience += experience
     const newLevel = getLevel(x.experience)
     if (newLevel > oldLevel) leveledUp += `\n[${x.name} ${haveWord} leveled up to ${newLevel}!]`
   })
+  return leveledUp
+}
+
+/**
+* Adds experience points to one party members and announces level-ups.
+* @function
+* @param {number} experience - The amount of experience points to add to the party member.
+* @returns {string} A message summarizing XP gain and any level-up events.
+*/
+function addXpToCharacter(experience) {
+  const character = getCharacter()
+  const haveWord = character.name == "You" ? "have" : "has"
+
+  const oldLevel = getLevel(character.experience)
+  character.experience += experience
+  const newLevel = getLevel(character.experience)
+
+  leveledUp += `\n[${character.name} ${haveWord} gained ${experience} experience!]`
+  if (newLevel > oldLevel) leveledUp += `\n[${character.name} ${haveWord} leveled up to ${newLevel}!]`
   return leveledUp
 }
 

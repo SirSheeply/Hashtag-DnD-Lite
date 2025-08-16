@@ -29,8 +29,8 @@ const commandRegistry = [
     // <><> General
     // TODO: A check command that uses AI Dungeon to determine the difficulty &/or skill (would have to be a state + continue action)
     { handler: doRoll,                  synonyms: ["roll"] },
-    { handler: doTry,                   synonyms: ["try", "tryto", "tries", "triesto", "attempt", "attemptto", "attemptsto", "do"] },
-    { handler: doCheck,                 synonyms: ["check", "checkstat", "checkstatistic", "checkattribute", "checkability", "checkskill", "skillcheck", "abilitycheck"] },
+    { handler: doTry,                   synonyms: ["try", "tries", "attempt", "attempts"] },
+    { handler: doCheck,                 synonyms: ["check"] },
     
     // <><> Time
     { handler: doShowDay,               synonyms: ["showday", "showdate", "day", "date"] },
@@ -327,40 +327,31 @@ function handleCreateStep(text) {
       break
     case 2:
       if (text.length > 0) {
-        var choices = text.split(/\D+/)
-        choices = [...new Set(choices)];
-        if (choices.length != 6) break
+        // Fixed order mapping for numbers → stat names
+        const statMap = {
+          1: "Strength",
+          2: "Dexterity",
+          3: "Constitution",
+          4: "Intelligence",
+          5: "Wisdom",
+          6: "Charisma"
+        };
 
-        for (var i = 0; i < 6; i++) {
-          const stat = {
-            name: "temp",
-            value: state.statDice[i]
-          }
-          switch (parseInt(choices[i])) {
-            case 1:
-              stat.name = "Strength"
-              break
-            case 2:
-              stat.name = "Dexterity"
-              break
-            case 3:
-              stat.name = "Constitution"
-              break
-            case 4:
-              stat.name = "Intelligence"
-              break
-            case 5:
-              stat.name = "Wisdom"
-              break
-            case 6:
-              stat.name = "Charisma"
-              break
-            default:
-              return text
-          }
-          state.tempCharacter.stats.push(stat)
+        // Split input into numbers, remove duplicates
+        let choices = text.split(/\D+/).map(Number).filter(Boolean);
+        choices = [...new Set(choices)];
+
+        if (choices.length !== 6) {
+          break; // invalid input
         }
 
+        // Assign dice values to chosen stats
+        choices.forEach((choice, i) => {
+          const statName = statMap[choice];
+          if (statName) {
+            state.tempCharacter.stats[statName].value = state.statDice[i];
+          }
+        });
         state.createStep = 100
       }
       return text
@@ -466,7 +457,7 @@ function doRoll(command) {
 /**
  * Performs a skill or ability check with difficulty and advantage/disadvantage.
  * - Grants autoXP on success. Provides descriptive success/failure messages.
- * - #try (ability|skill) (advantage|disadvantage) (number or automatic|effortless|easy|medium|hard|impossible) task
+ * - #try (ability|skill) (advantage|disadvantage) (number or automatic|effortless|easy|medium|hard|impossible) to ...task
  * -- Attempts to do the task based on the character's ability/skill against the specified difficulty.
  * @function
  * @param {string} [command] Command string specifying ability/skill, advantage, difficulty, and description.
@@ -517,16 +508,21 @@ function doTry(command) {
   let text = "\n"
   state.show = "prefix" // Will print whatever is saved in state.prefix, along with regular AI Dungeon output
   const failword = character.name == "You" ? "fail" : "fails"
+  const theirWord = character.name == "You" ? "your" : "their"
+  const checkType = checkSkill?.name ?? checkAbility?.name ?? "skills"
 
   // Essentially the same as doCheck (Prefixes rolling result into the printed output)
-  state.prefix = `\n${printRoll(dice, rollType, modifier, score, die1, die2, difficulty, character, checkSkill, checkAbility)}\n`
+  if (config.showRolls)
+    state.prefix = `\n${printRoll(dice, rollType, modifier, score, die1, die2, difficulty, character, checkSkill, checkAbility)}\n`
 
-  const critText2 = (score == 20) ? " Critical Success! The action was extremely effective." : (score == 1) ? " Critical Failure! There are dire consequences for this action." : ""
-  text += `${character.name} ${score + modifier >= difficulty ? "successfully" : failword + " to"} ${taskText}${critText2}`
+  const critText2 = (score == 20) ? " The action was a Critical Success, and extremely effective." : (score == 1) ? " The action was a Critical Failure, and will have dire consequences." : ""
+  text += `${character.name} use ${theirWord} ${checkType}, ${score + modifier >= difficulty ? "and successfully" : `but ${failword} to`} ${taskText}.${critText2}`
+  //text += `${character.name} ${score + modifier >= difficulty ? "successfully" : failword + " to"} ${taskText}${critText2}`
 
   // Adding of autoXp to all party members!
   if (score + modifier >= difficulty || score == 20) {
-    text += addXpToAll(Math.floor(config.autoXp * clamp(difficulty, 1, 20) / 20))
+    const exp = Math.floor(config.autoXp * clamp(difficulty, 1, 20) / 20)
+    text += config.xpShare ? addXpToAll(exp) : addXpToCharacter(exp)
   }
 
   return [text+"\n", true]
@@ -709,8 +705,8 @@ function doCreate(command) {
 
   state.createStep = 0
   state.tempCharacter.name = character.name
-  resetTempCharacterSkills() // Why for skills and not for stats?
-  state.tempCharacter.stats = []
+  resetTempCharacterSkills()
+  resetTempCharacterStats()
   state.tempCharacter.spells = []
   state.tempCharacter.inventory = [] // Use putIntoInventory() to add items
   
@@ -742,6 +738,21 @@ function resetTempCharacterSkills() {
     {name: "Sleight of Hand", stat: "Dexterity", modifier: 0},
     {name: "Stealth", stat: "Dexterity", modifier: 0},
     {name: "Survival", stat: "Wisdom", modifier: 0},
+  ]
+}
+
+/**
+ * Resets the temporary character's stats to default values.
+ * @function
+ */
+function resetTempCharacterStats() {
+  state.tempCharacter.stats = [
+    {name: "Strength", modifier: 10},
+    {name: "Dexterity", modifier: 10},
+    {name: "Constitution", modifier: 10},
+    {name: "Wisdom", modifier: 10},
+    {name: "Intelligence", modifier: 10},
+    {name: "Charisma", modifier: 10}
   ]
 }
 
@@ -1823,7 +1834,8 @@ function doCastSpell(command) {
   
   // Add autoXp to party!
   if (difficulty > 0 && (score + modifier >= difficulty || score == 20)) {
-    text += addXpToAll(Math.floor(config.autoXp * clamp(difficulty, 1, 20) / 20))
+    const exp = Math.floor(config.autoXp * clamp(difficulty, 1, 20) / 20)
+    text += config.xpShare ? addXpToAll(exp) : addXpToCharacter(exp)
   }
   return [`\n${text}\n`, true]
 }
