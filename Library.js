@@ -18,7 +18,6 @@ const version = "Hashtag DnD v0.7.0 by Raeleus / Lite Edition by SirSheeply"
 
 // CONSTANTS
 const argumentPattern = /("[^"\\]*(?:\\[\S\s][^"\\]*)*"|'[^'\\]*(?:\\[\S\s][^'\\]*)*'|\/[^\/\\]*(?:\\[\S\s][^\/\\]*)*\/[gimy]*(?=\s|$)|(?:\\\s|\S)+)/g
-const levelSplits = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000]
 const advantageNames = ["normal", "advantage", "disadvantage"]
 
 const difficultyScale = {
@@ -708,8 +707,11 @@ function addXpToAll(experience) {
     character.experience += experience
     const newLevel = getLevel(character.experience)
     if (newLevel > oldLevel) {
+      let [skillPointsGained, statPointsGained] = levelupEvent(character, oldLevel, newLevel)
+      const skillPointsText = ` And gained +${skillPointsGained} skill points.`
+      const statPointsText = statPointsGained > 0 ? ` And gained +${statPointsGained} skill points.` : ``
       levelupEvent(character, oldLevel, newLevel)
-      leveledUp += `\n[${character.name} ${haveWord} leveled up to ${newLevel}!]`
+      leveledUp += `\n[${character.name} ${haveWord} leveled up to ${newLevel}!${skillPointsText}${statPointsText}]`
     }
   })
   return leveledUp
@@ -729,10 +731,12 @@ function addXpToCharacter(experience) {
   character.experience += experience
   const newLevel = getLevel(character.experience)
 
-  leveledUp += `\n[${character.name} ${haveWord} gained ${experience} experience!]`
+  let leveledUp = `\n[${character.name} ${haveWord} gained ${experience} experience!]`
   if (newLevel > oldLevel) {
-    levelupEvent(character, oldLevel, newLevel)
-    leveledUp += `\n[${character.name} ${haveWord} leveled up to ${newLevel}!]`
+    let [skillPointsGained, statPointsGained] = levelupEvent(character, oldLevel, newLevel)
+    const skillPointsText = `And gained +${skillPointsGained} skill points.`
+    const statPointsText = statPointsGained > 0 ? `And gained +${statPointsGained} skill points.` : ``
+    leveledUp += `\n[${character.name} ${haveWord} leveled up to ${newLevel}!${skillPointsText}${statPointsText}]`
   }
   return leveledUp
 }
@@ -748,6 +752,7 @@ function levelupEvent(character, oldLevel, newLevel) {
   character.skillPoints += skillsPerLevel*(newLevel-oldLevel)
   const modLevels = Math.floor(newLevel / levelsPerASI)-Math.floor(oldLevel / levelsPerASI)
   character.statPoints += statsPerASI*modLevels
+  return [skillsPerLevel*(newLevel-oldLevel), statsPerASI*modLevels] //Points gained on this event
 }
 
 /**
@@ -1212,7 +1217,7 @@ function parseQuantityAndName(argQuantity, argName, handleAlls=true, handleArtic
 * @param {string} [dotPointChar] Style of dot point for listing items, defaults to double-space.
 * @returns {string} A textual representation/list of the character's inventory.
 **/
-function showInventory(character, dotPointChar=" ") {
+function printInventory(character, dotPointChar=" ") {
   text = ""
   if (character.inventory.length > 0) {
     character.inventory.forEach(item => {

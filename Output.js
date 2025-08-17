@@ -34,168 +34,42 @@ const modifier = (text) => {
 function DNDHash_output(text) {
   if (state.show == null) return text
 
-  var character = getCharacter()
-  var possessiveName = character == null ? null : getPossessiveName(character.name)
-  var type = history[history.length - 1].type
+  const character = getCharacter()
+  const possessiveName = character == null ? null : getPossessiveName(character.name)
+  const type = history[history.length - 1].type
   const originalText = text
   text = type != "story" ? "" : history[history.length - 1].text.endsWith("\n") ? "" : "\n"
   
   switch (state.show) {
     case "create":
-      switch (state.createStep) {
-        case 0:
-          text += `***CHARACTER CREATION***\nCharacter: ${state.tempCharacter.name}\nWould you like to use a prefab character? (y/n/q to quit)\n`
-          break
-        case 1:
-          text += `What class is your character?\n`
-          break
-        case 2:
-          text += `You rolled the following stat dice: ${state.statDice}\nChoose your abilities in order from highest to lowest\n1. Strength: Physical power and endurance\n2. Dexterity: Agility and coordination\n3. Constitution: Toughness and physique \n4. Intelligence: Reasoning and memory\n5. Wisdom: Judgement and insight\n6. Charisma: Force of personality and persuasiveness\n\nEnter the numbers with spaces between or q to quit.\n`
-          break
-        case 100:
-          text += `What character will you choose?\n`
-          const presetIndexes = getStoryCardListByType("preset")
-          for (let index = 0; index < presetIndexes.length; index++) {
-            text += `${index}. ${presetIndexes[index].title}\n`
-          }
-          text += `Enter the number or q to quit.\n`
-          break
-        case 500:
-          text += `${state.tempCharacter.name} the ${state.tempCharacter.className} has been created.\nType #bio to see a summary of your character.\n***********\n`
-          break;
-        case null:
-          text += `[Character creation has been aborted!]\n`
-          break
-      }
+      text += state.showText
       break
     case "bio":
-      text += `*** ${possessiveName.toUpperCase()} BIO ***\n`
-      text += `Class: ${character.className}\n`
-      text += `Health: ${character.health}/${getHealthMax()}\n`
-      text += `Experience: ${character.experience}\n`
-      text += `Level: ${getLevel(character.experience)}\n`
-      var nextLevel = getNextLevelXp(character.experience)
-      text += `Next level at: ${nextLevel == - 1 ? "(at maximum)": nextLevel + " xp"}\n\n`
-      text += `-ABILITIES-\n`
-
-      character.stats.forEach(function(x) {
-        text += `* ${toTitleCase(x.name)} ${x.value}\n`
-      })
-      text += `Unspent Stat Points = ${character.statPoints}\n`
-
-      text += `----\n\n`
-      text += `-SKILLS-\n`
-
-      character.skills.forEach(function(x) {
-        const stat = character.stats.find(y => y.name.toLowerCase() == x.stat.toLowerCase())
-
-        var statModifier = stat != null ? getModifier(stat.value): 0
-        var totalModifier = x.modifier + statModifier
-        var modifier = x.modifier
-
-        if (statModifier >= 0) statModifier = `+${statModifier}`
-        if (totalModifier >= 0) totalModifier = `+${totalModifier}`
-        if (modifier >= 0) modifier = `+${modifier}`
-
-        text += `* ${toTitleCase(x.name)} ${totalModifier} = ${toTitleCase(x.stat)} ${statModifier} Proficiency ${modifier}\n`
-      })
-      text += `Unspent Skill Points = ${character.skillPoints}\n`
-
-      text += `----\n\n`
-      if (character.spellStat != null) {
-        text += `-SPELLS-\n`
-        
-        character.spells.forEach(function(x) {
-          text += `* ${toTitleCase(x)}\n`
-        })
-
-        text += `----\n\n`
-      }
-
-      text += `-INVENTORY-\n`
-      text += showInventory(character, "-")
-      text += `----\n\n`
-
-      text += `**************\n\n`
+      text = showSummary(character)
       break
     case "showNotes":
-      text += "*** NOTES ***"
-      var counter = 1
-      state.notes.forEach(function(x) {
-        text += `\n${counter++}. ${x}`
-      })
-      if (state.notes.length == 0) text += "\nThere are no notes!"
-      text += "\n**************\n\n"
+      text += showNotes()
       break
     case "clearNotes":
       text += "[Notes cleared successfully]\n"
       break
     case "inventory":
-      text += `*** ${possessiveName.toUpperCase()} INVENTORY ***\n`
-      text += showInventory(character, "*")
-      text += "******************\n\n"
+      text += showInventory(character)
       break
     case "characters":
-      text += `*** CHARACTERS ***`
-      if (state.characters.length > 0) {
-        state.characters.forEach(function(x) {
-          text += `\n* ${toTitleCase(x.name)} the ${toTitleCase(x.className)}: ${x.summary}`
-        })
-      } else {
-        text += `\n${possessiveName} inventory is empty!`
-      }
-      text += "\n******************\n\n"
+      text += showParty()
       break
     case "spellbook":
-      text += `*** ${possessiveName.toUpperCase()} SPELLBOOK ***`
-      if (character.spells.length > 0) {
-        character.spells.forEach(function(x) {
-          text += "\n* " + toTitleCase(x)
-        })
-      } else {
-        text += `\n${possessiveName} spellbook is empty!`
-      }
-      text += "\n******************\n\n"
+      text += showSpells(character)
       break
     case "stats":
-      text += `*** ${possessiveName.toUpperCase()} ABILITIES ***\n`
-      if (character.stats.length > 0) {
-        character.stats.forEach(function(x) {
-          text += `* ${toTitleCase(x.name)} ${x.value}\n`
-        })
-      } else {
-        text += `${character.name} has no abilities!\n`
-      }
-      text += `Unspent Stat Points = ${character.statPoints}\n`
-      text += "******************\n\n"
+      text += showStats(character)
       break
     case "skills":
-      text += `*** ${possessiveName.toUpperCase()} SKILLS ***\n`
-      if (character.skills.length > 0) {
-        character.skills.forEach(function(x) {
-          const stat = character.stats.find(y => y.name.toLowerCase() == x.stat.toLowerCase())
-          
-          var statModifier = stat != null ? getModifier(stat.value): 0
-          var totalModifier = x.modifier + statModifier
-          var modifier = x.modifier
-
-          if (statModifier >= 0) statModifier = `+${statModifier}`
-          if (totalModifier >= 0) totalModifier = `+${totalModifier}`
-          if (modifier >= 0) modifier = `+${modifier}`
-
-          text += `* ${toTitleCase(x.name)} ${totalModifier} = ${toTitleCase(x.stat)} ${statModifier} Proficiency ${modifier}\n`
-        })
-      } else {
-        text += `${character.name} has no skills!\n`
-      }
-      text += `Unspent Skill Points = ${character.skillPoints}\n`
-      text += "******************\n\n"
-      break
-    case "none":
-      text += " "
+      text += showSkills(character)
       break
     case "prefix":
-      text = state.prefix + originalText
+      text = (state.prefix ?? "") + originalText
       break
     case "prefixOnly":
       text = state.prefix
@@ -212,12 +86,117 @@ function DNDHash_output(text) {
     case "help":
       text = helpText
       break
-    default:
+    case "none":
       text = " "
+      break
+    default:
+      text = originalText
       break
   }
 
   state.show = null
+  return text
+}
+
+function showNotes() {
+  let text = "*** NOTES ***"
+  let counter = 1
+  state.notes.forEach(function(x) {
+    text += `\n${counter++}. ${x}`
+  })
+  if (state.notes.length == 0) text += "\nThere are no notes!"
+  text += "\n**************\n\n"
+  return text
+}
+
+function showParty() {
+  let text = `*** CHARACTERS ***`
+  if (state.characters.length > 0) {
+    state.characters.forEach(function(character) {
+      text += `\n* ${toTitleCase(character.name)} the ${toTitleCase(character.className)}`
+    })
+  } else {
+    text += `\nThe party is empty!`
+  }
+  text += "\n******************\n\n"
+}
+
+function showSkills(character) {
+  const possessiveName = character == null ? null : getPossessiveName(character.name)
+  let text = `*** ${possessiveName.toUpperCase()} SKILLS ***\n`
+
+  if (character.skills.length > 0) {
+    character.skills.forEach(function(skill) {
+      const stat = character.stats.find(stat => stat.name.toLowerCase() == skill.stat.toLowerCase())
+      
+      var statModifier = stat != null ? getModifier(stat.value): 0
+      var totalModifier = skill.modifier + statModifier
+      var modifier = skill.modifier
+
+      if (statModifier >= 0) statModifier = `+${statModifier}`
+      if (totalModifier >= 0) totalModifier = `+${totalModifier}`
+      if (modifier >= 0) modifier = `+${modifier}`
+
+      text += `* ${toTitleCase(skill.name)} ${totalModifier} = ${toTitleCase(skill.stat)} ${statModifier} Proficiency ${modifier}\n`
+    })
+  } else {
+    text += `${character.name} has no skills!\n`
+  }
+  text += `Unspent Skill Points = ${character.skillPoints}\n`
+  text += "******************\n\n"
+  return text
+}
+
+function showStats(character) {
+  const possessiveName = character == null ? null : getPossessiveName(character.name)
+  let text = `*** ${possessiveName.toUpperCase()} ABILITIES ***\n`
+  if (character.stats.length > 0) {
+    character.stats.forEach(function(stat) {
+      text += `* ${toTitleCase(stat.name)} ${stat.value}\n`
+    })
+  } else {
+    text += `${character.name} has no abilities!\n`
+  }
+  text += `Unspent Stat Points = ${character.statPoints}\n`
+  text += "******************\n\n"
+  return text
+}
+
+function showSpells(character) {
+  const possessiveName = character == null ? null : getPossessiveName(character.name)
+  let text = `*** ${possessiveName.toUpperCase()} SPELLBOOK ***`
+  if (character.spells.length > 0) {
+    character.spells.forEach(function(x) {
+      text += "\n* " + toTitleCase(x)
+    })
+  } else {
+    text += `\n${possessiveName} spellbook is empty!`
+  }
+  text += "\n******************\n\n"
+  return text
+}
+
+function showInventory(character) {
+  const possessiveName = character == null ? null : getPossessiveName(character.name)
+  let text = `*** ${possessiveName.toUpperCase()} INVENTORY ***\n`
+  text += printInventory(character, "*")
+  text += "******************\n\n"
+  return text
+}
+
+function showSummary(character) {
+  const possessiveName = character == null ? null : getPossessiveName(character.name)
+  let text = `*** ${possessiveName.toUpperCase()} BIO ***\n`
+  text += `Class: ${character.className}\n`
+  text += `Health: ${character.health}/${getHealthMax()}\n`
+  text += `Experience: ${character.experience}\n`
+  text += `Level: ${getLevel(character.experience)}\n`
+  text += `Next level at: ${getNextLevelXp(character.experience)} xp\n\n`
+  text += showStats(character)
+  text += showSkills(character)
+  text += showSpells(character)
+  text += showInventory(character)
+  text += `**************\n\n`
   return text
 }
 

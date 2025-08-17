@@ -44,6 +44,8 @@ const commandRegistry = [
     { handler: doTest,                  synonyms: ["testcode", "debug"]},
     
     // <><> Character
+    // TODO: Add a character creation from JSON format in plot essentials (only on first load)
+    // This would allow for authors to ask the character creation questions up front, and not force players use the #create command
     { handler: doCreate,                synonyms: ["create", "generate", "start", "begin", "setup", "party", "member", "new"] },
     { handler: doRenameCharacter,       synonyms: ["renamecharacter", "renameperson"] },
     { handler: doCloneCharacter,        synonyms: ["clone", "clonecharacter", "cloneperson", "copycharacter", "copyperson", "duplicatecharacter", "duplicateperson", "dupecharacter", "dupeperson"] },
@@ -60,7 +62,7 @@ const commandRegistry = [
     // <><> Abilities/Attributes/Stats
     // TODO: Clear up stat terminology to use only one of the above
     { handler: doSetStat,               synonyms: ["setstat", "setattribute", "setability"] },
-    { handler: doAddSkill,              synonyms: ["addstat", "upgradestat", "updatestat"] },
+    { handler: doAddStat,              synonyms: ["addstat", "upgradestat", "updatestat"] },
     { handler: doShowStats,             synonyms: ["showstats", "stats", "viewstats", "showabilities", "abilities", "viewabilities", "showattributes", "attributes", "viewattributes"] },
     { handler: doRemoveStat,            synonyms: ["removestat", "deletestat", "removeability", "deleteability", "removeattribute", "deleteattribute"] },
     { handler: doClearStats,            synonyms: ["clearstats", "clearabilities", "clearattributes"] },
@@ -300,15 +302,28 @@ function handleCreateStep(text) {
   }
 
   if (text.toLowerCase() == "q") {
+    state.showText = `[Character creation has been aborted!]\n`
     state.createStep = null
     return text
   }
 
+  let nextOutputText = ""
   switch (state.createStep) {
     case 0:
       text = text.toLowerCase();
-      if (text.startsWith("y")) state.createStep = 100
-      else if (text.startsWith("n")) state.createStep++
+      if (text.startsWith("y")) {
+        state.createStep = 100
+        nextOutputText = `What character will you choose?\n`
+        const presetIndexes = getStoryCardListByType("preset")
+        for (let index = 0; index < presetIndexes.length; index++) {
+          nextOutputText += `${index}. ${presetIndexes[index].title}\n`
+        }
+        nextOutputText += `Enter the number or q to quit.\n`
+      }
+      else if (text.startsWith("n")) {
+        state.createStep++
+        nextOutputText = `What class is your character?\n`
+      }
       break
     case 1:
       if (text.length > 0) {
@@ -331,7 +346,15 @@ function handleCreateStep(text) {
           return b - a
         })
       }
-      return text
+      nextOutputText = `You rolled the following stat dice: ${state.statDice}\n`
+      + `Choose your abilities in order from highest to lowest\n`
+      + `1. Strength: Physical power and endurance\n`
+      + `2. Dexterity: Agility and coordination\n`
+      + `3. Constitution: Toughness and physique \n`
+      + `4. Intelligence: Reasoning and memory\n`
+      + `5. Wisdom: Judgement and insight\n`
+      + `6. Charisma: Force of personality and persuasiveness\n`
+      + `\nEnter the numbers with spaces between or q to quit.\n`
       break
     case 2:
       if (text.length > 0) {
@@ -350,6 +373,15 @@ function handleCreateStep(text) {
         choices = [...new Set(choices)];
 
         if (choices.length !== 6) {
+          nextOutputText = `You rolled the following stat dice: ${state.statDice}\n`
+          + `Choose your abilities in order from highest to lowest\n`
+          + `1. Strength: Physical power and endurance\n`
+          + `2. Dexterity: Agility and coordination\n`
+          + `3. Constitution: Toughness and physique \n`
+          + `4. Intelligence: Reasoning and memory\n`
+          + `5. Wisdom: Judgement and insight\n`
+          + `6. Charisma: Force of personality and persuasiveness\n`
+          + `\nEnter the numbers with spaces between or q to quit.\n`
           break; // invalid input
         }
 
@@ -357,52 +389,28 @@ function handleCreateStep(text) {
         choices.forEach((choice, i) => {
           const statName = statMap[choice];
           if (statName) {
-            state.tempCharacter.stats[statName].value = state.statDice[i];
+            const stat = state.tempCharacter.stats.find((element) => element.name.toLowerCase() == statName.toLowerCase())
+            if (stat) stat.value = state.statDice[i];
           }
         });
-        state.createStep = 100
+        state.createStep = 500
       }
-      return text
+      nextOutputText = `${state.tempCharacter.name} the ${state.tempCharacter.className} has been created.\nType #bio to see a summary of your character.\n***********\n`
+      break
     case 100:
       if (!isNaN(text)) {
         state.createStep = 500
-
-        // ~150+ lines of characters! Nice.
-        // The rework here is to have all the presets inside story cards, from which we can pull.
-        // This means players can curate the presests, and we're not limited to X amount.
-
         // Get a list of all the preset cards with the preset type
         const presetIndexes = getStoryCardListByType("preset")
         if (presetIndexes.length <= 0) {
           // Error no presets cards for this case!
+          state.createStep = null
           return "Error: No preset Cards Found!"
         }
-        // Convert description into what we need to create the preset.
-        const presetCard = presetIndexes[parseInt(text)]
-        const entity = JSON.parse(presetCard.description)
-
-        // Now to convert the entity description into the preset values
-        // NOTE: We can use this to save characters later too!
-        state.tempCharacter.className = presetCard.title
-        state.tempCharacter.stats = []
-        entity.abilities.forEach(ability => {
-          state.tempCharacter.stats.push({name: ability.name, value: ability.value})
-        });
-        entity.skills.forEach(skill => {
-          const findSkill = state.tempCharacter.skills.find((element) => element.name.toLowerCase() == skill.name.toLowerCase())
-          if (findSkill) {
-            // NOTE: If we implement character saving and loading we may want to consider fully deifining skills with stat base
-            state.tempCharacter.skills.find((element) => element.name.toLowerCase() == skill.name.toLowerCase()).modifier = skill.modifier;
-          } else { // We need to create the skill from scratch in this case, with it's stat base
-            state.tempCharacter.skills.push({name: skill.name, stat:skill.stat, modifier: skill.modifier})
-          }
-        });
-        entity.inventory.forEach(item => {
-          putItemIntoInventory(state.tempCharacter, item.name, item.quantity)
-        });
-        state.tempCharacter.spells = entity.spells
+        createCharacterFromPreset(presetIndexes, parseInt(text))
       }
-      return text
+      nextOutputText = `${state.tempCharacter.name} the ${state.tempCharacter.className} has been created.\nType #bio to see a summary of your character.\n***********\n`
+      break
     case 500:
       state.show = null
       state.createStep = null
@@ -417,9 +425,103 @@ function handleCreateStep(text) {
       character.health = getHealthMax()
       character.statPoints = 0
       character.skillPoints = 0
+      
+      nextOutputText = " "
       break
   }
+  state.showText = nextOutputText
   return text
+}
+
+function createCharacterFromPreset (presetIndexes, presetChoice) {
+  // Convert description into what we need to create the preset.
+  const presetCard = presetIndexes[presetChoice]
+  const entity = JSON.parse(presetCard.description)
+
+  // Now to convert the entity description into the preset values
+  // NOTE: We can use this to save characters later too!
+  state.tempCharacter.className = presetCard.title
+  state.tempCharacter.stats = []
+  entity.abilities.forEach(ability => {
+    state.tempCharacter.stats.push({name: ability.name, value: ability.value})
+  });
+  entity.skills.forEach(skill => {
+    const findSkill = state.tempCharacter.skills.find((element) => element.name.toLowerCase() == skill.name.toLowerCase())
+    if (findSkill) {
+      // NOTE: If we implement character saving and loading we may want to consider fully deifining skills with stat base
+      state.tempCharacter.skills.find((element) => element.name.toLowerCase() == skill.name.toLowerCase()).modifier = skill.modifier;
+    } else { // We need to create the skill from scratch in this case, with it's stat base
+      state.tempCharacter.skills.push({name: skill.name, stat:skill.stat, modifier: skill.modifier})
+    }
+  });
+  entity.inventory.forEach(item => {
+    putItemIntoInventory(state.tempCharacter, item.name, item.quantity)
+  });
+  state.tempCharacter.spells = entity.spells
+}
+
+/**
+ * Initializes the character creation process and resets temporary character data.
+ * @function
+ * @param {string} [command] Command string (ignored).
+ * @returns {[string, boolean]} Empty response and success flag.
+ */
+function doCreate(command) {
+  if (!hasCharacter(state.characterName)) createCharacter(state.characterName)
+  var character = getCharacter()
+
+  state.createStep = 0
+  state.tempCharacter.name = character.name
+  resetTempCharacterSkills()
+  resetTempCharacterStats()
+  state.tempCharacter.spells = []
+  state.tempCharacter.inventory = [] // Use putIntoInventory() to add items\
+  
+  state.show = "create"
+  state.showText = `***CHARACTER CREATION***\nCharacter: ${state.tempCharacter.name}\nWould you like to use a prefab character? (y/n/q to quit)\n`
+  return [" ", true]
+}
+
+/**
+ * Resets the temporary character's skills to default values.
+ * @function
+ */
+function resetTempCharacterSkills() {
+  state.tempCharacter.skills = [
+    {name: "Acrobatics", stat: "Dexterity", modifier: 0},
+    {name: "Animal Handling", stat: "Wisdom", modifier: 0},
+    {name: "Arcana", stat: "Intelligence", modifier: 0},
+    {name: "Athletics", stat: "Strength", modifier: 0},
+    {name: "Deception", stat: "Charisma", modifier: 0},
+    {name: "History", stat: "Intelligence", modifier: 0},
+    {name: "Insight", stat: "Wisdom", modifier: 0},
+    {name: "Intimidation", stat: "Charisma", modifier: 0},
+    {name: "Investigation", stat: "Intelligence", modifier: 0},
+    {name: "Medicine", stat: "Wisdom", modifier: 0},
+    {name: "Nature", stat: "Intelligence", modifier: 0},
+    {name: "Perception", stat: "Wisdom", modifier: 0},
+    {name: "Performance", stat: "Charisma", modifier: 0},
+    {name: "Persuasion", stat: "Charisma", modifier: 0},
+    {name: "Religion", stat: "Intelligence", modifier: 0},
+    {name: "Sleight of Hand", stat: "Dexterity", modifier: 0},
+    {name: "Stealth", stat: "Dexterity", modifier: 0},
+    {name: "Survival", stat: "Wisdom", modifier: 0},
+  ]
+}
+
+/**
+ * Resets the temporary character's stats to default values.
+ * @function
+ */
+function resetTempCharacterStats() {
+  state.tempCharacter.stats = [
+    {name: "Strength", value: 10},
+    {name: "Dexterity", value: 10},
+    {name: "Constitution", value: 10},
+    {name: "Wisdom", value: 10},
+    {name: "Intelligence", value: 10},
+    {name: "Charisma", value: 10}
+  ]
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -519,14 +621,15 @@ function doTry(command) {
   state.show = "prefix" // Will print whatever is saved in state.prefix, along with regular AI Dungeon output
   const failword = character.name == "You" ? "fail" : "fails"
   const theirWord = character.name == "You" ? "your" : "their"
-  const checkType = checkSkill?.name ?? checkAbility?.name ?? "skills"
+  const checkWord = checkSkill?.name ?? checkAbility?.name ?? "skills"
+  const checkType = checkSkill ? " skill" : checkAbility ? "" : ""
 
   // Essentially the same as doCheck (Prefixes rolling result into the printed output)
   if (config.showRolls)
     state.prefix = `\n${printRoll(dice, rollType, modifier, score, die1, die2, difficulty, character, checkSkill, checkAbility)}\n`
 
   const critText2 = (score == 20) ? " The action was a Critical Success, and extremely effective." : (score == 1) ? " The action was a Critical Failure, and will have dire consequences." : ""
-  text += `${character.name} use ${theirWord} ${checkType}, ${score + modifier >= difficulty ? "and successfully" : `but ${failword} to`} ${taskText}.${critText2}`
+  text += `${character.name} use ${theirWord} ${checkWord}${checkType}, ${score + modifier >= difficulty ? "and successfully" : `but ${failword} to`} ${taskText}${critText2}`
   //text += `${character.name} ${score + modifier >= difficulty ? "successfully" : failword + " to"} ${taskText}${critText2}`
 
   // Adding of autoXp to all party members!
@@ -702,69 +805,6 @@ function doHelp(command) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////// COMMAND FUNCTIONS - CHARACTER ///////////////////////////////////////////////
-
-/**
- * Initializes the character creation process and resets temporary character data.
- * @function
- * @param {string} [command] Command string (ignored).
- * @returns {[string, boolean]} Empty response and success flag.
- */
-function doCreate(command) {
-  if (!hasCharacter(state.characterName)) createCharacter(state.characterName)
-  var character = getCharacter()
-
-  state.createStep = 0
-  state.tempCharacter.name = character.name
-  resetTempCharacterSkills()
-  resetTempCharacterStats()
-  state.tempCharacter.spells = []
-  state.tempCharacter.inventory = [] // Use putIntoInventory() to add items\
-  
-  state.show = "create"
-  return [" ", true]
-}
-
-/**
- * Resets the temporary character's skills to default values.
- * @function
- */
-function resetTempCharacterSkills() {
-  state.tempCharacter.skills = [
-    {name: "Acrobatics", stat: "Dexterity", modifier: 0},
-    {name: "Animal Handling", stat: "Wisdom", modifier: 0},
-    {name: "Arcana", stat: "Intelligence", modifier: 0},
-    {name: "Athletics", stat: "Strength", modifier: 0},
-    {name: "Deception", stat: "Charisma", modifier: 0},
-    {name: "History", stat: "Intelligence", modifier: 0},
-    {name: "Insight", stat: "Wisdom", modifier: 0},
-    {name: "Intimidation", stat: "Charisma", modifier: 0},
-    {name: "Investigation", stat: "Intelligence", modifier: 0},
-    {name: "Medicine", stat: "Wisdom", modifier: 0},
-    {name: "Nature", stat: "Intelligence", modifier: 0},
-    {name: "Perception", stat: "Wisdom", modifier: 0},
-    {name: "Performance", stat: "Charisma", modifier: 0},
-    {name: "Persuasion", stat: "Charisma", modifier: 0},
-    {name: "Religion", stat: "Intelligence", modifier: 0},
-    {name: "Sleight of Hand", stat: "Dexterity", modifier: 0},
-    {name: "Stealth", stat: "Dexterity", modifier: 0},
-    {name: "Survival", stat: "Wisdom", modifier: 0},
-  ]
-}
-
-/**
- * Resets the temporary character's stats to default values.
- * @function
- */
-function resetTempCharacterStats() {
-  state.tempCharacter.stats = [
-    {name: "Strength", modifier: 10},
-    {name: "Dexterity", modifier: 10},
-    {name: "Constitution", modifier: 10},
-    {name: "Wisdom", modifier: 10},
-    {name: "Intelligence", modifier: 10},
-    {name: "Charisma", modifier: 10}
-  ]
-}
 
 /**
  * Renames the current character to a new name.
@@ -1030,17 +1070,18 @@ function doAddStat(command) {
   if (statName == null) {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
-  const statValue = Math.abs(parseInt(getArgument(command, 1)))
+  const statValue = Math.abs(parseInt(getArgument(command, 1) ?? 1))
   const possessiveName = getPossessiveName(character.name)
   if (character.statPoints < statValue) {
     return [`\n[Error: ${character.name} does not have enough stat points for this. See #help]\n`, false]
   }
 
-  const index = character.stats.findIndex((element) => element.name.toLowerCase() == stat.name.toLowerCase())
+  const index = character.stats.findIndex((element) => element.name.toLowerCase() == statName.toLowerCase())
   if (index == -1) {
     return [`\n[Error: ${statName} is not in ${possessiveName} stats. See #help]\n`, false]
   } else {
     character.stats[index].value += statValue
+    character.statPoints -= statValue
   }
 
   state.show = "none"
@@ -1163,21 +1204,22 @@ function doAddSkill(command) {
   if (skillName == null) {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
-  const skillValue = Math.abs(parseInt(getArgument(command, 1)))
+  const skillValue = Math.abs(parseInt(getArgument(command, 1) ?? 1))
   const possessiveName = getPossessiveName(character.name)
   if (character.skillPoints < skillValue) {
     return [`\n[Error: ${character.name} does not have enough skill points for this. See #help]\n`, false]
   }
 
-  const index = character.skills.findIndex((element) => element.name.toLowerCase() == skill.name.toLowerCase())
+  const index = character.skills.findIndex((element) => element.name.toLowerCase() == skillName.toLowerCase())
   if (index == -1) {
     return [`\n[Error: ${skillName} is not in ${possessiveName} skills. See #help]\n`, false]
   } else {
-    character.skills[index].value += skillValue
+    character.skills[index].modifier += skillValue
+    character.skillPoints -= skillValue
   }
 
-  skille.show = "none"
-  return [`\n[${possessiveName} ${toTitleCase(skillName)} skill bonus is now ${character.skills[index].value}]\n`, true]
+  state.show = "none"
+  return [`\n[${possessiveName} ${toTitleCase(skillName)} skill bonus is now ${character.skills[index].modifier}]\n`, true]
 }
 
 /**
