@@ -1,6 +1,4 @@
 // Your "Output" tab should look like this
-// const version = "Hashtag DnD v0.7.0 by Raeleus / Lite Edition by SirSheeply"
-
 // Checkout the Guidebook examples to get an idea of other ways you can use scripting
 // https://help.aidungeon.com/scripting
 
@@ -41,8 +39,8 @@ function DNDHash_output(text) {
   text = type != "story" ? "" : history[history.length - 1].text.endsWith("\n") ? "" : "\n"
   
   switch (state.show) {
-    case "create":
-      text += state.showText
+    case "steps":
+      text += handleStepProcess(text, outputMode);
       break
     case "bio":
       text = showSummary(character)
@@ -95,108 +93,6 @@ function DNDHash_output(text) {
   }
 
   state.show = null
-  return text
-}
-
-function showNotes() {
-  let text = "*** NOTES ***"
-  let counter = 1
-  state.notes.forEach(function(x) {
-    text += `\n${counter++}. ${x}`
-  })
-  if (state.notes.length == 0) text += "\nThere are no notes!"
-  text += "\n**************\n\n"
-  return text
-}
-
-function showParty() {
-  let text = `*** CHARACTERS ***`
-  if (state.characters.length > 0) {
-    state.characters.forEach(function(character) {
-      text += `\n* ${toTitleCase(character.name)} the ${toTitleCase(character.className)}`
-    })
-  } else {
-    text += `\nThe party is empty!`
-  }
-  text += "\n******************\n\n"
-}
-
-function showSkills(character) {
-  const possessiveName = character == null ? null : getPossessiveName(character.name)
-  let text = `*** ${possessiveName.toUpperCase()} SKILLS ***\n`
-
-  if (character.skills.length > 0) {
-    character.skills.forEach(function(skill) {
-      const stat = character.stats.find(stat => stat.name.toLowerCase() == skill.stat.toLowerCase())
-      
-      var statModifier = stat != null ? getModifier(stat.value): 0
-      var totalModifier = skill.modifier + statModifier
-      var modifier = skill.modifier
-
-      if (statModifier >= 0) statModifier = `+${statModifier}`
-      if (totalModifier >= 0) totalModifier = `+${totalModifier}`
-      if (modifier >= 0) modifier = `+${modifier}`
-
-      text += `* ${toTitleCase(skill.name)} ${totalModifier} = ${toTitleCase(skill.stat)} ${statModifier} Proficiency ${modifier}\n`
-    })
-  } else {
-    text += `${character.name} has no skills!\n`
-  }
-  text += `Unspent Skill Points = ${character.skillPoints}\n`
-  text += "******************\n\n"
-  return text
-}
-
-function showStats(character) {
-  const possessiveName = character == null ? null : getPossessiveName(character.name)
-  let text = `*** ${possessiveName.toUpperCase()} ABILITIES ***\n`
-  if (character.stats.length > 0) {
-    character.stats.forEach(function(stat) {
-      text += `* ${toTitleCase(stat.name)} ${stat.value}\n`
-    })
-  } else {
-    text += `${character.name} has no abilities!\n`
-  }
-  text += `Unspent Stat Points = ${character.statPoints}\n`
-  text += "******************\n\n"
-  return text
-}
-
-function showSpells(character) {
-  const possessiveName = character == null ? null : getPossessiveName(character.name)
-  let text = `*** ${possessiveName.toUpperCase()} SPELLBOOK ***`
-  if (character.spells.length > 0) {
-    character.spells.forEach(function(x) {
-      text += "\n* " + toTitleCase(x)
-    })
-  } else {
-    text += `\n${possessiveName} spellbook is empty!`
-  }
-  text += "\n******************\n\n"
-  return text
-}
-
-function showInventory(character) {
-  const possessiveName = character == null ? null : getPossessiveName(character.name)
-  let text = `*** ${possessiveName.toUpperCase()} INVENTORY ***\n`
-  text += printInventory(character, "*")
-  text += "******************\n\n"
-  return text
-}
-
-function showSummary(character) {
-  const possessiveName = character == null ? null : getPossessiveName(character.name)
-  let text = `*** ${possessiveName.toUpperCase()} BIO ***\n`
-  text += `Class: ${character.className}\n`
-  text += `Health: ${character.health}/${getHealthMax()}\n`
-  text += `Experience: ${character.experience}\n`
-  text += `Level: ${getLevel(character.experience)}\n`
-  text += `Next level at: ${getNextLevelXp(character.experience)} xp\n\n`
-  text += showStats(character)
-  text += showSkills(character)
-  text += showSpells(character)
-  text += showInventory(character)
-  text += `**************\n\n`
   return text
 }
 

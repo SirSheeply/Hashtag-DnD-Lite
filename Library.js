@@ -1,5 +1,5 @@
 // Based on version "Hashtag DnD v0.7.0" by Raeleus
-const version = "Hashtag DnD v0.7.0 by Raeleus / Lite Edition by SirSheeply"
+const version = "Hashtag DnD v0.7.0 by Raeleus / Lite v0.0.0 Edition by SirSheeply"
 
 // Your "Library" tab should look like this
 
@@ -17,6 +17,8 @@ const version = "Hashtag DnD v0.7.0 by Raeleus / Lite Edition by SirSheeply"
 ///////////////////////////////////////////////// CONFIG SETTINGS & CONSTANTS /////////////////////////////////////////////////
 
 // CONSTANTS
+const outputMode = "output" // outputMode and inputMode are used across step functions
+const inputMode = "input"   // They are defined here as constants for consistency and maintenance
 const argumentPattern = /("[^"\\]*(?:\\[\S\s][^"\\]*)*"|'[^'\\]*(?:\\[\S\s][^'\\]*)*'|\/[^\/\\]*(?:\\[\S\s][^\/\\]*)*\/[gimy]*(?=\s|$)|(?:\\\s|\S)+)/g
 const advantageNames = ["normal", "advantage", "disadvantage"]
 
@@ -33,20 +35,24 @@ const difficultyScale = {
   "auto": 0
 }
 
+// Synonyms used too broadly to search the registry every time
+const articleSynonyms = ["a", "an", "the"]
+const allSynonyms = ["all", "every", "each", "every one", "everyone"]
+const createSynonyms = ["create", "generate", "start", "begin", "setup", "new"]
+
 // CONFIGURATION
+//TODO: Make stat/skill/spell terminology a config option
 const config = {
   autoCreateItemCards: false, // Automaticall creates item cards when put into the inventory
   defaultDifficulty: 10,      // Difficulty of checks when not specified in commands
   autoXp: 100,                // XP a character gains after a successful check
   showRolls: false,           // Enables/Disables the dice result of rolls being displayed for #try, #cast
   critFailProtect: 20,        // Rerolls critical fails X checks after last critical fail
-  xpShare: false              // Enables/disables auto xp sharing among party characters
+  xpShare: false,             // Enables/disables auto xp sharing among party characters
+  skillsPerLevel: 1,          // Skill points awarded per levelup event
+  levelsPerASI: 4,            // How many levels award an ASI
+  statsPerASI: 2              // Stat points awarded per ASI event
 }
-
-//TODO: Place in config later
-const skillsPerLevel = 1  // Skill points awarded per levelup event
-const levelsPerASI = 4    // How many levels award an ASI
-const statsPerASI = 2     // Stat points awarded per ASI event
 
 /**
  * Loads and applies configuration settings from the "#DND Lite Config" story card.
@@ -470,6 +476,19 @@ function performRoll(dice, rollType, character=null, checkSkill=null, checkAbili
 }
 
 /**
+ * Generates a random stat roll from 4 d6 minus the lowest.
+ * @returns {number} random stat value.
+ */
+function rollStat() {
+  let rolls = [];
+  for (let r=0; r < 4; r++) {
+    rolls.push(getRandomInteger(1, 6));
+  }
+  const min = Math.min(...rolls);
+  return rolls.reduce((sum, n) => sum + n, 0) - min;
+}
+
+/**
  * Generates a formatted string describing the result of a dice roll.
  * Can handle raw rolls or skill/ability checks, including modifiers,
  * advantage/disadvantage, and optional success/critical text.
@@ -511,8 +530,414 @@ function printRoll(dice, rollType, modifier, score, die1, die2, difficulty=null,
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/////////////////////////////////////////////////////////////// ///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////// STEP PROCESS HANDLING ///////////////////////////////////////////////////
+
+// ============================
+// Step Handlers Registry
+// ============================
+const stepHandlers = {
+  // Character Creation Flow
+  prefabChoice: handlePrefabChoice,
+  presetChoice: handlePresetChoice,
+  classChoice: handleStepClassChoice,
+  statsChoice: handleStepStatsChoice,
+  skillsChoice: handleStepSkillsChoice,
+  spellsChoice: handleStepSpellsChoice,
+  itemsChoice: handleStepItemsChoice,
+  finishCreate: handleFinishCreate
+
+  // Other Flow
+  // <other flows steps here>
+};
+
+/**
+ *
+ * @function
+ * @param {string} [text]
+ * @returns {string} [newText]
+ */
+function handleStepProcess(text, mode) {
+  state.show = "steps" // Maintain the steps processing state; TODO: is this needed?
+  text = sanitizeTextAdvanced(text)
+
+  if (text.toLowerCase() == "q" || !state.step) {
+    state.show = "none"
+    state.step = null
+    return "[Process has been aborted!]\n"
+  }
+
+  const handler = stepHandlers[state.step];
+  if (!handler) {
+    state.show = "none"
+    state.step = null
+    return `Unknown step: ${state.step}\n`;
+  }
+
+  const { nextStep, newText, success } = handler(text, mode);
+  if (nextStep) state.step = nextStep;
+
+  if (!success) {
+    state.show = "none"
+    state.step = null
+  }
+  return newText
+}
+
+/* NOTE:
+ * Step functions should have an input mode, and output mode
+ * During output mode we ask questions, maybe do some pre-processing
+ * During input mode we process player answers, then set the nextStep
+ * Step functions return {nextStep:nextStep, newText:newText, success:success}
+ * Setting newText in output mode will overwrite AI Dungeon Output and display in the output field
+ * Setting newText in input mode will overwrite User Input and display in the input field
+ */
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/////////////////////////////////////////////////////////////// ///////////////////////////////////////////////////////////////
+/////////////////////////////////////////// CHARACTER CREATION - STEP FUNCTIONS ///////////////////////////////////////////////
+
+// TODO: Sorry for these step functions being quite dense. They aim to do a lot for such a simple form, so I packed them down.
+
+/**
+ * Handles the prefab character choice step.
+ * @function
+ * @param {string} [text] - Player input or AI Dungeon output
+ * @param {string} [mode] - Either "input" or "output".
+ * @returns {{ nextStep: string, newText: string, success: boolean }}
+ */
+function handlePrefabChoice(text, mode) {
+  let newText = " "
+  let nextStep = "prefabChoice"
+  if (mode === outputMode) {
+    newText = `***CHARACTER CREATION***\n`
+    +`Character: ${state.tempCharacter.name}\n`
+    +`Would you like to use a preset character? (y/n/q to quit)\n`
+  }
+  else if (mode === inputMode) {
+    if (text.toLowerCase().startsWith("y")) {
+      nextStep = "presetChoice"
+    }
+    else if (text.toLowerCase().startsWith("n")) {
+      nextStep = "classChoice"
+    }
+  }
+  return {nextStep:nextStep, newText:newText, success:true}
+}
+
+/**
+ * Handles the preset character selection step.
+ * @function
+ * @param {string} [text] - Player input or AI Dungeon output
+ * @param {string} [mode] - Either "input" or "output".
+ * @returns {{ nextStep: string, newText: string, success: boolean }}
+ */
+function handlePresetChoice(text, mode) {
+  let newText = " "
+  let success = true
+  let nextStep = "presetChoice"
+  // Get a list of all the preset cards with the preset type
+  const presetIndexes = getStoryCardListByType("preset")
+  if (mode === outputMode) {
+    newText = `What character will you choose?\n`
+    for (let index = 0; index < presetIndexes.length; index++) {
+      newText += `${index}. ${presetIndexes[index].title}\n`
+    }
+    newText += `Enter the number or q to quit.\n`
+  }
+  else if (mode === inputMode) {
+    const playerChoice = parseInt(text)
+    if (isNaN(text) || playerChoice < 0 || playerChoice >= presetIndexes.length) {
+      success = false
+      newText = "Error: No preset Cards Found!\n"
+    } else {
+      // FYI: Creates a character from the preset into state.tempCharacter
+      createCharacterFromPreset(presetIndexes, playerChoice)
+      nextStep = "finishCreate"
+    }
+  }
+  return {nextStep:nextStep, newText:newText, success:success}
+}
+
+/**
+ * Handles the class character selection step.
+ * @function
+ * @param {string} [text] - Player input or AI Dungeon output
+ * @param {string} [mode] - Either "input" or "output".
+ * @returns {{ nextStep: string, newText: string, success: boolean }}
+ */
+function handleStepClassChoice(text, mode) {
+  let newText = " "
+  let nextStep = "classChoice"
+  if (mode === outputMode) {
+    newText = `What class is your character?\n`
+  }
+  else if (mode === inputMode) {
+    state.tempCharacter.className = text
+    nextStep = "statsChoice"
+  }
+  return {nextStep:nextStep, newText:newText, success:true}
+}
+
+/**
+ * Handles the character stats selection step.
+ * @function
+ * @param {string} [text] - Player input or AI Dungeon output
+ * @param {string} [mode] - Either "input" or "output".
+ * @returns {{ nextStep: string, newText: string, success: boolean }}
+ */
+function handleStepStatsChoice(text, mode) {
+  let newText = " "
+  let nextStep = "statsChoice"
+
+  // Generate 6 ability scores (if none exist on output, or input equals r to reroll)
+  const needsReroll = (mode === outputMode && state.statDice?.length == 0)
+  const wantsReroll = (mode === inputMode && text.toLowerCase() == "r")
+  if ( needsReroll || wantsReroll ) {
+    state.statDice = Array.from({ length: 6 }, rollStat); 
+    state.statDice.sort((first, second) => second - first); // Sort descending
+    if (mode === inputMode) {
+      return {nextStep:nextStep, newText:newText, success:true} // Skip to output mode
+    }
+  }
+
+  if (mode === outputMode) {
+    newText = `You rolled the following stat dice: ${state.statDice}\n`
+    + `Choose your abilities in order from highest to lowest.\n`
+    for (let i=0; i < state.tempCharacter.stats.length; i++) {
+      newText += `${i+1}. ${state.tempCharacter.stats[i].name}\n`
+    }
+    newText += `\nEnter (1-6) with spaces between, q to quit, or r to reroll.\n`
+  }
+  else if (mode === inputMode) {
+    // Split input into numbers, remove duplicates
+    let choices = text.split(/\D+/).map(Number).filter(Boolean);
+    choices = [...new Set(choices)];
+    if (choices.some(num => num < 1 || num > state.tempCharacter.stats.length || choices.length !== state.statDice.length)) {
+      newText = "Invalid input. Please enter numbers 1-6 without duplicates.\n";
+      return {nextStep:nextStep, newText:newText, success:true}  // Re-prompt
+    }
+    // The arrays should align so that:
+    // * choices[i]-1 is a reference to the character.stats[]
+    // * And statDice[i] is the value we wish to assign to character.stats[choices[i]-1]
+    choices.forEach((choice, i) => {
+      const stat = state.tempCharacter.stats[choice-1]; 
+      if (stat) stat.value = state.statDice[i];
+    });
+    // Finally progress to the next step
+    state.statDice = []
+    nextStep = "skillsChoice"
+  }
+  return {nextStep:nextStep, newText:newText, success:true}
+}
+
+/**
+ * Handles the character skills selection step.
+ * @function
+ * @param {string} [text] - Player input or AI Dungeon output
+ * @param {string} [mode] - Either "input" or "output".
+ * @returns {{ nextStep: string, newText: string, success: boolean }}
+ */
+// TODO: In D&D this plus would be the proficiency/expertise mod, but DNDHash is not programmed like that
+// -- In DNDHash each skill has it's own modifier that can be increased with skill points.
+// -- So this skill selection gives ${config.skillsPerLevel} aka one levels worth to each chosen skill.
+// TODO: Either rework the skill system to use a proficiency/expertise mod, or add config option
+function handleStepSkillsChoice(text, mode) {
+  let newText = " "
+  let nextStep = "skillsChoice"
+  if (mode === outputMode) {
+    const skills = state.tempCharacter.skills;
+    newText = `What skills is your character proficient in?\n`
+    + `Chosen skills will gain a +${config.skillsPerLevel} modifier.\n`;
+    // Length of the longest skill word
+    let longest = 0
+    for (let i=0; i < skills.length; i+=2) {
+      if (fontLength(skills[i].name) > longest)
+        longest = fontLength(skills[i].name);
+    }
+    // Print columns with adjusted tabs ( 8 being the space length of a tab in AI Dungeon)
+    for (let i = 0; i < skills.length; i += 2) {
+      const col1 = `${String(i+1).padStart(2, " ")}. ${skills[i].name}`;
+      const col2 = skills[i+1] ? `${String(i+2).padStart(2, " ")}. ${skills[i+1].name}` : "";
+      // Adjusts for tabs needed, plus one tab between columns
+      const nameLength = fontLength(skills[i].name)
+      const tabsNeeded = Math.ceil((longest - nameLength) / 4) + 1 // 4 being the tab-length (+1 for column spacing)
+      newText += `${col1}${"\t".repeat(tabsNeeded)}${col2}\n`;
+    }
+    newText += `\nEnter numbers with spaces between, q to quit.\n`;
+  }
+  else if (mode === inputMode) {
+    // Split input into numbers, remove duplicates
+    let choices = text.split(/\D+/).map(Number).filter(Boolean);
+    choices = [...new Set(choices)];
+    if (choices.some(num => num < 1 || num > state.tempCharacter.skills.length)) {
+      newText = "Invalid input. Please enter numbers without duplicates.\n";
+      return {nextStep:nextStep, newText:newText, success:true}  // Re-prompt
+    }
+    choices.forEach(num => {
+      const skill = state.tempCharacter.skills[num - 1];
+      if (skill) skill.modifier += config.skillsPerLevel;
+    });
+    nextStep = "spellsChoice"
+  }
+  return {nextStep:nextStep, newText:newText, success:true}
+}
+
+/**
+ * Handles the character spell selection step.
+ * @function
+ * @param {string} [text] - Player input or AI Dungeon output
+ * @param {string} [mode] - Either "input" or "output".
+ * @returns {{ nextStep: string, newText: string, success: boolean }}
+ */
+function handleStepSpellsChoice(text, mode) {
+  let newText = " "
+  let nextStep = "spellsChoice"
+  if (mode === outputMode) {
+    newText = `What spells does your character possess?\n`
+    + `\nEnter spell names with semicolon ; between, q to quit.\n`
+  }
+  else if (mode === inputMode) {
+    // Clean and split by semicolon; removes empty entries
+    let spells = text.split(";").map(spell => spell.trim()).filter(Boolean);
+    spells = [...new Set(spells)]; // Remove duplicates
+    state.tempCharacter.spells = spells;
+    nextStep = "itemsChoice"
+  }
+  return {nextStep:nextStep, newText:newText, success:true}
+}
+
+/**
+ * Handles the character items selection step.
+ * @function
+ * @param {string} [text] - Player input or AI Dungeon output
+ * @param {string} [mode] - Either "input" or "output".
+ * @returns {{ nextStep: string, newText: string, success: boolean }}
+ */
+function handleStepItemsChoice(text, mode) {
+  let newText = " "
+  let nextStep = "itemsChoice"
+  if (mode === outputMode) {
+    newText = `What items does your character possess?\n`
+    + `\nEnter items separated by semicolons (;). Add quantities with "x#", e.g., "Potion x3; Torch x2".\n`
+    + `Type 'q' to quit.\n`;
+  }
+  else if (mode === inputMode) {
+    // Clean and split by semicolon; removes empty entries
+    let items = text.split(";").map(i => i.trim()).filter(Boolean);
+    items.forEach(itemEntry => {
+      // Extract quantity
+      const match = itemEntry.match(/^(.*?)\s*x(\d+)$/i);
+      let name = itemEntry;
+      let qty = 1;
+      if (match) {
+        name = match[1].trim();
+        qty = parseInt(match[2], 10) || 1;
+      }
+      // Add item (putItemIntoInventory will merge quantities if needed)
+      putItemIntoInventory(state.tempCharacter, name, qty);
+    });
+    nextStep = "finishCreate"
+  }
+  return {nextStep:nextStep, newText:newText, success:true}
+}
+
+/**
+ * Finalizes the temporary character (`state.tempCharacter`) and commits it into the game state as a permanent character.
+ * @function
+ * @param {string} text - Ignored (no input required at this step).
+ * @returns {{ nextStep: string, newText: string, success: boolean }}
+ */
+function handleFinishCreate(text, mode) {
+  let newText = " "
+  if (mode === outputMode) {
+    // Finally commits the tempCharacter into state.characters
+    const addedCharacter = addCharacter(state.tempCharacter)
+    if (addedCharacter == null) {
+      newText = "Error: Character was not created!\n"
+    } else {
+      newText = `${addedCharacter.name} the ${addedCharacter.className} has been created.\n***********\n`
+      newText += showSummary(addedCharacter)
+    }
+  }
+  else if (mode === inputMode) {
+    // NO input required on the final creation step thus should not be possible!
+    // UNLESS the state was not cleared as it should have been, or set incorrectly
+    // OR if this function was called outside the step process handling for some reason
+    newText = "Error: Character creation has finsihed!\n"
+    state.show = "none"
+    state.step = null
+  }
+  // In this case false for success actually means stop processing steps
+  return {nextStep:null, newText:newText, success:false}
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////// CHARACTER SYSTEM & MANIPULATION ///////////////////////////////////////////////
+
+/**
+ * Loads a temporary character from a preset card.
+ *
+ * Takes a selected preset (from `presetIndexes`) and applies its defined
+ * stats, skills, inventory, and spells to `state.tempCharacter`. This
+ * allows quick-start character creation using predefined archetypes.
+ *
+ * Behavior:
+ * - Parses the preset JSON into an entity object.
+ * - Sets `className` to the preset title.
+ * - Copies abilities into `tempCharacter.stats`.
+ * - Updates existing skills if found, or creates new ones if missing.
+ * - Loads items into inventory via `putItemIntoInventory`.
+ * - Assigns the preset’s spell list.
+ *
+ * Useful for both new-character presets and later character saving/loading.
+ *
+ * @function
+ * @param {Array} presetIndexes - List of available preset cards.
+ * @param {number} presetChoice - Index of the chosen preset.
+ * @returns {void}
+ */
+// TODO: Not a biggy, but createCharacterFromPreset should return a created character, not just modify state.tempCharacter, which is a little confusing
+function createCharacterFromPreset (presetIndexes, presetChoice) {
+  // Convert description into what we need to create the preset.
+  const presetCard = presetIndexes[presetChoice]
+  const entity = JSON.parse(presetCard.description)
+
+  // Now to convert the entity description into the preset values
+  // NOTE: We can use this to save characters later too!
+  state.tempCharacter.className = presetCard.title
+  state.tempCharacter.stats = []
+  entity.abilities.forEach(ability => {
+    state.tempCharacter.stats.push({name: ability.name, value: ability.value})
+  });
+  entity.skills.forEach(skill => {
+    const findSkill = state.tempCharacter.skills.find((element) => element.name.toLowerCase() == skill.name.toLowerCase())
+    if (findSkill) {
+      // NOTE: If we implement character saving and loading we may want to consider fully deifining skills with stat base
+      const charSkill = state.tempCharacter.skills.find((element) => element.name.toLowerCase() == skill.name.toLowerCase())
+      charSkill.stat = skill.stat ?? "none";
+      charSkill.modifier = skill.modifier ?? 0;
+
+    } else { // We need to create the skill from scratch in this case, with it's stat base
+      state.tempCharacter.skills.push({name: skill.name, stat:skill.stat, modifier: skill.modifier})
+    }
+  });
+  entity.inventory.forEach(item => {
+    putItemIntoInventory(state.tempCharacter, item.name, item.quantity)
+  });
+  state.tempCharacter.spells = entity.spells
+}
 
 /**
 * Retrieves a character object by name from the game state.
@@ -525,7 +950,7 @@ function printRoll(dice, rollType, modifier, score, die1, die2, difficulty=null,
 function getCharacter(characterName, allowFallback = true) {
   if (characterName == null && allowFallback) characterName = state.characterName
   if (characterName == null) return null
-  return state.characters.find(element => element.name.toLowerCase() == characterName.toLowerCase())
+  return state.characters.find(element => element.name.toLowerCase() == characterName.toLowerCase()) ?? null
 }
 
 /**
@@ -539,30 +964,15 @@ function hasCharacter(characterName) {
 }
 
 /**
-* Creates a new character or resets an existing character with default stats and attributes.
-* @function
-* @param {string} name - The name of the character to create or reset.
-* @returns {object} The newly created or reset character object.
-*/
+ * Creates a blank character.
+ * @function
+ * @param {string} name - The name of the character to create or reset.
+ * @returns {object} The newly created or reset character object.
+ */
 function createCharacter(name) {
-  var existingCharacter = getCharacter(name)
-  if (existingCharacter != null) {
-    existingCharacter.name = name
-    existingCharacter.className = "adventurer"
-    existingCharacter.inventory = []
-    existingCharacter.spells = []
-    existingCharacter.stats = []
-    existingCharacter.skills = []
-    existingCharacter.experience = 0
-    existingCharacter.health = 10
-    existingCharacter.skillPoints = 0
-    existingCharacter.statPoints = 0
-    return existingCharacter
-  }
-
-  var character = {
-    name: name,
-    className: "adventurer",
+  return {
+    name: name || "Blank",
+    className: "Blank",
     inventory: [],
     spells: [],
     stats: [],
@@ -571,9 +981,7 @@ function createCharacter(name) {
     health: 10,
     skillPoints: 0,
     statPoints: 0
-  }
-  state.characters.push(character)
-  return character
+  };
 }
 
 /**
@@ -582,7 +990,7 @@ function createCharacter(name) {
 * @function
 * @param {object} fromCharacter - The source character to copy from.
 * @param {object} toCharacter - The target character to copy into.
-* @returns {object|undefined} The updated target character, or undefined if parameters are invalid.
+* @returns {object|null} The updated target character, or undefined if parameters are invalid.
 */
 function copyCharacter(fromCharacter, toCharacter) {
   if (toCharacter != null && fromCharacter != null) {
@@ -597,6 +1005,30 @@ function copyCharacter(fromCharacter, toCharacter) {
     toCharacter.statPoints = fromCharacter.statPoints
     return toCharacter
   }
+  return null
+}
+
+/**
+ * Safely adds or updates a character in the state.
+ * @function
+ * @param {object} character - Character object to add or update.
+ * @returns {object|null} The added/updated character, or false on failure.
+ */
+function addCharacter(character) {
+  if (!character || !character.name) return null;
+
+  // Safely create a full character object
+  const newCharacter = copyCharacter(character, createCharacter(character.name));
+  if (!newCharacter) return null;
+
+  const index = state.characters.findIndex(c => c.name === character.name);
+  if (index === -1) { // Add as new character
+    state.characters.push(newCharacter);
+  } else { // Replace existing character in the array
+    state.characters[index] = newCharacter;
+  }
+
+  return newCharacter;
 }
 
 /**
@@ -749,10 +1181,10 @@ function addXpToCharacter(experience) {
 * @param {number} newLevel - The new level they reached
 */
 function levelupEvent(character, oldLevel, newLevel) {
-  character.skillPoints += skillsPerLevel*(newLevel-oldLevel)
-  const modLevels = Math.floor(newLevel / levelsPerASI)-Math.floor(oldLevel / levelsPerASI)
-  character.statPoints += statsPerASI*modLevels
-  return [skillsPerLevel*(newLevel-oldLevel), statsPerASI*modLevels] //Points gained on this event
+  character.skillPoints += config.skillsPerLevel*(newLevel-oldLevel)
+  const modLevels = Math.floor(newLevel / config.levelsPerASI)-Math.floor(oldLevel / config.levelsPerASI)
+  character.statPoints += config.statsPerASI*modLevels
+  return [config.skillsPerLevel*(newLevel-oldLevel), config.statsPerASI*modLevels] //Points gained on this event
 }
 
 /**
@@ -814,6 +1246,58 @@ function sanitizeText(text) {
     text = text.replace(/\.?\n$/, "")
   }
   
+  return text
+}
+
+/**
+ * Sanitizes AI Dungeon–style text.
+ *
+ * This function normalizes text input from the engine during the step process flow.
+ * It removes system-style markers (`>`), quotes from dialogue, redundant character names,
+ * and trailing punctuation so that the result is a clean input string for processing.
+ *
+ * Behavior:
+ * - Case 1: Dialogue (`> John says "Strength 14"`)  
+ *   → Strips speaker and quotes, leaving only the inner text.
+ * - Case 2: Narration/action (`> You chose Strength`)  
+ *   → Removes the `>` marker, character name prefixes, and trailing punctuation.
+ * - Case 3: Anything else  
+ *   → Trims leading whitespace only.
+ *
+ * @function
+ * @param {string} text - The raw input text from the engine.
+ * @returns {string} - The sanitized, cleaned text ready for parsing.
+ */
+function sanitizeTextAdvanced(text) {
+  // Case 1: Dialogue lines like `> John says "Strength 14"`
+  // ^\s*>         → starts with ">" (optionally preceded by whitespace)
+  // .*says?       → any name/subject, followed by "say" or "says"
+  // ".*           → then a literal quote, and some text after it
+  if (/^\s*>.*says? ".*/.test(text)) {  
+    text = text.replace(/^\s*>.*says? "/, "") // ^\s*>.*says? " → remove everything from the start up to and including `say "` 
+    text = text.replace(/"\s*$/, "") // "\s*$ → remove the trailing quote and any spaces at the end
+  } 
+  // Case 2: Narration/action lines like `> You chose Strength`
+  // ^\s*>         → starts with ">" (optionally preceded by whitespace)
+  // \s.*          → followed by a space and then any text (narration/action)
+  else if (/^\s*>\s.*/.test(text)) {
+    text = text.replace(/\s*> /, "") // \s*>  → remove the "> " marker at the start
+    // Remove character name prefixes ("You " or "Bob ")
+    for (var i = 0; i < info.characters.length; i++) {
+      var matchString = info.characters[i] == "" ? "You " : `${info.characters[i]} `
+      if (text.startsWith(matchString)) {
+        text = text.replace(matchString, "")
+        break
+      }
+    }
+    // \.?        → optional period at the end
+    // \s*$       → followed by any trailing spaces
+    text = text.replace(/\.?\s*$/, "") 
+  } 
+  // Case 3: Any other line (just trim leading whitespace)
+  else {
+    text = text.replace(/^\s+/, "") // ^\s+ → remove leading whitespace at start
+  }
   return text
 }
 
@@ -982,6 +1466,37 @@ function toTitleCase(str) {
   );
 }
 
+/**
+ * Approximates the visual width of a string in a proportional font.
+ *
+ * This function assigns a weight to each character based on its typical
+ * visual width, helping simulate text alignment in non-monospace environments
+ * (like AI Dungeon). Characters are grouped into three width categories:
+ * 
+ * - large: ~1.5 units (e.g., "M", "W", uppercase letters, "m")
+ * - medium: ~1.0 units (most lowercase letters)
+ * - small: ~0.5 units (thin characters like "i", "l", spaces)
+ * 
+ * Characters not explicitly listed in these groups default to medium width.
+ *
+ * @param {string} string - The text to measure.
+ * @returns {number} Approximate total width of the string.
+ */
+function fontLength(string) {
+  const large = "ABCDEFGHJKLMNOPKRSTUVWXYZm"
+  const medium = "abcdeghknopqsuvwxyz"
+  const small = "Ifijltr "
+
+  let length = 0;
+  for (const char of string) {
+    if (large.includes(char)) length += 1.5;
+    else if (medium.includes(char)) length += 1.0;
+    else if (small.includes(char)) length += 0.5;
+    else length += 1.0;
+  }
+  return length;
+}
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -1091,10 +1606,10 @@ function getStoryCardListByTitle(listTitle, exactTitle = true) {
 * @function
 * @param {character} [character] The character whose inventory is being manipulated
 * @param {string} [itemName] Name of the item to be added or increased
-* @param {number} [quantity] The quantity of the item attempting to add
+* @param {number} [quantity] The quantity of the item attempting to add (default 1)
 * @returns {item} Returns the inventory item just added or increased
 **/
-function putItemIntoInventory(character, itemName, quantity)
+function putItemIntoInventory(character, itemName, quantity=1)
 {
   // Check story cards (create one if needed), and make sure it's a complete item
   const newItem = checkItemCards(itemName)
@@ -1238,6 +1753,122 @@ function printInventory(character, dotPointChar=" ") {
 **/
 function searchInventory(character, itemName) {
   return character.inventory.find((element) => compareWithoutPlural(itemName, element.itemName)) ?? null
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/////////////////////////////////////////////////////////////// ///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////// SHOW OUTPUT FUNCTIONS ///////////////////////////////////////////////////
+
+function showNotes() {
+  let text = "*** NOTES ***"
+  let counter = 1
+  state.notes.forEach(function(x) {
+    text += `\n${counter++}. ${x}`
+  })
+  if (state.notes.length == 0) text += "\nThere are no notes!"
+  text += "\n**************\n\n"
+  return text
+}
+
+function showParty() {
+  let text = `*** CHARACTERS ***`
+  if (state.characters.length > 0) {
+    state.characters.forEach(function(character) {
+      text += `\n* ${toTitleCase(character.name)} the ${toTitleCase(character.className)}`
+    })
+  } else {
+    text += `\nThe party is empty!`
+  }
+  text += "\n******************\n\n"
+  return text
+}
+
+function showSkills(character) {
+  const possessiveName = character == null ? null : getPossessiveName(character.name)
+  let text = `*** ${possessiveName.toUpperCase()} SKILLS ***\n`
+
+  if (character.skills.length > 0) {
+    character.skills.forEach(function(skill) {
+      const stat = character.stats.find(stat => stat.name.toLowerCase() == skill.stat.toLowerCase())
+      
+      var statModifier = stat != null ? getModifier(stat.value): 0
+      var totalModifier = skill.modifier + statModifier
+      var modifier = skill.modifier
+
+      if (statModifier >= 0) statModifier = `+${statModifier}`
+      if (totalModifier >= 0) totalModifier = `+${totalModifier}`
+      if (modifier >= 0) modifier = `+${modifier}`
+
+      text += `* ${toTitleCase(skill.name)} ${totalModifier} = ${toTitleCase(skill.stat)} ${statModifier} Proficiency ${modifier}\n`
+    })
+  } else {
+    text += `${character.name} has no skills!\n`
+  }
+  text += `Unspent Skill Points = ${character.skillPoints}\n`
+  text += "******************\n\n"
+  return text
+}
+
+function showStats(character) {
+  const possessiveName = character == null ? null : getPossessiveName(character.name)
+  let text = `*** ${possessiveName.toUpperCase()} ABILITIES ***\n`
+  if (character.stats.length > 0) {
+    character.stats.forEach(function(stat) {
+      text += `* ${toTitleCase(stat.name)} ${stat.value}\n`
+    })
+  } else {
+    text += `${character.name} has no abilities!\n`
+  }
+  text += `Unspent Stat Points = ${character.statPoints}\n`
+  text += "******************\n\n"
+  return text
+}
+
+function showSpells(character) {
+  const possessiveName = character == null ? null : getPossessiveName(character.name)
+  let text = `*** ${possessiveName.toUpperCase()} SPELLBOOK ***`
+  if (character.spells.length > 0) {
+    character.spells.forEach(function(x) {
+      text += "\n* " + toTitleCase(x)
+    })
+  } else {
+    text += `\n${possessiveName} spellbook is empty!`
+  }
+  text += "\n******************\n\n"
+  return text
+}
+
+function showInventory(character) {
+  const possessiveName = character == null ? null : getPossessiveName(character.name)
+  let text = `*** ${possessiveName.toUpperCase()} INVENTORY ***\n`
+  text += printInventory(character, "*")
+  text += "******************\n\n"
+  return text
+}
+
+function showSummary(character) {
+  const possessiveName = character == null ? null : getPossessiveName(character.name)
+  let text = `*** ${possessiveName.toUpperCase()} BIO ***\n`
+  text += `Class: ${character.className}\n`
+  text += `Health: ${character.health}/${getHealthMax()}\n`
+
+  text += `Level: ${getLevel(character.experience)}\n`
+  text += `Experience: ${character.experience}\n`
+  text += `Next level at: ${getNextLevelXp(character.experience)} xp\n\n`
+  
+  text += `Unspent Skill Points = ${character.skillPoints}\n`
+  text += `Unspent Stat Points = ${character.statPoints}\n`
+  // text += showStats(character)
+  // text += showSkills(character)
+  // text += showSpells(character)
+  // text += showInventory(character)
+  text += `**************\n\n`
+  return text
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *

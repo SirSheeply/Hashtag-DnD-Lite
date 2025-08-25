@@ -1,6 +1,4 @@
 // Based on version "Hashtag DnD v0.7.0" by Raeleus
-// const version = "Hashtag DnD v0.7.0 by Raeleus / Lite Edition by SirSheeply"
-
 // Your "Input" tab should look like this
 
 // Checkout the Guidebook examples to get an idea of other ways you can use scripting
@@ -33,42 +31,44 @@ const commandRegistry = [
     { handler: doCheck,                 synonyms: ["check"] },
     
     // <><> Time
+    // TODO: Idea for hungry, thirst, sleep, that ties in D&D exhaustion
     { handler: doShowDay,               synonyms: ["showday", "showdate", "day", "date"] },
     { handler: doSetDay,                synonyms: ["setday", "setdate"] },
     { handler: doRest,                  synonyms: ["rest", "longrest", "shortrest", "sleep", "nap"] },
     
     // System
-    { handler: doReset,                 synonyms: ["reset", "cleandata", "cleardata", "resetdata", "resetsettings", "clearsettings", "profile"] },
-    { handler: doVersion,               synonyms: ["version", "ver", "showversion"] },
+    { handler: doReset,                 synonyms: ["reset", "cleardata"] },
+    { handler: doVersion,               synonyms: ["version", "ver"] },
     { handler: doHelp,                  synonyms: ["help"] },
     { handler: doTest,                  synonyms: ["testcode", "debug"]},
     
     // <><> Character
     // TODO: Add a character creation from JSON format in plot essentials (only on first load)
     // This would allow for authors to ask the character creation questions up front, and not force players use the #create command
-    { handler: doCreate,                synonyms: ["create", "generate", "start", "begin", "setup", "party", "member", "new"] },
-    { handler: doRenameCharacter,       synonyms: ["renamecharacter", "renameperson"] },
-    { handler: doCloneCharacter,        synonyms: ["clone", "clonecharacter", "cloneperson", "copycharacter", "copyperson", "duplicatecharacter", "duplicateperson", "dupecharacter", "dupeperson"] },
-    { handler: doBio,                   synonyms: ["bio", "biography", "summary", "character", "charactersheet", "statsheet"] },
-    { handler: doSetClass,              synonyms: ["setclass", "class"] },
-    { handler: doShowCharacters,        synonyms: ["showcharacters", "showparty", "showteam", "characters", "party", "team"] },
-    { handler: doRemoveCharacter,       synonyms: ["removecharacter", "deletecharacter", "erasecharacter"] },
+    { handler: doCreate,                synonyms: ["create", "generate", "start", "begin", "setup", "new"] },
+    { handler: doRenameCharacter,       synonyms: ["renamecharacter"] },
+    { handler: doBio,                   synonyms: ["bio", "biography", "summary", "character", "profile"] },
+    { handler: doSetClass,              synonyms: ["setclass"] },
+    { handler: doShowCharacters,        synonyms: ["characters", "party", "team"] },
+    { handler: doRemoveCharacter,       synonyms: ["removecharacter", "deletecharacter"] },
     
     // <><> Levels & Experience
     { handler: doSetExperience,         synonyms: ["setexperience", "setexp", "setxp", "setexperiencepoints"] },
-    { handler: doAddExperience,         synonyms: ["addexperience", "addexp", "addxp", "addexperiencepoints", "experience", "exp", "gainxp", "gainexperience", "xp", "experiencepoints"] },
+    { handler: doAddExperience,         synonyms: ["addexperience", "addexp", "addxp"] },
     { handler: doLevelUp,               synonyms: ["levelup", "level"] },
     
     // <><> Abilities/Attributes/Stats
-    // TODO: Clear up stat terminology to use only one of the above
+    // TODO: Clear up stat vs attribute terminology to use only one of the above
     { handler: doSetStat,               synonyms: ["setstat", "setattribute", "setability"] },
-    { handler: doAddStat,              synonyms: ["addstat", "upgradestat", "updatestat"] },
+    //TODO: may need to rename this, as addStat adds stat points, rather than adding a new stat, which is what setStat does
+    { handler: doAddStat,               synonyms: ["addstat", "upgradestat", "updatestat"] },
     { handler: doShowStats,             synonyms: ["showstats", "stats", "viewstats", "showabilities", "abilities", "viewabilities", "showattributes", "attributes", "viewattributes"] },
     { handler: doRemoveStat,            synonyms: ["removestat", "deletestat", "removeability", "deleteability", "removeattribute", "deleteattribute"] },
     { handler: doClearStats,            synonyms: ["clearstats", "clearabilities", "clearattributes"] },
     
     // <><> Skills
     { handler: doSetSkill,              synonyms: ["setskill"] },
+    //TODO: may need to rename this, as addSkill adds skill points, rather than adding a new skill, which is what setSkill does
     { handler: doAddSkill,              synonyms: ["addskill", "upgradeskill", "updateskill"] },
     { handler: doShowSkills,            synonyms: ["showskills", "skills"] },
     { handler: doRemoveSkill,           synonyms: ["removeskill", "deleteskill"] },
@@ -81,26 +81,27 @@ const commandRegistry = [
     { handler: doEraseNote,             synonyms: ["erasenote", "removenote", "deletenote", "cancelnote"] },
     
     // <><> Inventory
-    { handler: doTake,                  synonyms: ["take", "steal", "get", "grab", "receive"] },
+    //TODO: make currency a seperate feature
+    { handler: doTake,                  synonyms: ["take", "steal", "get", "grab", "receive", "pocket", "bag", "stow"] },
     { handler: doLoot,                  synonyms: ["loot", "search", "investigate", "harvest"] },
     { handler: doDrop,                  synonyms: ["remove", "discard", "drop", "leave", "dispose", "toss", "throw", "throwaway", "trash", "donate", "eat", "consume", "use", "drink", "pay", "lose"] },
     { handler: doGive,                  synonyms: ["give", "handover", "hand", "gift"] },
     { handler: doBuy,                   synonyms: ["buy", "purchase", "barter", "trade", "swap", "exchange"] },
     { handler: doSell,                  synonyms: ["sell"] },
 
-    { handler: doRenameItem,            synonyms: ["rename", "renameitem", "renameobject", "renamegear", "renameequipment"] },
+    { handler: doRenameItem,            synonyms: ["renameitem", "renameobject", "renamegear", "renameequipment"] },
     { handler: doInventory,             synonyms: ["inv", "inventory", "backpack", "gear", "showinv", "showinventory", "viewinventory", "viewinv"] },
     { handler: doClearInventory,        synonyms: ["clearinventory", "clearinv", "emptyinventory", "emptybackpack", "clearbackpack", "emptygear", "cleargear"] },
     
     // <><> Spells
     { handler: doLearnSpell,            synonyms: ["learnspell", "learnmagic", "learnincantation", "learnritual", "memorizespell", "memorizemagic", "memorizeincantation", "memorizeritual", "learnsspell", "learnsmagic", "learnsincantation", "learnsritual", "memorizesspell", "memorizesmagic", "memorizesincantation", "memorizesritual", "learn"] },
     { handler: doForgetSpell,           synonyms: ["forgetspell", "forgetmagic", "forgetincantation", "forgetritual", "forgetsspell", "forgetsmagic", "forgetsincantation", "forgetsritual", "deletespell", "deletemagic", "deleteincantation", "deleteritual", "deletesspell", "deletesmagic", "deletesincantation", "deletesritual", "cancelspell", "cancelmagic", "cancelincantation", "cancelritual", "cancelsspell", "cancelsmagic", "cancelsincantation", "cancelsritual", "removespell", "removemagic", "removeincantation", "removeritual", "removesspell", "removesmagic", "removesincantation", "removesritual", "forget"] },
-    { handler: doCastSpell,             synonyms: ["cast", "castspell", "castmagic", "castincantation", "castritual", "castsspell", "castsmagic", "castsincantation", "castsritual"] },
+    { handler: doCastSpell,             synonyms: ["cast", "activate", "castspell", "castmagic", "castincantation", "castritual", "castsspell", "castsmagic", "castsincantation", "castsritual"] },
     { handler: doClearSpells,           synonyms: ["clearspells", "clearmagic", "clearincantations", "clearrituals", "forgetallspells", "forgetallmagic", "forgetallincantation", "forgetallritual"] },
     { handler: doSpellbook,             synonyms: ["spellbook", "spells", "listspells", "showspells", "spelllist", "spellcatalog", "spellinventory"] },
     
     // <><> Narrative
-    { handler: doEncounter,             synonyms: ["encounter", "travel", "traverse", "explore"] }
+    { handler: doEncounter,             synonyms: ["encounter", "travel", "traverse", "explore", "depart", "enter"] }
     
     /** PLAN: Replace health/damage/ac system with injury system
      * Wepaons have injury types which source from injury tables, armor has injury resistance
@@ -124,14 +125,6 @@ function findCommandHandler(commandName) {
   }
   return null
 }
-
-// Synonyms used too broadly to search the registry every time
-const articleSynonyms = ["a", "an", "the"]
-const allSynonyms = ["all", "every", "each", "every one", "everyone"]
-const turnSynonyms = ["turn", "doturn", "taketurn"]
-const createSynonyms = ["create", "generate", "start", "begin", "setup", "party", "member", "new"]
-const checkSynonyms = ["check", "checkstat", "checkstatistic", "checkattribute", "checkability", "checkskill", "skillcheck", "abilitycheck"]
-const trySynonyms = ["try", "tryto", "tries", "triesto", "attempt", "attemptto", "attemptsto", "do"]
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -159,12 +152,11 @@ function DNDHash_input (text) {
     return `\nERROR: Bad config file, please delete or fix!\n`
   }
 
-  // These handle steps don't have commands, we're inputing answers to form like questions.
+  // Needs to be handled before checking the "#" command symbol
+  // Steps take player input, as input for a step process (form like input to a question)
   // E.g. Do you want to use a character preset? (y/n/q)
-  if (state.createStep != null) {
-    text = handleCreateStep(text)
-    if (state.createStep != null) return text
-    else text = rawText
+  if (state.step != null) {
+    return newText = handleStepProcess(text, inputMode)
   }
 
   // I assume this prevents us running commands the first time this function is called.
@@ -174,6 +166,7 @@ function DNDHash_input (text) {
     return text
   }
 
+  // This is important, and sets the activate character performing the commands
   state.characterName = getCharacterName(rawText)
 
   // Extracts "flavor text" after a newline.
@@ -269,225 +262,39 @@ function init() {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////// DND HASH FORM & STEP FUNCTIONS ////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////// ///////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////// CHARACTER CREATION //////////////////////////////////////////////////////
 
 /**
-* - Handles the create character form input across multiple inputs.
-* - Allows loading of preset characters from story cards.
-* - Has a partner in the output function.
-* - Operates in state.show = "create"
-* @function
-* @param {string} [text] Text passed from AI dungeon's input
-* @returns {string} Returns textual response, if any, or error messages
-*/
-function handleCreateStep(text) {
-  state.show = "create"
-
-  if (/^\s*>.*says? ".*/.test(text)) {
-    text = text.replace(/^\s*>.*says? "/, "")
-    text = text.replace(/"\s*$/, "")
-  } else if (/^\s*>\s.*/.test(text)) {
-    text = text.replace(/\s*> /, "")
-    for (var i = 0; i < info.characters.length; i++) {
-      var matchString = info.characters[i] == "" ? "You " : `${info.characters[i]} `
-      if (text.startsWith(matchString)) {
-        text = text.replace(matchString, "")
-        break
-      }
-    }
-    text = text.replace(/\.?\s*$/, "")
-  } else {
-    text = text.replace(/^\s+/, "")
-  }
-
-  if (text.toLowerCase() == "q") {
-    state.showText = `[Character creation has been aborted!]\n`
-    state.createStep = null
-    return text
-  }
-
-  let nextOutputText = ""
-  switch (state.createStep) {
-    case 0:
-      text = text.toLowerCase();
-      if (text.startsWith("y")) {
-        state.createStep = 100
-        nextOutputText = `What character will you choose?\n`
-        const presetIndexes = getStoryCardListByType("preset")
-        for (let index = 0; index < presetIndexes.length; index++) {
-          nextOutputText += `${index}. ${presetIndexes[index].title}\n`
-        }
-        nextOutputText += `Enter the number or q to quit.\n`
-      }
-      else if (text.startsWith("n")) {
-        state.createStep++
-        nextOutputText = `What class is your character?\n`
-      }
-      break
-    case 1:
-      if (text.length > 0) {
-        state.tempCharacter.className = text
-        state.createStep++
-
-        state.statDice = []
-        for (var i = 0; i < 6; i++) {
-          var dice = []
-          for (var j = 0; j < 4; j++) {
-            dice.push(parseInt(calculateRoll("d6")))
-          }
-          dice.sort(function(a, b) {
-            return b - a;
-          });
-          dice.splice(3, 1)
-          state.statDice.push(dice[0] + dice[1] + dice[2])
-        }
-        state.statDice.sort(function(a, b) {
-          return b - a
-        })
-      }
-      nextOutputText = `You rolled the following stat dice: ${state.statDice}\n`
-      + `Choose your abilities in order from highest to lowest\n`
-      + `1. Strength: Physical power and endurance\n`
-      + `2. Dexterity: Agility and coordination\n`
-      + `3. Constitution: Toughness and physique \n`
-      + `4. Intelligence: Reasoning and memory\n`
-      + `5. Wisdom: Judgement and insight\n`
-      + `6. Charisma: Force of personality and persuasiveness\n`
-      + `\nEnter the numbers with spaces between or q to quit.\n`
-      break
-    case 2:
-      if (text.length > 0) {
-        // Fixed order mapping for numbers → stat names
-        const statMap = {
-          1: "Strength",
-          2: "Dexterity",
-          3: "Constitution",
-          4: "Intelligence",
-          5: "Wisdom",
-          6: "Charisma"
-        };
-
-        // Split input into numbers, remove duplicates
-        let choices = text.split(/\D+/).map(Number).filter(Boolean);
-        choices = [...new Set(choices)];
-
-        if (choices.length !== 6) {
-          nextOutputText = `You rolled the following stat dice: ${state.statDice}\n`
-          + `Choose your abilities in order from highest to lowest\n`
-          + `1. Strength: Physical power and endurance\n`
-          + `2. Dexterity: Agility and coordination\n`
-          + `3. Constitution: Toughness and physique \n`
-          + `4. Intelligence: Reasoning and memory\n`
-          + `5. Wisdom: Judgement and insight\n`
-          + `6. Charisma: Force of personality and persuasiveness\n`
-          + `\nEnter the numbers with spaces between or q to quit.\n`
-          break; // invalid input
-        }
-
-        // Assign dice values to chosen stats
-        choices.forEach((choice, i) => {
-          const statName = statMap[choice];
-          if (statName) {
-            const stat = state.tempCharacter.stats.find((element) => element.name.toLowerCase() == statName.toLowerCase())
-            if (stat) stat.value = state.statDice[i];
-          }
-        });
-        state.createStep = 500
-      }
-      nextOutputText = `${state.tempCharacter.name} the ${state.tempCharacter.className} has been created.\nType #bio to see a summary of your character.\n***********\n`
-      break
-    case 100:
-      if (!isNaN(text)) {
-        state.createStep = 500
-        // Get a list of all the preset cards with the preset type
-        const presetIndexes = getStoryCardListByType("preset")
-        if (presetIndexes.length <= 0) {
-          // Error no presets cards for this case!
-          state.createStep = null
-          return "Error: No preset Cards Found!"
-        }
-        createCharacterFromPreset(presetIndexes, parseInt(text))
-      }
-      nextOutputText = `${state.tempCharacter.name} the ${state.tempCharacter.className} has been created.\nType #bio to see a summary of your character.\n***********\n`
-      break
-    case 500:
-      state.show = null
-      state.createStep = null
-
-      var character = getCharacter(state.tempCharacter.name)
-      character.className = state.tempCharacter.className
-      character.experience = 0
-      character.stats = [...state.tempCharacter.stats]
-      character.inventory = [...state.tempCharacter.inventory]
-      character.skills = [...state.tempCharacter.skills]
-      character.spells = [...state.tempCharacter.spells]
-      character.health = getHealthMax()
-      character.statPoints = 0
-      character.skillPoints = 0
-      
-      nextOutputText = " "
-      break
-  }
-  state.showText = nextOutputText
-  return text
-}
-
-function createCharacterFromPreset (presetIndexes, presetChoice) {
-  // Convert description into what we need to create the preset.
-  const presetCard = presetIndexes[presetChoice]
-  const entity = JSON.parse(presetCard.description)
-
-  // Now to convert the entity description into the preset values
-  // NOTE: We can use this to save characters later too!
-  state.tempCharacter.className = presetCard.title
-  state.tempCharacter.stats = []
-  entity.abilities.forEach(ability => {
-    state.tempCharacter.stats.push({name: ability.name, value: ability.value})
-  });
-  entity.skills.forEach(skill => {
-    const findSkill = state.tempCharacter.skills.find((element) => element.name.toLowerCase() == skill.name.toLowerCase())
-    if (findSkill) {
-      // NOTE: If we implement character saving and loading we may want to consider fully deifining skills with stat base
-      state.tempCharacter.skills.find((element) => element.name.toLowerCase() == skill.name.toLowerCase()).modifier = skill.modifier;
-    } else { // We need to create the skill from scratch in this case, with it's stat base
-      state.tempCharacter.skills.push({name: skill.name, stat:skill.stat, modifier: skill.modifier})
-    }
-  });
-  entity.inventory.forEach(item => {
-    putItemIntoInventory(state.tempCharacter, item.name, item.quantity)
-  });
-  state.tempCharacter.spells = entity.spells
-}
-
-/**
- * Initializes the character creation process and resets temporary character data.
+ * Initializes the character creation process and creates temporary character data.
  * @function
  * @param {string} [command] Command string (ignored).
  * @returns {[string, boolean]} Empty response and success flag.
  */
 function doCreate(command) {
-  if (!hasCharacter(state.characterName)) createCharacter(state.characterName)
-  var character = getCharacter()
+  // NOTE: state.characterName will be the name in the input, before the command
+  // For Do or Say actions this is "You"
+  // For story actions a character name is provided by "characterName #create"
 
-  state.createStep = 0
-  state.tempCharacter.name = character.name
-  resetTempCharacterSkills()
-  resetTempCharacterStats()
-  state.tempCharacter.spells = []
-  state.tempCharacter.inventory = [] // Use putIntoInventory() to add items\
-  
-  state.show = "create"
-  state.showText = `***CHARACTER CREATION***\nCharacter: ${state.tempCharacter.name}\nWould you like to use a prefab character? (y/n/q to quit)\n`
+  // NOTE: state.tempCharacter persists across multiple AI Dungeon inputs/outputs
+  state.tempCharacter = createCharacter(state.characterName)
+  defaultCharacterStatsAndSkills(state.tempCharacter)
+
+  // Tells the main input/output functions we're in steps processing state
+  state.show = "steps"
+  state.step = "prefabChoice" // First step will be called in output mode for the first question
+
   return [" ", true]
 }
 
 /**
- * Resets the temporary character's skills to default values.
+ * Resets the character's skills to default values.
  * @function
+ * @param {object} [character]
  */
-function resetTempCharacterSkills() {
-  state.tempCharacter.skills = [
+// TODO: Source this list from a story card
+function defaultCharacterStatsAndSkills(character) {
+  character.skills = [
     {name: "Acrobatics", stat: "Dexterity", modifier: 0},
     {name: "Animal Handling", stat: "Wisdom", modifier: 0},
     {name: "Arcana", stat: "Intelligence", modifier: 0},
@@ -507,14 +314,7 @@ function resetTempCharacterSkills() {
     {name: "Stealth", stat: "Dexterity", modifier: 0},
     {name: "Survival", stat: "Wisdom", modifier: 0},
   ]
-}
-
-/**
- * Resets the temporary character's stats to default values.
- * @function
- */
-function resetTempCharacterStats() {
-  state.tempCharacter.stats = [
+  character.stats = [
     {name: "Strength", value: 10},
     {name: "Dexterity", value: 10},
     {name: "Constitution", value: 10},
@@ -630,7 +430,6 @@ function doTry(command) {
 
   const critText2 = (score == 20) ? " The action was a Critical Success, and extremely effective." : (score == 1) ? " The action was a Critical Failure, and will have dire consequences." : ""
   text += `${character.name} use ${theirWord} ${checkWord}${checkType}, ${score + modifier >= difficulty ? "and successfully" : `but ${failword} to`} ${taskText}${critText2}`
-  //text += `${character.name} ${score + modifier >= difficulty ? "successfully" : failword + " to"} ${taskText}${critText2}`
 
   // Adding of autoXp to all party members!
   if (score + modifier >= difficulty || score == 20) {
@@ -759,7 +558,7 @@ function doRest(command) {
 ////////////////////////////////////////////////// COMMAND FUNCTIONS - SYSTEM /////////////////////////////////////////////////
 
 /**
- * Resets game state including notes, characters, difficulty, auto XP, and day.
+ * Resets game state including notes, characters, and day.
  * @function
  * @param {string} [command] Command string (ignored).
  * @returns {[string, boolean]} Empty response and success flag.
@@ -768,7 +567,8 @@ function doReset(command) {
   state.notes = []
   state.characters = []
   state.day = null
-
+  state.step = null
+  state.statDice = []
   state.show = "reset"
   return [" ", true]
 }
@@ -824,30 +624,6 @@ function doRenameCharacter(command) {
   var text = `\n[${possessiveName} name has been changed to ${arg0}]\n`
 
   character.name = arg0
-
-  return [text, true]
-}
-
-/**
- * Clones the current character to a new character with a specified name.
- * @function
- * @param {string} [command] Command string containing the new character name.
- * @returns {[string, boolean]} Result message and success flag.
- */
-function doCloneCharacter(command) {
-  var character = getCharacter()
-
-  var arg0 = getArgumentRemainder(command, 0)
-  if (arg0 == null) {
-    return ["\n[Error: Not enough parameters. See #help]\n", false]
-  }
-
-  if (!hasCharacter(arg0)) createCharacter(arg0)
-  var newCharacter = getCharacter(arg0)
-  copyCharacter(character, newCharacter)
-
-  state.show = "none"
-  var text = `\n[${character.name} has been cloned to a new character called ${newCharacter.name}]\n`
 
   return [text, true]
 }
