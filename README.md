@@ -16,6 +16,12 @@ The Lite Edition has several goals:
 1) Create a more narative based game system.
 2) Enhance commands, create dynamic systems, remove some restrictions.
 3) Improve customisation for users/authors via story cards.
+4) Implement D&D "like" mechanics as a base (for authors to add content)
+
+<h5><i>AS a side NOTE :: Lite Edition does not aim to be an exact replica of D&D and it's mechanics or features.
+<br/>-- Some elements from other TTRPGs may be borrowed if they fit better with the narative based gameplay of AI Dungeon.
+<br/>-- Which also means, some mechanics may be excluded, or not implemented, if they don't fit narative based gameplay.
+</i></h5>
 
 ### Lite Edition is NOT Compatible with [The Original Hashtag-DnD by Raeleus](https://github.com/raeleus/Hashtag-DnD)!
 
@@ -36,8 +42,9 @@ Lite Edition does not have all the features of [The Original Hashtag-DnD by Rael
 - Story Card Presets             (Character presets are now sourced from story cards, and can be user generated!)
 - Story Card Items               (Items are now sourced from story cards, and can be user generated!)
 - Unlimited levelling            (Removed the cap on leveling, stats, and skills)
+- More help info                 (Help info for every command, and help option to show all commands)
 #### Added Features
-- Story Card Config              (Show roll, xp sharing, auto xp, default dc, and more)
+- Story Card Config              (Show roll, xp sharing, auto xp, default dc, leveling rewards, and more)
 - Thematic Loot Tables           (Reward command now uses thematic story card loot tables, which can be user generated!)
 - Encounters Tables              (Encounters are now sourced from story cards, and can be player generated!)
 - Crit Fail Protection           (Configurable: Rerolls critical fails for X checks after a critical fail)
@@ -50,4 +57,3 @@ Lite Edition does not have all the features of [The Original Hashtag-DnD by Rael
 - Initial Character creation from plot essentials.
 - Custom terminology for stats, skills, and spells.
 - Seperate currency/money from inventory items.
-- Make skill/stat point gain a config item.

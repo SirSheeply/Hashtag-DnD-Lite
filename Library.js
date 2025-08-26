@@ -112,6 +112,17 @@ function validateType(value, expectedValue) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////// TEMPLATES & DEFAULTS ////////////////////////////////////////////////////
 
+/*
+<><> Item Story Cards <><>
+* Every item should be an "Item" type story card, and must include a category.
+* Format each item story card as follows:
+  -- Type: {{ Item - Category }}
+  -- Title: The name of the item.
+  -- Entry: A brief description to help the AI understand what this item represents.
+  -- Keywords: For unique items only. Avoid common words or phrases!
+  -- Description: Use JSON to define item rarity, quantity, and name again.
+*/
+
 // Rarirty is used to determine loot rarity, and item worth.
 // Loot rarity examples: 0.0 = 0%, 0.5 = 50%, 1.0 = 100%
 const defaultItemTemplate = {
@@ -121,17 +132,7 @@ const defaultItemTemplate = {
     // TODO: could store category
 }
 
-const helpDialog_itemStoryCards = `
-<><> Item Story Cards <><>
-* Every item should be an "Item" type story card, and must include a category.
-* Format each item story card as follows:
-  -- Type: {{ Item - Category }}
-  -- Title: The name of the item.
-  -- Entry: A brief description to help the AI understand what this item represents.
-  -- Keywords: For unique items only. Avoid common words or phrases!
-  -- Description: Use JSON to define item behavior and reward values.
-
-Example JSON format: \n${defaultItemTemplate}\n`
+// TODO: Create a character template up here
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -1156,6 +1157,7 @@ function addXpToAll(experience) {
 * @returns {string} A message summarizing XP gain and any level-up events.
 */
 function addXpToCharacter(experience) {
+  if (experience == 0) return ""
   const character = getCharacter()
   const haveWord = character.name == "You" ? "have" : "has"
 
@@ -1764,6 +1766,13 @@ function searchInventory(character, itemName) {
 /////////////////////////////////////////////////////////////// ///////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////// SHOW OUTPUT FUNCTIONS ///////////////////////////////////////////////////
 
+/**
+ * Generates a formatted list of player notes.
+ *
+ * Displays all notes stored in `state.notes` with numbering, or a message if no notes exist.
+ *
+ * @returns {string} A formatted string of all notes, or a message that there are no notes.
+ */
 function showNotes() {
   let text = "*** NOTES ***"
   let counter = 1
@@ -1775,6 +1784,14 @@ function showNotes() {
   return text
 }
 
+/**
+ * Displays all characters in the player's party.
+ *
+ * Lists each character's name and class in a formatted block. If no characters exist, 
+ * it shows a message indicating the party is empty.
+ *
+ * @returns {string} A formatted string of all party members or an empty party message.
+ */
 function showParty() {
   let text = `*** CHARACTERS ***`
   if (state.characters.length > 0) {
@@ -1788,6 +1805,15 @@ function showParty() {
   return text
 }
 
+/**
+ * Displays a character's skills with modifiers.
+ *
+ * Shows each skill, its total modifier, base stat modifier, and proficiency bonus.
+ * If the character has no skills, it displays a message instead.
+ *
+ * @param {Object} character - The character object to display skills for.
+ * @returns {string} A formatted string listing all skills and their modifiers.
+ */
 function showSkills(character) {
   const possessiveName = character == null ? null : getPossessiveName(character.name)
   let text = `*** ${possessiveName.toUpperCase()} SKILLS ***\n`
@@ -1814,6 +1840,14 @@ function showSkills(character) {
   return text
 }
 
+/**
+ * Displays a character's ability stats.
+ *
+ * Lists all stats with their values. If the character has no stats, shows a message.
+ *
+ * @param {Object} character - The character object to display stats for.
+ * @returns {string} A formatted string of all stats and values.
+ */
 function showStats(character) {
   const possessiveName = character == null ? null : getPossessiveName(character.name)
   let text = `*** ${possessiveName.toUpperCase()} ABILITIES ***\n`
@@ -1829,6 +1863,14 @@ function showStats(character) {
   return text
 }
 
+/**
+ * Displays a character's spells.
+ *
+ * Lists all spells in the character's spellbook. If there are no spells, shows a message.
+ *
+ * @param {Object} character - The character object to display spells for.
+ * @returns {string} A formatted string of all spells or a message for an empty spellbook.
+ */
 function showSpells(character) {
   const possessiveName = character == null ? null : getPossessiveName(character.name)
   let text = `*** ${possessiveName.toUpperCase()} SPELLBOOK ***`
@@ -1843,6 +1885,14 @@ function showSpells(character) {
   return text
 }
 
+/**
+ * Displays a character's inventory.
+ *
+ * Uses `printInventory` to display all items. Always returns a formatted block.
+ *
+ * @param {Object} character - The character object to display inventory for.
+ * @returns {string} A formatted string of inventory items.
+ */
 function showInventory(character) {
   const possessiveName = character == null ? null : getPossessiveName(character.name)
   let text = `*** ${possessiveName.toUpperCase()} INVENTORY ***\n`
@@ -1851,6 +1901,15 @@ function showInventory(character) {
   return text
 }
 
+/**
+ * Displays a summary of a character's key information.
+ *
+ * Shows the character's class, health, level, experience, and unspent points
+ * in a formatted "bio" block.
+ *
+ * @param {Object} character - The character object to summarize.
+ * @returns {string} A formatted string summarizing the character's stats and progress.
+ */
 function showSummary(character) {
   const possessiveName = character == null ? null : getPossessiveName(character.name)
   let text = `*** ${possessiveName.toUpperCase()} BIO ***\n`
@@ -1863,10 +1922,6 @@ function showSummary(character) {
   
   text += `Unspent Skill Points = ${character.skillPoints}\n`
   text += `Unspent Stat Points = ${character.statPoints}\n`
-  // text += showStats(character)
-  // text += showSkills(character)
-  // text += showSpells(character)
-  // text += showInventory(character)
   text += `**************\n\n`
   return text
 }

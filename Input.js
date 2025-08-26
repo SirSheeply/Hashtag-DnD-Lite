@@ -23,104 +23,108 @@ const modifier = (text) => {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////// COMMAND REGISTRY ///////////////////////////////////////////////////////
 
-const commandRegistry = [
-    // <><> General
-    // TODO: A check command that uses AI Dungeon to determine the difficulty &/or skill (would have to be a state + continue action)
-    { handler: doRoll,                  synonyms: ["roll"] },
-    { handler: doTry,                   synonyms: ["try", "tries", "attempt", "attempts"] },
-    { handler: doCheck,                 synonyms: ["check"] },
-    
-    // <><> Time
-    // TODO: Idea for hungry, thirst, sleep, that ties in D&D exhaustion
-    { handler: doShowDay,               synonyms: ["showday", "showdate", "day", "date"] },
-    { handler: doSetDay,                synonyms: ["setday", "setdate"] },
-    { handler: doRest,                  synonyms: ["rest", "longrest", "shortrest", "sleep", "nap"] },
-    
-    // System
-    { handler: doReset,                 synonyms: ["reset", "cleardata"] },
-    { handler: doVersion,               synonyms: ["version", "ver"] },
-    { handler: doHelp,                  synonyms: ["help"] },
-    { handler: doTest,                  synonyms: ["testcode", "debug"]},
-    
-    // <><> Character
-    // TODO: Add a character creation from JSON format in plot essentials (only on first load)
-    // This would allow for authors to ask the character creation questions up front, and not force players use the #create command
-    { handler: doCreate,                synonyms: ["create", "generate", "start", "begin", "setup", "new"] },
-    { handler: doRenameCharacter,       synonyms: ["renamecharacter"] },
-    { handler: doBio,                   synonyms: ["bio", "biography", "summary", "character", "profile"] },
-    { handler: doSetClass,              synonyms: ["setclass"] },
-    { handler: doShowCharacters,        synonyms: ["characters", "party", "team"] },
-    { handler: doRemoveCharacter,       synonyms: ["removecharacter", "deletecharacter"] },
-    
-    // <><> Levels & Experience
-    { handler: doSetExperience,         synonyms: ["setexperience", "setexp", "setxp", "setexperiencepoints"] },
-    { handler: doAddExperience,         synonyms: ["addexperience", "addexp", "addxp"] },
-    { handler: doLevelUp,               synonyms: ["levelup", "level"] },
-    
-    // <><> Abilities/Attributes/Stats
-    // TODO: Clear up stat vs attribute terminology to use only one of the above
-    { handler: doSetStat,               synonyms: ["setstat", "setattribute", "setability"] },
-    //TODO: may need to rename this, as addStat adds stat points, rather than adding a new stat, which is what setStat does
-    { handler: doAddStat,               synonyms: ["addstat", "upgradestat", "updatestat"] },
-    { handler: doShowStats,             synonyms: ["showstats", "stats", "viewstats", "showabilities", "abilities", "viewabilities", "showattributes", "attributes", "viewattributes"] },
-    { handler: doRemoveStat,            synonyms: ["removestat", "deletestat", "removeability", "deleteability", "removeattribute", "deleteattribute"] },
-    { handler: doClearStats,            synonyms: ["clearstats", "clearabilities", "clearattributes"] },
-    
-    // <><> Skills
-    { handler: doSetSkill,              synonyms: ["setskill"] },
-    //TODO: may need to rename this, as addSkill adds skill points, rather than adding a new skill, which is what setSkill does
-    { handler: doAddSkill,              synonyms: ["addskill", "upgradeskill", "updateskill"] },
-    { handler: doShowSkills,            synonyms: ["showskills", "skills"] },
-    { handler: doRemoveSkill,           synonyms: ["removeskill", "deleteskill"] },
-    { handler: doClearSkills,           synonyms: ["clearskills"] },
-    
-    // <><> Notes
-    { handler: doShowNotes,             synonyms: ["notes", "shownotes", "viewnotes"] },
-    { handler: doNote,                  synonyms: ["note", "takenote", "setnote", "createnote", "remember"] },
-    { handler: doClearNotes,            synonyms: ["clearnotes"] },
-    { handler: doEraseNote,             synonyms: ["erasenote", "removenote", "deletenote", "cancelnote"] },
-    
-    // <><> Inventory
-    //TODO: make currency a seperate feature
-    { handler: doTake,                  synonyms: ["take", "steal", "get", "grab", "receive", "pocket", "bag", "stow"] },
-    { handler: doLoot,                  synonyms: ["loot", "search", "investigate", "harvest"] },
-    { handler: doDrop,                  synonyms: ["remove", "discard", "drop", "leave", "dispose", "toss", "throw", "throwaway", "trash", "donate", "eat", "consume", "use", "drink", "pay", "lose"] },
-    { handler: doGive,                  synonyms: ["give", "handover", "hand", "gift"] },
-    { handler: doBuy,                   synonyms: ["buy", "purchase", "barter", "trade", "swap", "exchange"] },
-    { handler: doSell,                  synonyms: ["sell"] },
-
-    { handler: doRenameItem,            synonyms: ["renameitem", "renameobject", "renamegear", "renameequipment"] },
-    { handler: doInventory,             synonyms: ["inv", "inventory", "backpack", "gear", "showinv", "showinventory", "viewinventory", "viewinv"] },
-    { handler: doClearInventory,        synonyms: ["clearinventory", "clearinv", "emptyinventory", "emptybackpack", "clearbackpack", "emptygear", "cleargear"] },
-    
-    // <><> Spells
-    { handler: doLearnSpell,            synonyms: ["learnspell", "learnmagic", "learnincantation", "learnritual", "memorizespell", "memorizemagic", "memorizeincantation", "memorizeritual", "learnsspell", "learnsmagic", "learnsincantation", "learnsritual", "memorizesspell", "memorizesmagic", "memorizesincantation", "memorizesritual", "learn"] },
-    { handler: doForgetSpell,           synonyms: ["forgetspell", "forgetmagic", "forgetincantation", "forgetritual", "forgetsspell", "forgetsmagic", "forgetsincantation", "forgetsritual", "deletespell", "deletemagic", "deleteincantation", "deleteritual", "deletesspell", "deletesmagic", "deletesincantation", "deletesritual", "cancelspell", "cancelmagic", "cancelincantation", "cancelritual", "cancelsspell", "cancelsmagic", "cancelsincantation", "cancelsritual", "removespell", "removemagic", "removeincantation", "removeritual", "removesspell", "removesmagic", "removesincantation", "removesritual", "forget"] },
-    { handler: doCastSpell,             synonyms: ["cast", "activate", "castspell", "castmagic", "castincantation", "castritual", "castsspell", "castsmagic", "castsincantation", "castsritual"] },
-    { handler: doClearSpells,           synonyms: ["clearspells", "clearmagic", "clearincantations", "clearrituals", "forgetallspells", "forgetallmagic", "forgetallincantation", "forgetallritual"] },
-    { handler: doSpellbook,             synonyms: ["spellbook", "spells", "listspells", "showspells", "spelllist", "spellcatalog", "spellinventory"] },
-    
-    // <><> Narrative
-    { handler: doEncounter,             synonyms: ["encounter", "travel", "traverse", "explore", "depart", "enter"] }
-    
-    /** PLAN: Replace health/damage/ac system with injury system
-     * Wepaons have injury types which source from injury tables, armor has injury resistance
-     * This will allow us to introduce damage types (something not present)
-     * The injury system will be narrative based, not turn based (A deviation from D&D)
-     * This removes the need for players to book-keep encounters, memorize command sequences, and allow free-form combat
-     */
-];
-
 /**
-* - Helper: Look up command handler from registry using synonyms
-* @function
-* @param {string} [commandName] A command name or synonym to look up, e.g. "take"
-* @returns {function} Returns the command handler function, e.g. "doTake"
-*/
-function findCommandHandler(commandName) {
-  for (let entry of commandRegistry) {
+ * Builds and returns the command registry.
+ * Optionally searches by a synonym and returns just that entry.
+ * @param {string} [commandName] Optional command name or synonym to look up.
+ * @returns {object[]|object|null} The entire registry if no argument is given,
+ *                                 a single command object if found,
+ *                                 or null if not found.
+ */
+function commandRegistry(commandName) {
+  const registry = [
+      // <><> General
+      // TODO: A check command that uses AI Dungeon to determine the difficulty &/or skill (would have to be a state + continue action)
+      { handler: doRoll,             helpText: doRollHelp,             synonyms: ["roll"] },
+      { handler: doTry,              helpText: doTryHelp,              synonyms: ["try", "tries", "attempt", "attempts"] },
+      { handler: doCheck,            helpText: doCheckHelp,            synonyms: ["check"] },
+      
+      // <><> Time
+      // TODO: Idea for hungry, thirst, sleep, that ties in D&D exhaustion
+      { handler: doShowDay,          helpText: doShowDayHelp,          synonyms: ["showday", "showdate", "day", "date"] },
+      { handler: doSetDay,           helpText: doSetDayHelp,           synonyms: ["setday", "setdate"] },
+      { handler: doRest,             helpText: doRestHelp,             synonyms: ["rest", "longrest", "shortrest", "sleep", "nap"] },
+      
+      // System
+      { handler: doReset,            helpText: doResetHelp,            synonyms: ["reset", "cleardata"] },
+      { handler: doVersion,          helpText: doVersionHelp,          synonyms: ["version", "ver"] },
+      { handler: doHelp,             helpText: doHelpHelp,             synonyms: ["help"] },
+      { handler: doTest,             helpText: doTestHelp,             synonyms: ["testcode", "debug"]},
+      
+      // <><> Character
+      // TODO: Add a character creation from JSON format in plot essentials (only on first load)
+      // This would allow for authors to ask the character creation questions up front, and not force players use the #create command
+      { handler: doCreate,           helpText: doCreateHelp,           synonyms: ["create", "generate", "start", "begin", "setup", "new"] },
+      { handler: doRenameCharacter,  helpText: doRenameCharacterHelp,  synonyms: ["renamecharacter"] },
+      { handler: doBio,              helpText: doBioHelp,              synonyms: ["bio", "biography", "summary", "character", "profile"] },
+      { handler: doSetClass,         helpText: doSetClassHelp,         synonyms: ["setclass"] },
+      { handler: doShowCharacters,   helpText: doShowCharactersHelp,   synonyms: ["characters", "party", "team"] },
+      { handler: doRemoveCharacter,  helpText: doRemoveCharacterHelp,  synonyms: ["removecharacter", "deletecharacter"] },
+      
+      // <><> Levels & Experience
+      { handler: doSetExperience,    helpText: doSetExperienceHelp,    synonyms: ["setexperience", "setexp", "setxp", "setexperiencepoints"] },
+      { handler: doAddExperience,    helpText: doAddExperienceHelp,    synonyms: ["addexperience", "addexp", "addxp"] },
+      { handler: doLevelUp,          helpText: doLevelUpHelp,          synonyms: ["levelup", "level"] },
+      
+      // <><> Abilities/Attributes/Stats
+      // TODO: Clear up stat vs attribute terminology to use only one of the above
+      { handler: doSetStat,          helpText: doSetStatHelp,          synonyms: ["setstat", "setattribute", "setability"] },
+      //TODO: may need to rename this, as addStat adds stat points, rather than adding a new stat, which is what setStat does
+      { handler: doAddStat,          helpText: doAddStatHelp,          synonyms: ["addstat", "upgradestat", "updatestat", "spendstat"] },
+      { handler: doShowStats,        helpText: doShowStatsHelp,        synonyms: ["showstats", "stats", "viewstats", "showabilities", "abilities", "viewabilities", "showattributes", "attributes", "viewattributes"] },
+      { handler: doRemoveStat,       helpText: doRemoveStatHelp,       synonyms: ["removestat", "deletestat", "removeability", "deleteability", "removeattribute", "deleteattribute"] },
+      { handler: doClearStats,       helpText: doClearStatsHelp,       synonyms: ["clearstats", "clearabilities", "clearattributes"] },
+      
+      // <><> Skills
+      { handler: doSetSkill,         helpText: doSetSkillHelp,         synonyms: ["setskill"] },
+      //TODO: may need to rename this, as addSkill adds skill points, rather than adding a new skill, which is what setSkill does
+      { handler: doAddSkill,         helpText: doAddSkillHelp,         synonyms: ["addskill", "upgradeskill", "updateskill", "spendskill"] },
+      { handler: doShowSkills,       helpText: doShowSkillsHelp,       synonyms: ["showskills", "skills"] },
+      { handler: doRemoveSkill,      helpText: doRemoveSkillHelp,      synonyms: ["removeskill", "deleteskill"] },
+      { handler: doClearSkills,      helpText: doClearSkillsHelp,      synonyms: ["clearskills"] },
+      
+      // <><> Notes
+      { handler: doShowNotes,        helpText: doShowNotesHelp,        synonyms: ["notes", "shownotes", "viewnotes"] },
+      { handler: doNote,             helpText: doNoteHelp,             synonyms: ["note", "takenote", "setnote", "createnote", "remember"] },
+      { handler: doClearNotes,       helpText: doClearNotesHelp,       synonyms: ["clearnotes"] },
+      { handler: doEraseNote,        helpText: doEraseNoteHelp,        synonyms: ["erasenote", "removenote", "deletenote", "cancelnote"] },
+      
+      // <><> Inventory
+      //TODO: make currency a seperate feature
+      { handler: doTake,             helpText: doTakeHelp,             synonyms: ["take", "steal", "get", "grab", "receive", "pocket", "bag", "stow"] },
+      { handler: doLoot,             helpText: doLootHelp,             synonyms: ["loot", "search", "investigate", "harvest"] },
+      { handler: doDrop,             helpText: doDropHelp,             synonyms: ["remove", "discard", "drop", "leave", "dispose", "toss", "throw", "throwaway", "trash", "donate", "eat", "consume", "use", "drink", "pay", "lose"] },
+      { handler: doGive,             helpText: doGiveHelp,             synonyms: ["give", "handover", "hand", "gift"] },
+      { handler: doBuy,              helpText: doBuyHelp,              synonyms: ["buy", "purchase", "barter", "trade", "swap", "exchange"] },
+      { handler: doSell,             helpText: doSellHelp,             synonyms: ["sell"] },
+
+      { handler: doRenameItem,       helpText: doRenameItemHelp,       synonyms: ["renameitem", "renameobject", "renamegear", "renameequipment"] },
+      { handler: doInventory,        helpText: doInventoryHelp,        synonyms: ["inv", "inventory", "backpack", "gear", "showinv", "showinventory", "viewinventory", "viewinv"] },
+      { handler: doClearInventory,   helpText: doClearInventoryHelp,   synonyms: ["clearinventory", "clearinv", "emptyinventory", "emptybackpack", "clearbackpack", "emptygear", "cleargear"] },
+      
+      // <><> Spells
+      { handler: doLearnSpell,       helpText: doLearnSpellHelp,       synonyms: ["learnspell", "learnmagic", "learnincantation", "learnritual", "memorizespell", "memorizemagic", "memorizeincantation", "memorizeritual", "learnsspell", "learnsmagic", "learnsincantation", "learnsritual", "memorizesspell", "memorizesmagic", "memorizesincantation", "memorizesritual", "learn"] },
+      { handler: doForgetSpell,      helpText: doForgetSpellHelp,      synonyms: ["forgetspell", "forgetmagic", "forgetincantation", "forgetritual", "forgetsspell", "forgetsmagic", "forgetsincantation", "forgetsritual", "deletespell", "deletemagic", "deleteincantation", "deleteritual", "deletesspell", "deletesmagic", "deletesincantation", "deletesritual", "cancelspell", "cancelmagic", "cancelincantation", "cancelritual", "cancelsspell", "cancelsmagic", "cancelsincantation", "cancelsritual", "removespell", "removemagic", "removeincantation", "removeritual", "removesspell", "removesmagic", "removesincantation", "removesritual", "forget"] },
+      { handler: doCastSpell,        helpText: doCastSpellHelp,        synonyms: ["cast", "activate", "castspell", "castmagic", "castincantation", "castritual", "castsspell", "castsmagic", "castsincantation", "castsritual"] },
+      { handler: doClearSpells,      helpText: doClearSpellsHelp,      synonyms: ["clearspells", "clearmagic", "clearincantations", "clearrituals", "forgetallspells", "forgetallmagic", "forgetallincantation", "forgetallritual"] },
+      { handler: doSpellbook,        helpText: doSpellbookHelp,        synonyms: ["spellbook", "spells", "listspells", "showspells", "spelllist", "spellcatalog", "spellinventory"] },
+      
+      // <><> Narrative
+      { handler: doEncounter,        helpText: doEncounterHelp,        synonyms: ["encounter", "travel", "traverse", "explore", "depart", "enter"] }
+      
+      /** PLAN: Replace health/damage/ac system with injury system
+       * Wepaons have injury types which source from injury tables, armor has injury resistance
+       * This will allow us to introduce damage types (something not present)
+       * The injury system will be narrative based, not turn based (A deviation from D&D)
+       * This removes the need for players to book-keep encounters, memorize command sequences, and allow free-form combat
+       */
+  ];
+
+  // Handles searching of the command registry if needed
+  if (!commandName) return registry;
+  for (let entry of registry) {
     if (entry.synonyms.some(s => s === commandName || s + "s" === commandName)) {
-      return entry.handler
+      return entry;
     }
   }
   return null
@@ -188,7 +192,7 @@ function DNDHash_input (text) {
   // Sanitize and extract just the base command phrase
   let command = text.substring(text.search(/#/) + 1)
   let commandName = getCommandName(command)?.toLowerCase().replaceAll(/[^a-z0-9\s]*/gi, "").trim()
-  const handler = findCommandHandler(commandName)
+  const handler = commandRegistry(commandName).handler
   if (!commandName || !handler) {
     state.show = "none"
     text = "\n[Error: Invalid or missing command.]\n"
@@ -286,6 +290,9 @@ function doCreate(command) {
 
   return [" ", true]
 }
+const doCreateHelp = `<><> #create command
+-- This command launches the character creation process for the activate character.
+Usage: character|You #create\n`
 
 /**
  * Resets the character's skills to default values.
@@ -365,6 +372,10 @@ function doRoll(command) {
 
   return [text, true]
 }
+const doRollHelp = `<><> #roll command
+-- Rolls dice with optional advantage or disadvantage.
+-- dice_value may be formatetd 5d20+6 or 5d20 or d20 or 20.
+Usage: #roll (advantage|disadvantage) (dice_value)\n`
 
 /**
  * Performs a skill or ability check with difficulty and advantage/disadvantage.
@@ -439,6 +450,15 @@ function doTry(command) {
 
   return [text+"\n", true]
 }
+const doTryHelp = `<><> #try command
+-- Attempts to do the task based on the character's ability/skill against the specified difficulty with advantage/disadvantage.
+-- If no ability or skill is defined then it will be a general d20 vs difficulty check.
+-- If no difficulty is defined then the config default is used.
+-- If advantage/disadvantage is not defined, then check uses normal.
+-- Grants autoXP on success.
+-- Provides descriptive success/failure messages.
+-- Roll result is prefixed to AI Dungeon Output (can be configured not to).
+Usage: character|You #try (ability|skill) (advantage|disadvantage) (number or automatic|effortless|easy|medium|hard|impossible) to ...task\n`
 
 /**
  * Performs a skill or ability check with difficulty and advantage/disadvantage.
@@ -478,6 +498,13 @@ function doCheck(command) {
 
   return [text, true]
 }
+const doCheckHelp = `<><> #check command
+-- Performs a skill or ability check with difficulty and advantage/disadvantage.
+-- Unlike #try does not prefix or append AI Dungeon output afterwards.
+-- If no ability or skill is defined then it will be a general d20 vs difficulty check.
+-- If no difficulty is defined then the config default is used.
+-- If advantage/disadvantage is not defined, then check uses normal.
+Usage: character|You #check (ability|skill) (advantage|disadvantage) (number or automatic|effortless|easy|medium|hard|impossible)\n`
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -498,6 +525,11 @@ function doShowDay(command) {
   state.show = "none"
   return [`\n[It is day ${state.day}]\n`, true]
 }
+const doShowDayHelp = `<><> #showday command
+-- Shows the current day in the game state.
+-- The current day is progressed #rest command.
+-- Or can be set using the #setday command.
+Usage: #showday\n`
 
 /**
  * Sets the current day in the game state.
@@ -510,12 +542,15 @@ function doSetDay(command) {
   if (arg0 == null || isNaN(arg0)) {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
-
   state.day = parseInt(arg0)
-
   state.show = "none"
   return [`\n[The day has been set to day ${state.day}]\n`, true]
 }
+const doSetDayHelp = `<><> #setday command
+-- Sets the current day in the game state.
+-- The current day is progressed #rest command.
+-- Or can be shown using the #showday command.
+Usage: #setday day\n`
 
 
 /**
@@ -547,6 +582,10 @@ function doRest(command) {
   state.show = "none"
   return [text, true]
 }
+const doRestHelp = `<><> #rest command
+-- Advances the day by one and heals characters.
+-- Supports "#shortrest" for 50% healing without advancing the day.
+Usage: #rest\n`
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -569,9 +608,15 @@ function doReset(command) {
   state.day = null
   state.step = null
   state.statDice = []
-  state.show = "reset"
+  state.show = "showText"
+  state.showText = "[All settings have been reset]\n"
   return [" ", true]
 }
+const doResetHelp = `<><> #reset command
+-- Resets game state including:
+-- notes, characters, and day
+Usage: #reset\n`
+
 
 /**
  * Shows the current version of the game or system.
@@ -583,19 +628,68 @@ function doVersion(command) {
   state.show = "none"
   return [`[${version}]`, true]
 }
+const doVersionHelp = `<><> #version command
+-- Shows the current version of the game or system.
+Usage: #version\n`
 
 /**
- * Displays help information or a specific help section.
+ * Displays help information or a specific help for a command.
  * @function
  * @param {string} [command] Command string containing optional help topic.
  * @returns {[string, boolean]} Empty response and success flag.
  */
 function doHelp(command) {
-  const helpType = getArgument(command, 0)
-  if (helpType) state.show = "help "
-  else state.show = "help"
+  const helpType = getArgumentRemainder(command, 0)
+  state.show = "showText"
+  let textBuilder = helpText
+  if (helpType == "all") {
+    textBuilder = "This is a list of all commands, and their synonyms.\nYou can use #help followed by a command name for specific info; e.g. '#help create'.\n\n"
+    for (let entry of commandRegistry()) {
+      textBuilder += `#${entry.synonyms[0]}\n[${entry.synonyms.join(", ")}]\n\n`
+    }
+  } else if (helpType != null) {
+    const entry = commandRegistry(helpType);
+    if (entry) textBuilder = `${entry.helpText}\nSynonyms: [${entry.synonyms.join(", ")}]`
+  }
+  state.showText = textBuilder
   return [" ", true]
 }
+const doHelpHelp = `<><> #help command
+-- Displays help information or a specific help for a command.
+-- I see you're already a master of the help command ;)
+Usage: #help (command)\n`
+const helpText = `<><> WELCOME to DNDHash - Lite Edition -
+TO get started use the #create command as a Do or Say action to create your first character.
+
+** GENERAL COMMANDS:
+-- Some general commands to get you playing your adventure!
+#try - has the active character try some task using an stat or skill check.
+-- usage: character|you #try (stat/skill) (difficulty) (advantage/disadvantage) to ...task
+#cast - has the active character cast the spell specified.
+-- usage: character|you #cast spell (difficulty) (advantage/disadvantage)
+#take - adds an item to the active character's inventory.
+-- usage: character|you #take itemName (quantity)
+#drop - removes an item from the active character's inventory.
+-- usage: character|you #drop itemName (quantity)
+
+** SHOW COMMANS:
+-- These require no arguments.
+#bio - displays the active character's general info.
+#inv - displays the active character's inventory.
+#stats - displays the active character's stats.
+#skills - displays the active character's skills.
+#spells - displays the active character's spells.
+
+** COMMAND GUIDE:
+-- To see a list of all command you may enter "#help all".
+-- You can use #help followed by a command name for specific info; e.g. "#help create".
+-- It's best to use "quotes" to encapsulate text arguments with spaces.
+-- If a command argument is portrayed in (brakets) then it's optional.
+-- Some commands require an active character portrayed by "Character|You".
+-- The active character for Do or Say actions is automatically "You" or your character name in AI Dungeon.
+-- The active character or Story actions needs to be specified before the command i.e. "CharacterName #command ...".
+-- If you end a command with a . period, then anything after that will be flavor text.
+-- Flavor text will be re-appened to your input, after the command process.\n`
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -627,6 +721,9 @@ function doRenameCharacter(command) {
 
   return [text, true]
 }
+const doRenameCharacterHelp = `<><> #renamecharacter command
+-- Renames the active character to a new name.
+Usage: character|you #renamecharacter newName\n`
 
 /**
  * Shows the biography screen for the current character.
@@ -635,9 +732,13 @@ function doRenameCharacter(command) {
  * @returns {[string, boolean]} Empty response and success flag.
  */
 function doBio(command) {
-  state.show = "bio"
+  state.show = "showText"
+  state.showText = showSummary(getCharacter())
   return [" ", true]
 }
+const doBioHelp = `<><> #bio command
+-- Shows the biography screen for the active character.
+Usage: character|you #bio\n`
 
 /**
  * Sets the class name for the current character.
@@ -659,7 +760,9 @@ function doSetClass(command) {
   state.show = "none"
   return [`\n[${possessiveName} class is set to "${character.className}"]\n`, true]
 }
-
+const doSetClassHelp = `<><> #setclass command
+-- Sets the class name for the active character.
+Usage: character|you #setclass newClass\n`
 
 /**
  * Displays the list of characters.
@@ -668,9 +771,13 @@ function doSetClass(command) {
  * @returns {[string, boolean]} Empty response and success flag.
  */
 function doShowCharacters(command) {
-  state.show = "characters"
+  state.show = "showText"
+  state.showText = showParty()
   return [" ", true]
 }
+const doShowCharactersHelp = `<><> #characters command
+-- Displays the list of all characters.
+Usage: #characters\n`
 
 /**
  * Removes a character by name.
@@ -695,6 +802,9 @@ function doRemoveCharacter(command) {
 
   return [`[Character ${arg0} was not found]`, true]
 }
+const doRemoveCharacterHelp = `<><> #removecharacter command
+-- Removes a character by name.
+Usage: #removecharacter characterName\n`
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -729,6 +839,10 @@ function doSetExperience(command) {
   state.show = "none"
   return [`\n[${possessiveName} experience is set to ${character.experience}]\n`, true]
 }
+const doSetExperienceHelp = `<><> #setexp command
+-- Sets active character's experience points to a specified value.
+-- This will also update the character's level, but does not count as leveling up (no rewards).
+Usage: character|you #setexp exp\n`
 
 /**
  * Adds experience points to a character or the entire party.
@@ -759,7 +873,7 @@ function doAddExperience(command) {
     return [`\n[Error: There are no characters. Type #setup to create a character]\n`, false]
   }
 
-  state.prefix = "\n"
+  state.showText = "\n"
   characters = arg1 == null ? [character] : state.characters
   for (const c of characters) {
     const possessiveName = getPossessiveName(c.name)
@@ -770,14 +884,18 @@ function doAddExperience(command) {
 
     if (newLevel > level) {
       levelupEvent(c, level, newLevel)
-      state.prefix += `[${possessiveName} experience is increased to ${c.experience}. LEVEL UP! Level: ${newLevel}, Health Max: ${getHealthMax(c)}. Next level at ${getNextLevelXp(c.experience)}]\n`
+      state.showText += `[${possessiveName} experience is increased to ${c.experience}. LEVEL UP! Level: ${newLevel}, Health Max: ${getHealthMax(c)}. Next level at ${getNextLevelXp(c.experience)}]\n`
     }
-    else state.prefix += `[${possessiveName} experience is increased to ${c.experience}. Next level at ${getNextLevelXp(c.experience)}]\n`
+    else state.showText += `[${possessiveName} experience is increased to ${c.experience}. Next level at ${getNextLevelXp(c.experience)}]\n`
   }
 
-  state.show = "prefixOnly"
+  state.show = "showText"
   return [" ", true]
 }
+const doAddExperienceHelp = `<><> #addexp command
+-- Adds experience points to the active character.
+-- This will also update the character's level, and count as leveling.
+Usage: character|you #addexp exp\n`
 
 /**
  * Levels up a character by granting enough experience to reach the next level.
@@ -785,12 +903,16 @@ function doAddExperience(command) {
  * @param {string} [command] Command string (ignored except for context).
  * @returns {[string, boolean]} Result message and success flag.
  */
+// TODO: make it so level up takes an argument for number of levels
 function doLevelUp(command) {
   const character = getCharacter()
   const level = getLevel(character.experience)
   const experience = getExpForLevel(level) - character.experience
   return doAddExperience(`${command} ${experience}`)
 }
+const doLevelUpHelp = `<><> #levelup command
+-- Advances the active characters level by one.
+Usage: character|you #levelup\n`
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -802,7 +924,7 @@ function doLevelUp(command) {
 ///////////////////////////////////////////// COMMAND FUNCTIONS - ABILITIES & SKILLS //////////////////////////////////////////
 
 /**
- * Sets or updates a character's stat with a specified value (1-100).
+ * Sets or updates a character's stat with a specified value.
  * 
  * @function
  * @param {string} [command] Command text containing stat name and value.
@@ -832,10 +954,14 @@ function doSetStat(command) {
   state.show = "none"
   return [`\n[${possessiveName} ${toTitleCase(statName)} ability is now ${statValue}]\n`, true]
 }
+const doSetStatHelp = `<><> #setstat command
+-- Sets a character's stat with a specified value.
+-- If the stat does not exist, it is created for that character.
+Usage: character|you #setstat stat value\n`
 
 /**
- * Sets or updates a character's stat with a specified value (1-100).
- * 
+ * Updates a character's stat with a specified value.
+ * Spends stat points.
  * @function
  * @param {string} [command] Command text containing stat name and value.
  * @returns {[string, boolean]} Confirmation message and success status.
@@ -863,6 +989,9 @@ function doAddStat(command) {
   state.show = "none"
   return [`\n[${possessiveName} ${toTitleCase(statName)} ability is now ${character.stats[index].value}]\n`, true]
 }
+const doAddStatHelp = `<><> #spendstat command
+-- Uses stat points to increase a stat's value.
+Usage: character|you #spendstat stat value\n`
 
 /**
  * Shows the character stats UI section.
@@ -872,9 +1001,13 @@ function doAddStat(command) {
  * @returns {[string, boolean]} Placeholder string and success status.
  */
 function doShowStats(command) {
-  state.show = "stats"
+  state.show = "showText"
+  state.showText = showStats(getCharacter())
   return [" ", true]
 }
+const doShowStatsHelp = `<><> #stats command
+-- Displays the active character's stats.
+Usage: character|you #stats\n`
 
 /**
  * Removes a specified stat from the character.
@@ -900,6 +1033,9 @@ function doRemoveStat(command) {
 
   return [`\n[${character.name} removed the ability ${statName}]\n`, true]
 }
+const doRemoveStatHelp = `<><> #removestat command
+-- Removes a specified stat from the character.
+Usage: character|you #removestat stat\n`
 
 /**
  * Clears all stats from the character.
@@ -911,9 +1047,13 @@ function doRemoveStat(command) {
 function doClearStats(command) {
   const character = getCharacter()
   character.stats = []
-  state.show = "clearStats"
+  state.show = "showText"
+  state.showText = `[${character == null ? null : getPossessiveName(character.name)} stats has been cleared]\n`
   return [" ", true]
 }
+const doClearStatsHelp = `<><> #clearstats command
+-- Clears all stats from the character.
+Usage: character|you #clearstats\n`
 
 /**
  * Sets or updates a skill for the character with an optional associated stat and modifier.
@@ -966,6 +1106,11 @@ function doSetSkill(command) {
   state.show = "none"
   return [`\n[${possessiveName} ${toTitleCase(skillName)} skill is now ${skillValue >= 0 ? "+" + skillValue : "-" + skillValue} and based on ${toTitleCase(skillStat)}]\n`, true]
 }
+const doSetSkillHelp = `<><> #setskill command
+-- Sets a character's skill with a specified modifier.
+-- If the skill does not exist, it is created for that character.
+Usage: character|you #setskill skill modifier\n`
+
 
 /**
  * Sets or updates a character's skill with a specified value (1-100).
@@ -997,6 +1142,9 @@ function doAddSkill(command) {
   state.show = "none"
   return [`\n[${possessiveName} ${toTitleCase(skillName)} skill bonus is now ${character.skills[index].modifier}]\n`, true]
 }
+const doAddSkillHelp = `<><> #spendskill command
+-- Uses skill points to increase a skill's modifier.
+Usage: character|you #spendskill skill modifier\n`
 
 /**
  * Shows the character skills UI section.
@@ -1006,9 +1154,13 @@ function doAddSkill(command) {
  * @returns {[string, boolean]} Placeholder string and success status.
  */
 function doShowSkills(command) {
-  state.show = "skills"
+  state.show = "showText"
+  state.showText = showSkills(getCharacter())
   return [" ", true]
 }
+const doShowSkillsHelp = `<><> #skills command
+-- Displays the active character's skills.
+Usage: character|you #skills\n`
 
 /**
  * Removes a specified skill from the character.
@@ -1034,6 +1186,9 @@ function doRemoveSkill(command) {
 
   return [`\n[${character.name} removed the skill ${skillName}]\n`, true]
 }
+const doRemoveSkillHelp = `<><> #removeskill command
+-- Removes a specified skill from the character.
+Usage: character|you #removeskill skill\n`
 
 /**
  * Clears all skills from the character.
@@ -1045,9 +1200,13 @@ function doRemoveSkill(command) {
 function doClearSkills(command) {
   const character = getCharacter()
   character.skills = []
-  state.show = "clearSkills"
+  state.show = "showText"
+  state.showText = `[${character == null ? null : getPossessiveName(character.name)} skills has been cleared]\n`
   return [" ", true]
 }
+const doClearSkillsHelp = `<><> #clearskills command
+-- Clears all skills from the character.
+Usage: character|you #clearskills\n`
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -1065,9 +1224,13 @@ function doClearSkills(command) {
  * @returns {[string, boolean]} Tuple with a placeholder string and true.
  */
 function doShowNotes(command) {
-  state.show = "showNotes"
+  state.show = "showText"
+  state.showText = showNotes()
   return [" ", true]
 }
+const doShowNotesHelp = `<><> #notes command
+-- Displays all your saved notes.
+Usage: #notes\n`
 
 /**
  * Adds a note from the command text or, if empty, adds the last action text.
@@ -1087,6 +1250,9 @@ function doNote(command) {
   state.show = "none"
   return ["\n[The last action was successfully added to the notes]\n", true]
 }
+const doNoteHelp = `<><> #note command
+-- Adds a note; or if empty adds the last action text.
+Usage: #note (note text)\n`
 
 /**
  * Clears all notes.
@@ -1096,10 +1262,13 @@ function doNote(command) {
  */
 function doClearNotes(command) {
   state.notes = []
-  
-  state.show = "clearNotes"
+  state.show = "showText"
+  state.showText = `[All Notes have been cleared]\n`
   return [" ", true]
 }
+const doClearNotesHelp = `<><> #clearnotes command
+-- Clears all notes.
+Usage: #clearnotes\n`
 
 
 /**
@@ -1131,6 +1300,9 @@ function doEraseNote(command) {
   state.show = "none"
   return [text, true]
 }
+const doEraseNoteHelp = `<><> #removenote command
+-- Removes specified notes by index.
+Usage: #removenote index\n`
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -1141,16 +1313,6 @@ function doEraseNote(command) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////// COMMAND FUNCTIONS - INVENTORY ///////////////////////////////////////////////
 
-const HelpDialog_takeCommand = `
-#take item_name
-#take (quantity) item_name
-
--- Adds an instance of the specified item(s) to a character's inventory.
--- item_name must use "quotation" for names with spaces.
--- (quantity) is optional.
-
-To create your own item cards, type: #help "create item"
-`
 /**
 * Adds an instance of the specified item(s) to a character's inventory.
 * @function
@@ -1184,16 +1346,11 @@ function doTake(command) {
 
   return [text+`\n`, true]
 }
+const doTakeHelp = `<><> #take command
+-- Adds an instance of the specified item(s) to the character's inventory.
+-- (quantity) is optional, defaults to one.
+Usage: character|you #take (quantity) item_name\n`
 
-const HelpDialog_rewards = `
-Command Format: {{ (you|character) #loot (theme) }}
--- Randomly rolls a random item from a thematic loot table.
--- Automaticallt adds to character's inventory.
--- (theme) is optional; defualts to all story card items.
--- (theme) may also be an item category.
--- If (theme) is not found it defualts to all story card items.
--- If the theme contains spaces, wrap it in quotes (e.g. "ancient ruins").
--- The word 'the' can be used e.g. "#loot the orchard"`
 /**
 * Use this command to give the character random rewards from a loot table, or a pool of all items.
 * @function
@@ -1264,14 +1421,14 @@ function doLoot(command) {
 
   return [text+"\n", true]
 }
+const doLootHelp = `<><> #loot command
+-- Randomly rolls a random item from a thematic loot table.
+-- Automatically adds item to character's inventory.
+-- (theme) is optional; defualts to all item story cards.
+-- (theme) may also be an item category.
+-- The word 'the' can be used e.g. "#loot the orchard"
+Usage: character|you #loot (theme)\n`
 
-const HelpDialog_doDrop = `
-#drop (quantity or all|every) item_name
--- Removes the specified quantity of item from the character's inventory.
--- The words the, a, and an are ignored. Quotes are not necessary.
--- If a quantity is omitted, it's assumed to be 1.
--- Equipped items are unequipped.
-`
 /**
 * - Removes the specified quantity of item from the character's inventory.
 * @function
@@ -1316,14 +1473,13 @@ function doDrop(command) {
 
   return [text+'\n', true]
 }
+const doDropHelp = `<><> #drop command
+-- Removesthe specified item(s) from the character's inventory.
+-- (quantity) is optional, defaults to one.
+-- 'the', 'a', and 'an', can be given as quantity (count as one).
+-- 'all' or 'every' can be given as quantity (count as all of that item).
+Usage: character|you #drop (quantity|all) item_name\n`
 
-const HelpDialog_doGive = `
-#give other_character (quantity or all|every) item
--- Removes the quantity of item from the character's inventory and adds it to the other_character's inventory.
--- The words the, a, and an are ignored.
--- If a quantity is omitted, it's assumed to be 1.
--- Equipped items are unequipped.
-`
 /**
 * - Removes the quantity of item from the character's inventory and adds it to the other_character's inventory.
 * @function
@@ -1375,17 +1531,13 @@ function doGive(command) {
   }
   return [text+`\n`, true]
 }
+const doGiveHelp = `<><> #give command
+-- Removes the quantity of item from the character's inventory and adds to the other_character's inventory.
+-- (quantity) is optional, defaults to one.
+-- 'the', 'a', and 'an', can be given as quantity (count as one).
+-- 'all' or 'every' can be given as quantity (count as all of that item).
+Usage: character|you #give other_character (quantity|all|the) item_name\n`
 
-const HelpDialog_doBuy = `
-#buy (buy_quantity) buy_item (for|with) sell_quantity sell_item
--- Adds the specified buy_quantity of the buy_item to the character's inventory and also removes the sell_quantity of sell_item.
--- If buy_quantity are omitted, it's assumed to be 1.
--- sell_quantity cannot be omitted!
--- Quotes are necessary for items with spaces in the name.
--- "my", "with", "for", "your" will be ignored.
--- sell_quantity can be "all", "every", "a", "an", "the", or number.
--- buy_quantity can only "a", "an", "the", or number.
-`
 /**
 * - Adds the specified buy_quantity of the buy_item to the character's inventory and also removes the sell_quantity of sell_item.
 * @function
@@ -1455,16 +1607,15 @@ function doBuy(command) {
   }
   return [text+`\n`, true]
 }
-
-const HelpDialog_doSell = `
-#sell (sell_quantity) sell_item (for|with) buy_quantity buy_item
--- Adds the specified buy_quantity of the buy_item to the character's inventory and also removes the sell_quantity of sell_item.
--- sell_quantity is optional, but buy_quantity cannot be omitted!
--- Quotes are necessary for items with spaces in the name.
+const doBuyHelp = `<><> #buy command
+-- Adds the specified buy_quantity of the buy_item to the character's inventory and removes the sell_quantity of sell_item.
 -- "my", "with", "for", "your" will be ignored.
--- sell_quantity can be "all", "every", "a", "an", "the", or number.
+-- If buy_quantity are omitted, it's assumed to be 1.
 -- buy_quantity can only "a", "an", "the", or number.
-`
+-- sell_quantity cannot be omitted!
+-- sell_quantity can be "all", "every", "a", "an", "the", or number.
+Usage: character|you #buy (buy_quantity) buy_item (for|with) sell_quantity sell_item\n`
+
 /**
 * Adds the specified sell_quantity of the sell_item to the character's inventory and also removes the buy_quantity of buy_item.
 * @function
@@ -1498,13 +1649,15 @@ function doSell(command) {
   }
   return [text, success]
 }
+const doSellHelp = `<><> #sell command
+-- Adds the specified buy_quantity of the buy_item to the character's inventory and removes the sell_quantity of sell_item.
+-- "my", "with", "for", "your" will be ignored.
+-- If sell_quantity are omitted, it's assumed to be 1.
+-- sell_quantity can only "a", "an", "the", or number.
+-- buy_quantity cannot be omitted!
+-- buy_quantity can be "all", "every", "a", "an", "the", or number.
+Usage: character|you #sell (sell_quantity) sell_item (for|with) buy_quantity buy_item\n`
 
-const HelpDialog_doRenameItem = `
-#renameitem original_name new_name
--- Renames the item indicated by original_name to the new_name.
--- The quantity remains the same.
--- Quotes are necessary for names.
-`
 /**
 * Renames the item indicated by original_name to the new_name.
 * @function
@@ -1536,11 +1689,10 @@ function doRenameItem(command) {
   state.show = "none"
   return [text, true]
 }
+const doRenameItemHelp = `<><> #rename command
+-- Renames the item indicated by original_name to the new_name.
+Usage: character|you #rename item_name new_name\n`
 
-const HelpDialog_doInventory = `
-#inventory
--- Shows the items in the inventory of the character.
-`
 /**
 * Sets the state to show the character's inventory in next output
 * @function
@@ -1548,9 +1700,13 @@ const HelpDialog_doInventory = `
 * @returns {[string, boolean]} Tupple containing [text result of command, and successful execution flag]
 **/
 function doInventory(command) {
-  state.show = "inventory"
+  state.show = "showText"
+  state.showText = showInventory(getCharacter())
   return [" ", true]
 }
+const doInventoryHelp = `<><> #inv command
+-- Displays the active character's inventory.
+Usage: character|you #inv\n`
 
 /**
  * Clears all items from the active character's inventory.
@@ -1564,9 +1720,13 @@ function doInventory(command) {
 function doClearInventory(command) {
   var character = getCharacter()
   character.inventory = []
-  state.show = "clearInventory"
+  state.show = "showText"
+  state.showText = `[${character == null ? null : getPossessiveName(character.name)} inventory has been cleared]\n`
   return [" ", true]
 }
+const doClearInventoryHelp = `<><> #clearitems command
+-- Clears all items from the active character's inventory.
+Usage: character|you #clearitems\n`
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -1608,6 +1768,10 @@ function doLearnSpell(command) {
 
   return [text+="\n", true]
 }
+const doLearnSpellHelp = `<><> #learnspell command
+-- Attempts to teach the active character a new spell.
+-- If the spell is already known, returns a message stating so.
+Usage: character|you #learnspell spell_name\n`
 
 /**
  * Attempts to remove a spell from the active character's known spells.
@@ -1642,6 +1806,10 @@ function doForgetSpell(command) {
   state.show = "none"
   return [text+"\n", true]
 }
+const doForgetSpellHelp = `<><> #forgetspell command
+-- Attempts to remove a spell from the active character's known spells.
+-- If the spell is not known, returns a message stating so.
+Usage: character|you #forgetspell spell_name\n`
 
 /**
  * Attempts to cast a known spell, applying difficulty and advantage rules.
@@ -1729,6 +1897,11 @@ function doCastSpell(command) {
   }
   return [`\n${text}\n`, true]
 }
+const doCastSpellHelp = `<><> #cast command
+-- Attempts to cast a known spell, applying difficulty and advantage rules.
+-- Performs a d20 roll (with modifiers) and determines success or failure.
+-- Optional ability name for modifier.
+Usage: character|you #cast (advantage|disadvantage) (difficulty) (abiliity) spellName\n`
 
 /**
  * Clears all known spells from the active character.
@@ -1742,9 +1915,13 @@ function doCastSpell(command) {
 function doClearSpells(command) {
   var character = getCharacter()
   character.spells = []
-  state.show = "clearSpells"
+  state.show = "showText"
+  state.showText = `[${character == null ? null : getPossessiveName(character.name)} spells has been cleared]\n`
   return [" ", true]
 }
+const doClearSpellsHelp = `<><> #clearspells command
+-- Clears all known spells from the active character.
+Usage: character|you #clearspells\n`
 
 /**
  * Displays the spellbook view for the active character.
@@ -1756,9 +1933,13 @@ function doClearSpells(command) {
  *   - boolean: Always true.
  */
 function doSpellbook(command) {
-  state.show = "spellbook"
+  state.show = "showText"
+  state.showText = showSpells(getCharacter())
   return [" ", true]
 }
+const doSpellbookHelp = `<><> #spells command
+-- Displays all known spells of the active character.
+Usage: character|you #spells\n`
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -1819,6 +2000,10 @@ function doEncounter(command) {
 
   return [text+"\n", true]
 }
+const doEncounterHelp = `<><> #explore command
+-- Rolls a random encounter from a thematic encounter table.
+-- 'the' is ignored, allowing for input like "#explore the city".
+Usage: character|you #explore theme\n`
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -1894,6 +2079,10 @@ function doTest(command) {
   state.show = "none" // Hide output in AI Dungeon GUI
   return ["You have no test cases! :P Did you forget to replace this with TestZone.js?", true]
 }
+const doTestHelp = `<><> #debug command
+-- FAIR WARNING: The debug command alters the game state to test. DATA WILL BE LOST!!!
+-- Just be careful if you're a player, author's should remove tests before publishing.
+Usage: #debug\n`
 
 // AI DUNGEON -- Don't modify this part
 modifier(text)
