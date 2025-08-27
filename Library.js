@@ -42,6 +42,7 @@ const createSynonyms = ["create", "generate", "start", "begin", "setup", "new"]
 
 // CONFIGURATION
 //TODO: Make stat/skill/spell terminology a config option
+//TODO: Shouldn't this be in the state?
 const config = {
   autoCreateItemCards: false, // Automaticall creates item cards when put into the inventory
   defaultDifficulty: 10,      // Difficulty of checks when not specified in commands
@@ -58,7 +59,6 @@ const config = {
  * Loads and applies configuration settings from the "#DND Lite Config" story card.
  * - Validates types before applying.
  * - Always saves the current config back to the story card.
- * @returns {boolean} True if config was successfully processed, false if JSON parsing failed.
  */
 function enforceConfig() {
   // Get config story card or create one
@@ -70,7 +70,7 @@ function enforceConfig() {
         config[key] = validateType(newSettings[key], config[key])
       });
     } catch (error) {
-      return false
+      throw new Error("[Bad config file, please delete or fix!]");
     }
   }
   // Refresh the config story card, or build one if none exists.
@@ -79,7 +79,6 @@ function enforceConfig() {
     type: "CONFIG",
     keys: ""
   });
-  return true
 }
 
 /**
@@ -563,16 +562,14 @@ function handleStepProcess(text, mode) {
   text = sanitizeTextAdvanced(text)
 
   if (text.toLowerCase() == "q" || !state.step) {
-    state.show = "none"
     state.step = null
-    return "[Process has been aborted!]\n"
+    throw new Error("[Process has been aborted!]\n");
   }
 
   const handler = stepHandlers[state.step];
   if (!handler) {
-    state.show = "none"
     state.step = null
-    return `Unknown step: ${state.step}\n`;
+    throw new Error(`Unknown step: ${state.step}\n`);
   }
 
   const { nextStep, newText, success } = handler(text, mode);
@@ -1914,7 +1911,7 @@ function showSummary(character) {
   const possessiveName = character == null ? null : getPossessiveName(character.name)
   let text = `*** ${possessiveName.toUpperCase()} BIO ***\n`
   text += `Class: ${character.className}\n`
-  text += `Health: ${character.health}/${getHealthMax()}\n`
+  text += `Health: ${character.health}/${getHealthMax(character)}\n`
 
   text += `Level: ${getLevel(character.experience)}\n`
   text += `Experience: ${character.experience}\n`

@@ -137,104 +137,110 @@ function commandRegistry(commandName) {
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////// DND HASH INPUT FUNCTION ////////////////////////////////////////////////////
+////////////////////////////////////////////////// DND HASH INPUT FUNCTIONS ///////////////////////////////////////////////////
 
 /**
-* - This is the main Hashtag DND function!
-* - It handles input text, translates them to commands, and executes commands.
-* - Handles step flows, forms, and initialises variables.
-* @function
-* @param {string} [text] Raw input text from AI Dungeon
-* @returns {string} Returns command result, if any, or error messages
-*/
-function DNDHash_input (text) {
-  init() // Creates templates and inital values in state
-  const rawText = text
+ * Main entry point for processing user input in the DNDHash system.
+ * - If a step process is in progress, delegates input to `handleStepProcess`.
+ * - If no `#` is present, returns the raw input.
+ * - If a command is processed successfully, returns the result with flavor text.
+ * - If an error occurs, suppresses output display (`state.show = "none"`)
+ * @param {string} text - The raw user input string (may include `#command` and flavor text).
+ * @returns {string} The processed text output, possibly modified by commands or steps.
+ */
+function DNDHash_input(text) {
+  try {
+    init(text) // Creates templates and inital values in state
+    
+    // Steps take player input, as answers for a form process (no #)
+    // E.g. Do you want to use a character preset? (y/n/q)
+    if (state.step != null) { return newText = handleStepProcess(text, inputMode) }
+    
+    // No # no command to process
+    if (!text.includes("#")) { return text }
 
-  if (!enforceConfig()) {// Loads configuration variables from story cards
+    // Extracts "flavor text" after a period .
+    let [commandText, flavorText] = flavorTextExtract(text)
+    
+    // Sanitize and extract just the base command phrase
+    let [command, handler] = commandExtract(commandText)
+    
+    // Command Processing Block
+    // TODO: switch from commandSuccess to error throws in all command handlers
+    let [commandResult, commandSuccess] = handler(command)
+    if (!commandSuccess) state.show = "none"; // If a command fails, do not show output
+    text = commandResult // overwrite text for output
+
+    // Return with falavor added back in
+    return text + flavorText;
+  } catch (err) {
     state.show = "none"
-    return `\nERROR: Bad config file, please delete or fix!\n`
+    text = `\n${err.message}\n`;
+    return text;
   }
+}
 
-  // Needs to be handled before checking the "#" command symbol
-  // Steps take player input, as input for a step process (form like input to a question)
-  // E.g. Do you want to use a character preset? (y/n/q)
-  if (state.step != null) {
-    return newText = handleStepProcess(text, inputMode)
-  }
+/**
+ * Splits an input string into a command and optional "flavor text" following the first period.
+ * - If no period exists, flavor is returned as an empty string.
+ * @param {string} text - The full input string, e.g. "#roll. with flair"
+ * @returns {[string, string]} An array: [command, flavor]
+ */
+function flavorTextExtract(text) {
+  const index = text.indexOf(".");
+  if (index === -1) return [text, ""];
+  const command = text.slice(0, index);
+  const flavor = text.slice(index + 1).trimStart();
+  return [command, flavor ? " " + flavor : "" ];
+}
 
-  // I assume this prevents us running commands the first time this function is called.
-  // If there's no #, it just passes the message through as-is (probably flavor/narrative).
-  if (state.initialized == null || !text.includes("#")) {
-    state.initialized = true;
-    return text
-  }
-
-  // This is important, and sets the activate character performing the commands
-  state.characterName = getCharacterName(rawText)
-
-  // Extracts "flavor text" after a newline.
-  // Keeps the #command separated from the rest of the input.
-  // This is later appended back after processing the command.
-  let lineBreakIndex = text.indexOf(".")
-  let flavorText = null
-  if (lineBreakIndex > -1) {
-    flavorText = text.substring(lineBreakIndex + 1)
-    if (!flavorText.startsWith(" ")) flavorText = " " + flavorText
-    text = text.substring(0, lineBreakIndex)
-  } else {
-    flavorText = null
-  }
-
-  text = sanitizeText(text)
-
+/**
+ * Extracts and validates a command from user input text.
+ * @param {string} text - The raw user input containing a command
+ * @returns {[string, Function]} An array containing:
+ *   - The raw command string (without `#` or trailing flavor text).
+ *   - The corresponding handler function for the command.
+ * @throws {Error} If the command is invalid, missing, or the character state is not valid.
+ */
+function commandExtract(text) {
   // Extract the command portion of the input after #
-  // Sanitize and extract just the base command phrase
+  text = sanitizeText(text)
   let command = text.substring(text.search(/#/) + 1)
   let commandName = getCommandName(command)?.toLowerCase().replaceAll(/[^a-z0-9\s]*/gi, "").trim()
-  const handler = commandRegistry(commandName).handler
+  const handler = commandRegistry(commandName)?.handler
   if (!commandName || !handler) {
-    state.show = "none"
-    text = "\n[Error: Invalid or missing command.]\n"
-    return text
+    throw new Error("\n[Error: Invalid or missing command.]\n")
   }
-  
+  validateCharacterState(commandName)
+  return [command, handler]
+}
+
+
+/**
+ * Validates whether a command can be executed based on the current character state.
+ * Certain commands (character creation) are allowed without a character.
+ * @param {string} commandName - The normalized name of the command being validated.
+ * @throws {Error} If the command is not allowed due to missing or non-existent character.
+ */
+function validateCharacterState(commandName) {
   // The idea of this block is to prevent us from running commmands if we have no character created
-  const youNeedACharacter = `\n[Error: Character name not specified. Use the "do" or "say" modes. Alternatively, use "story" mode in the following format without quotes: "charactername #hashtag"]\n`
   const isCreateCommand = createSynonyms.includes(commandName)
   const hasChar = state.characterName != null
   const exists = hasChar && hasCharacter(state.characterName)
-
-  if (!exists && !isCreateCommand) {
-    state.show = "none"
-    text = hasChar
+  if ((!exists && !isCreateCommand) || (!hasChar && isCreateCommand)) {
+    throw new Error(hasChar
       ? `\n[Error: Character ${state.characterName} does not exist. Type #setup to create this character]\n`
-      : youNeedACharacter
-    return text
+      : `\n[Error: Character name not specified. Use the "do" or "say" modes. Alternatively, use "story" mode in the following format without quotes: "charactername #hashtag"]\n`)
   }
-
-  if (!hasChar && isCreateCommand && !handler) {
-    state.show = "none"
-    text = youNeedACharacter
-    return text
-  }
-  
-  // Command Processing Block
-  let commandResult, commandSuccess = null;
-  [commandResult, commandSuccess] = handler(command)
-  if (!commandSuccess) state.show = "none"; // If a command fails, do not show output
-  text = commandResult
-
-  // Return with falavor added back in
-  if (flavorText != null) text += flavorText;
-  return text;
 }
 
 /**
 * Mini-function that initialises all variables on first run.
 * @function
 */
-function init() {
+function init(text) {
+  enforceConfig()
+  state.characterName = getCharacterName(text)
   if (state.tempCharacter == null) {
     state.tempCharacter = {
       name: "template",
@@ -250,14 +256,11 @@ function init() {
       skillPoints: 0
     }
   }
-  
   if (state.characters == null) state.characters = []
   if (state.notes == null) state.notes = []
   if (state.day == null) state.day = 0
-
   state.show = null
   state.prefix = null
-  state.critical = null
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
