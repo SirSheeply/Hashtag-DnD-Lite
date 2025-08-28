@@ -161,7 +161,7 @@ function DNDHash_input(text) {
 
     // Extracts "flavor text" after a period .
     let [commandText, flavorText] = flavorTextExtract(text)
-    
+
     // Sanitize and extract just the base command phrase
     let [command, handler] = commandExtract(commandText)
     
@@ -541,11 +541,11 @@ Usage: #showday\n`
  * @returns {[string, boolean]} Confirmation message and success flag or error.
  */
 function doSetDay(command) {
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null || isNaN(arg0)) {
+  var day = getArgument(command, 0)
+  if (day == null || isNaN(day)) {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
-  state.day = parseInt(arg0)
+  state.day = parseInt(day)
   state.show = "none"
   return [`\n[The day has been set to day ${state.day}]\n`, true]
 }
@@ -711,16 +711,16 @@ TO get started use the #create command as a Do or Say action to create your firs
  */
 function doRenameCharacter(command) {
   var character = getCharacter()
-  var arg0 = getArgumentRemainder(command, 0)
-  if (arg0 == null) {
+  var newName = getArgumentRemainder(command, 0)
+  if (newName == null) {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
   var possessiveName = getPossessiveName(character.name)
 
   state.show = "none"
-  var text = `\n[${possessiveName} name has been changed to ${arg0}]\n`
+  var text = `\n[${possessiveName} name has been changed to ${newName}]\n`
 
-  character.name = arg0
+  character.name = newName
 
   return [text, true]
 }
@@ -751,14 +751,14 @@ Usage: character|you #bio\n`
  */
 function doSetClass(command) {
   var character = getCharacter()
-  var arg0 = getArgumentRemainder(command, 0)
-  if (arg0 == null) {
+  var newClass = getArgumentRemainder(command, 0)
+  if (newClass == null) {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   var possessiveName = getPossessiveName(character.name)
 
-  character.className = arg0
+  character.className = newClass
 
   state.show = "none"
   return [`\n[${possessiveName} class is set to "${character.className}"]\n`, true]
@@ -789,21 +789,21 @@ Usage: #characters\n`
  * @returns {[string, boolean]} Result message and success flag.
  */
 function doRemoveCharacter(command) {
-  var arg0 = getArgumentRemainder(command, 0)
-  if (arg0 == null) {
+  var characterName = getArgumentRemainder(command, 0)
+  if (characterName == null) {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
   for (var i = 0; i < state.characters.length; i++) {
     var character = state.characters[i]
-    if (character.name.toLowerCase() == arg0.toLowerCase()) {
+    if (character.name.toLowerCase() == characterName.toLowerCase()) {
       state.characters.splice(i, 1)
       state.show = "none"
       return [`[Character ${character.name} removed]`, true]
     }
   }
 
-  return [`[Character ${arg0} was not found]`, true]
+  return [`[Character ${characterName} was not found]`, true]
 }
 const doRemoveCharacterHelp = `<><> #removecharacter command
 -- Removes a character by name.
@@ -826,18 +826,18 @@ Usage: #removecharacter characterName\n`
  */
 function doSetExperience(command) {
   var character = getCharacter()
-  var arg0 = getArgument(command, 0)
-  if (arg0 == null) {
+  var exp = getArgument(command, 0)
+  if (exp == null) {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
-  if (isNaN(arg0)) {
+  if (isNaN(exp)) {
     return ["\n[Error: Not a number. See #help]\n", false]
   }
 
   var possessiveName = getPossessiveName(character.name)
 
-  character.experience = parseInt(arg0)
+  character.experience = parseInt(exp)
 
   state.show = "none"
   return [`\n[${possessiveName} experience is set to ${character.experience}]\n`, true]
@@ -855,20 +855,20 @@ Usage: character|you #setexp exp\n`
  */
 function doAddExperience(command) {
   const character = getCharacter()
-  let arg0 = getArgument(command, 0)
-  if (arg0 == null) {
+  let exp = getArgument(command, 0)
+  if (exp == null) {
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
-  arg0 = searchArgument(command, /\d+/gi)
-  if (arg0 == null) {
+  exp = searchArgument(command, /\d+/gi)
+  if (exp == null) {
     return ["\n[Error: Expected a number. See #help]\n", false]
   }
-  arg0 = parseInt(arg0)
+  exp = parseInt(exp)
 
-  const arg1 = searchArgument(command, /party/gi)
+  const forParty = searchArgument(command, /party/gi)
 
-  if (arg1 == null && character == null) {
+  if (forParty == null && character == null) {
     return [`\n[Error: Character name not specified. Use the "do" or "say" modes. Alternatively, use "story" mode in the following format without quotes: "charactername #hashtag"]\n`, false]
   }
 
@@ -877,12 +877,12 @@ function doAddExperience(command) {
   }
 
   state.showText = "\n"
-  characters = arg1 == null ? [character] : state.characters
+  characters = forParty == null ? [character] : state.characters
   for (const c of characters) {
     const possessiveName = getPossessiveName(c.name)
 
     const level = getLevel(c.experience)
-    c.experience += arg0
+    c.experience += exp
     const newLevel = getLevel(c.experience)
 
     if (newLevel > level) {
@@ -896,9 +896,9 @@ function doAddExperience(command) {
   return [" ", true]
 }
 const doAddExperienceHelp = `<><> #addexp command
--- Adds experience points to the active character.
+-- Adds experience points to the active character, optionally "party".
 -- This will also update the character's level, and count as leveling.
-Usage: character|you #addexp exp\n`
+Usage: character|you #addexp exp (party)\n`
 
 /**
  * Levels up a character by granting enough experience to reach the next level.
@@ -1242,10 +1242,10 @@ Usage: #notes\n`
  * @returns {[string, boolean]} Tuple containing a success message and true.
  */
 function doNote(command) {
-  var arg0 = getArgumentRemainder(command, 0)
+  var text = getArgumentRemainder(command, 0)
   
-  if (arg0 != null && arg0.length > 0) {
-    state.notes.push(arg0)
+  if (text != null && text.length > 0) {
+    state.notes.push(text)
     state.show = "none"
     return ["\n[Note added successfully]\n", true]
   }
@@ -1281,10 +1281,10 @@ Usage: #clearnotes\n`
  * @returns {[string, boolean]} Tuple containing removal confirmation messages or error and true/false.
  */
 function doEraseNote(command) {
-  var arg0 = getArgumentRemainder(command, 0)
-  if (arg0 == null) arg0 = 1
+  var index = getArgumentRemainder(command, 0)
+  if (index == null) index = 1
 
-  var list = arg0.split(/\D+/)
+  var list = index.split(/\D+/)
   list.sort(function(a, b) {
     return b - a, true
   });
