@@ -1,5 +1,5 @@
 # Hashtag-DnD Lite Edition
-PLEASE SUPPORT the Original Creator: [Raeleus Hashtag-DnD](https://github.com/raeleus/Hashtag-DnD)
+>PLEASE SUPPORT the Original Creator: [Raeleus Hashtag-DnD](https://github.com/raeleus/Hashtag-DnD)
 See the [user guide here](https://github.com/raeleus/Hashtag-DnD/wiki).
 Watch the [tutorial video](https://youtu.be/E5TYU7rDaBQ).
 
@@ -18,18 +18,25 @@ The Lite Edition has several goals:
 3) Improve customisation for users/authors via story cards.
 4) Implement D&D "like" mechanics as a base (for authors to add content)
 
-<h5><i>AS a side NOTE :: Lite Edition does not aim to be an exact replica of D&D and it's mechanics or features.
-<br/>-- Some elements from other TTRPGs may be borrowed if they fit better with the narative based gameplay of AI Dungeon.
-<br/>-- Which also means, some mechanics may be excluded, or not implemented, if they don't fit narative based gameplay.
-</i></h5>
+> <i>**NOTE:**
+<br>* Lite Edition does not aim to be an exact replica of D&D and it's mechanics or features.
+<br>* Some elements from other TTRPGs may be borrowed if they fit better with the narative based gameplay of AI Dungeon.
+<br>* Thich also means, some D&D mechanics may be excluded, or not implemented, if they don't fit.</i>
 
-### Lite Edition is NOT Compatible with [The Original Hashtag-DnD by Raeleus](https://github.com/raeleus/Hashtag-DnD)!
+## Lite Edition is NOT backward Compatible!
 
-If you think you may want the full set of features offered by [The Original Hashtag-DnD by Raeleus](https://github.com/raeleus/Hashtag-DnD), then please us that. You will not be able to upgrade later!
+If you think you may want the full set of features offered by [The Original Hashtag-DnD by Raeleus](https://github.com/raeleus/Hashtag-DnD), then please us that.
 
-Lite Edition does not have all the features of [The Original Hashtag-DnD by Raeleus](https://github.com/raeleus/Hashtag-DnD); and a lot of commands, and features have been trimmed out in exchange for lighter systems that are more customisable.
+**You will not be able to upgrade to the original later!** Or revert to the Lite Edition after.
+
+Lite Edition does not have all the features of [The Original Hashtag-DnD by Raeleus](https://github.com/raeleus/Hashtag-DnD); and a lot of commands & features, have been trimmed out in exchange for lighter and more customisable versions..
 
 ## Changelog
+---
+### Version 0.1.0
+#### Added Features
+- Injury based combat            (#attack, #shoot, #evade, #injure, #heal) See modules/injury system.md
+---
 ### Version 0.0.0
 #### Removed Features
 - Removed Minigames (Stragedy, Lockpicking, Memory)
@@ -49,11 +56,23 @@ Lite Edition does not have all the features of [The Original Hashtag-DnD by Rael
 - Encounters Tables              (Encounters are now sourced from story cards, and can be player generated!)
 - Crit Fail Protection           (Configurable: Rerolls critical fails for X checks after a critical fail)
 - Levelling Rewards              (+3 skill points per level, and +2 stat points every 4 levels; new commands for spending points)
-
-## Upcoming/Planned Features
-- Replace health/damage/ac system with injury system.
+---
+---
+## Upcoming/Planned Features & Ideas
+- Character deaths.
+- Quest tracking system.
+- Full class+features system.
+- Major cleanup of code (dev).
+- Add injury system to casting.
+- Basic spellcasting with levels.
+- Injury resistance and equipable items.
+- Track health/injuries of non-characters.
+- Apply universal parser to all doFunctions (dev).
+- Implement a party system vs general character directory.
+- Effects system for spells (mechanics vs narrative effects).
 - A check command that uses AI Dungeon to determine DC and Advantage.
 - Hunger, Thirst, Sleep, Exhaustion.
 - Initial Character creation from plot essentials.
 - Custom terminology for stats, skills, and spells.
 - Seperate currency/money from inventory items.
+- Re-add shops, minigames, location, and name gen.

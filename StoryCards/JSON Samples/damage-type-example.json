@@ -1,0 +1,8 @@
+[
+  {"injury": "blister", "rarity": 1.0,  "damage":"1d4"},
+  {"injury": "burn", "rarity": 0.5,  "damage":"1d6"},
+  {"injury": "2nd degree burn", "rarity": 0.25, "damage":"1d8+4"},
+  {"injury": "3rd degree burn", "rarity": 0.12, "damage":"1d10+6"},
+  {"injury": "charred flesh", "rarity": 0.06, "damage":"1d12+8"},
+  {"injury": "melted bones", "rarity": 0.01, "damage":"1d20+10"}
+]

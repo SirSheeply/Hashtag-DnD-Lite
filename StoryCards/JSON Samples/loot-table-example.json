@@ -1,0 +1,6 @@
+[
+  {"item": "twig", "chance": 1, "quantity": 5},
+  {"item": "orange", "chance": 0.5, "quantity": 10},
+  {"item": "sturdy stick", "chance": 0.25, "quantity": 1, "level":1},
+  {"item": "Stick Sword", "chance": 0.01, "quantity": 1, "level":1, "damageType":"blunt"}
+]

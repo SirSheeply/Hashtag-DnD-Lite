@@ -93,14 +93,18 @@ function commandRegistry(commandName) {
       //TODO: make currency a seperate feature
       { handler: doTake,             helpText: doTakeHelp,             synonyms: ["take", "steal", "get", "grab", "receive", "pocket", "bag", "stow"] },
       { handler: doLoot,             helpText: doLootHelp,             synonyms: ["loot", "search", "investigate", "harvest"] },
-      { handler: doDrop,             helpText: doDropHelp,             synonyms: ["remove", "discard", "drop", "leave", "dispose", "toss", "throw", "throwaway", "trash", "donate", "eat", "consume", "use", "drink", "pay", "lose"] },
+      { handler: doDrop,             helpText: doDropHelp,             synonyms: ["remove", "discard", "drop", "leave", "dispose", "trash", "donate", "eat", "consume", "use", "drink", "pay", "lose"] },
       { handler: doGive,             helpText: doGiveHelp,             synonyms: ["give", "handover", "hand", "gift"] },
       { handler: doBuy,              helpText: doBuyHelp,              synonyms: ["buy", "purchase", "barter", "trade", "swap", "exchange"] },
       { handler: doSell,             helpText: doSellHelp,             synonyms: ["sell"] },
 
-      { handler: doRenameItem,       helpText: doRenameItemHelp,       synonyms: ["renameitem", "renameobject", "renamegear", "renameequipment"] },
       { handler: doInventory,        helpText: doInventoryHelp,        synonyms: ["inv", "inventory", "backpack", "gear", "showinv", "showinventory", "viewinventory", "viewinv"] },
       { handler: doClearInventory,   helpText: doClearInventoryHelp,   synonyms: ["clearinventory", "clearinv", "emptyinventory", "emptybackpack", "clearbackpack", "emptygear", "cleargear"] },
+
+      // <><> Item Management
+      { handler: doRenameItem,       helpText: doRenameItemHelp,       synonyms: ["renameitem", "renameobject", "renamegear", "renameequipment"] },
+      { handler: doItemDamage,       helpText: doItemDamageHelp,       synonyms: ["itemdamage", "itemdmg"] },
+      { handler: doItemLevel,        helpText: doItemLevelHelp,        synonyms: ["itemlevel", "itemlvl"] },
       
       // <><> Spells
       { handler: doLearnSpell,       helpText: doLearnSpellHelp,       synonyms: ["learnspell", "learnmagic", "learnincantation", "learnritual", "memorizespell", "memorizemagic", "memorizeincantation", "memorizeritual", "learnsspell", "learnsmagic", "learnsincantation", "learnsritual", "memorizesspell", "memorizesmagic", "memorizesincantation", "memorizesritual", "learn"] },
@@ -110,14 +114,14 @@ function commandRegistry(commandName) {
       { handler: doSpellbook,        helpText: doSpellbookHelp,        synonyms: ["spellbook", "spells", "listspells", "showspells", "spelllist", "spellcatalog", "spellinventory"] },
       
       // <><> Narrative
-      { handler: doEncounter,        helpText: doEncounterHelp,        synonyms: ["encounter", "travel", "traverse", "explore", "depart", "enter"] }
+      { handler: doEncounter,        helpText: doEncounterHelp,        synonyms: ["encounter", "travel", "traverse", "explore", "depart", "enter"] },
       
-      /** PLAN: Replace health/damage/ac system with injury system
-       * Wepaons have injury types which source from injury tables, armor has injury resistance
-       * This will allow us to introduce damage types (something not present)
-       * The injury system will be narrative based, not turn based (A deviation from D&D)
-       * This removes the need for players to book-keep encounters, memorize command sequences, and allow free-form combat
-       */
+      // <><> Combat System
+      { handler: doInjury,           helpText: doInjuryHelp,           synonyms: ["injure", "wound", "damage"] },
+      { handler: doHealInjury,       helpText: doHealInjuryHelp,       synonyms: ["heal"] },
+      { handler: doMelee,            helpText: doMeleeHelp,            synonyms: ["attack", "strike", "hit", "smash", "slash", "stab", "bash", "jab", "whack"] },
+      { handler: doRange,            helpText: doRangeHelp,            synonyms: ["shoot", "fire", "throw", "hurl", "fling"] },
+      { handler: doEvade,            helpText: doEvadeHelp,            synonyms: ["evade", "block", "dodge", "parry"] }
   ];
 
   // Handles searching of the command registry if needed
@@ -176,7 +180,8 @@ function DNDHash_input(text) {
   } catch (err) {
     state.show = "none"
     text = `\n${err.message}\n`;
-    return text;
+    throw err
+    //return text;
   }
 }
 
@@ -251,7 +256,7 @@ function init(text) {
       stats: [],
       skills: [],
       experience: 0,
-      health: 10,
+      injuries: [],
       statPoints: 0,
       skillPoints: 0
     }
@@ -446,10 +451,8 @@ function doTry(command) {
   text += `${character.name} use ${theirWord} ${checkWord}${checkType}, ${score + modifier >= difficulty ? "and successfully" : `but ${failword} to`} ${taskText}${critText2}`
 
   // Adding of autoXp to all party members!
-  if (score + modifier >= difficulty || score == 20) {
-    const exp = Math.floor(config.autoXp * clamp(difficulty, 1, 20) / 20)
-    text += config.xpShare ? addXpToAll(exp) : addXpToCharacter(exp)
-  }
+  const hitResult =(score + modifier >= difficulty || score == 20)
+  text += addAutoExp(character, hitResult, difficulty)
 
   return [text+"\n", true]
 }
@@ -564,29 +567,31 @@ Usage: #setday day\n`
  * @returns {[string, boolean]} Message about healing/rest and success flag.
  */
 function doRest(command) {
-  var commandName = getCommandName(command)
-  state.day++
-
-  var healingFactor = 1
-  var text
-  if (commandName.toLowerCase() == "shortrest") {
-    state.day--
-    healingFactor = .5
-    text = `\n[All characters have healed 50%]\n`
-  } else {
-    text = `\n[All characters have rested and feel rejuvinated. It's now day ${state.day}]\n`
+  var commandName = getCommandName(command).toLowerCase()
+  const shortRest = (commandName == "shortrest" || commandName == "nap")
+  var healingFactor = (shortRest ? .5 : 1)
+  var text = `\nEveryone ${singularize(commandName, false)}, and heals slightly.\n`
+  if (!shortRest) {
+    state.day++
+    text += `It's now day ${state.day}!\n`
   }
-
-  state.characters.forEach(function(character) {
-    var max = getHealthMax(character)
-    character.health += Math.floor(max * healingFactor)
-    if (character.health > max) character.health = max
+  state.characters.forEach(character => {
+    if (character.injuries.length > 0) {
+      const hasWord = character.name == "You" ? "have" : "has"
+      const healed = recoverInjuries(character, healingFactor)
+      text += `\n ${character.name} ${hasWord} `
+      if (healed.length > 0) {
+        let healedText = ""
+        healed.forEach(i => healedText+=`${i.injury}, `)
+        text += `been healed of: ${healedText} and ${hasWord} `
+      }
+      text += `${character.injuries.length || "no more"} injuries remaining.`
+    }
   })
-  state.show = "none"
-  return [text, true]
+  return [text+"\n", true]
 }
 const doRestHelp = `<><> #rest command
--- Advances the day by one and heals characters.
+-- Advances the day by one and allows characters to recover injuries by +con mod.
 -- Supports "#shortrest" for 50% healing without advancing the day.
 Usage: #rest\n`
 
@@ -1368,11 +1373,8 @@ function doLoot(command) {
 
   /* <><> EXAMPLE OF Loot Table Story Card
   // (description JSON format inside loot table story card)
-  [
-    {"item": "twig", "rarity": 1, "quantity": 5},
-    {"item": "orange", "rarity": 0.5, "quantity": 10},
-    {"item": "sturdy stick", "rarity": 0.5, "quantity": 1}
-  ]
+  [ array of items with details ]
+  // See <><> Item Story Cards <><> for item details.
   */
 
   // Attempt to fill the loot table with items from a thematic loot table first
@@ -1390,13 +1392,14 @@ function doLoot(command) {
       itemCards = getStoryCardListByType("item - ", false);
     }
     itemCards.forEach(itemCard => {
-      item = JSON.parse(itemCard.description);
-      randomQuantity = getRandomInteger(1, item.quantity)
-      lootTable.push({
-        item: item.itemName, 
-        rarity: item.rarity, 
-        quantity: randomQuantity
-      });
+      let item = JSON.parse(itemCard.description);
+      for (const key in defaultItemTemplate) {
+        if (item[key] === undefined) {
+          item[key] = defaultItemTemplate[key]
+        }
+      }
+      item.quantity = getRandomInteger(1, item.quantity)
+      lootTable.push(item);
     });
   }
 
@@ -1697,6 +1700,76 @@ const doRenameItemHelp = `<><> #rename command
 Usage: character|you #rename item_name new_name\n`
 
 /**
+* Replaces the damage type of the item indicated.
+* @function
+* @param {string} [command] (you|character) #itemdmg itemname damageType
+* @returns {[string, boolean]} Tupple containing [text result of command, and successful execution flag]
+**/
+function doItemDamage(command) {
+  const itemName = getArgument(command, 0)
+  const damageType = getArgument(command, 1)
+
+  if (itemName == null || damageType == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+
+  // Text result to print
+  const character = getCharacter()
+  const hasWord = character.name == "You" ? "have" : "has"
+  const possessiveName = getPossessiveName(character.name)
+  let text = `\n[${possessiveName} ${itemName} ${hasWord} been renamed to ${damageType}]\n`
+
+  // Attempt to rename item
+  const invItem = searchInventory(character, itemName)
+  if (invItem) {
+    invItem.damageType = damageType
+  } else {
+    return [`\n[Error: ${character.name} ${hasWord} no item named "${itemName}". See #inventory]\n`, false]
+  }
+
+  state.show = "none"
+  return [text, true]
+}
+const doItemDamageHelp = `<><> #itemdmg command
+-- Replaces the damage type of the inventory item.
+Usage: (you|character) #itemdmg itemname damageType\n`
+
+/**
+* Replaces the level type of the item indicated.
+* @function
+* @param {string} [command] (you|character) #itemdmg item newLevel
+* @returns {[string, boolean]} Tupple containing [text result of command, and successful execution flag]
+**/
+function doItemLevel(command) {
+  const itemName = getArgument(command, 0)
+  const newLevel = getArgument(command, 1)
+
+  if (itemName == null || newLevel == null || isNaN(newLevel)) {
+    return ["\n[Error: Invalid parameters. See #help]\n", false]
+  }
+
+  // Text result to print
+  const character = getCharacter()
+  const hasWord = character.name == "You" ? "have" : "has"
+  const possessiveName = getPossessiveName(character.name)
+  let text = `\n[${possessiveName} ${itemName} ${hasWord} been renamed to ${newLevel}]\n`
+
+  // Attempt to rename item
+  const invItem = searchInventory(character, itemName)
+  if (invItem) {
+    invItem.level = parseInt(newLevel)
+  } else {
+    return [`\n[Error: ${character.name} ${hasWord} no item named "${itemName}". See #inventory]\n`, false]
+  }
+
+  state.show = "none"
+  return [text, true]
+}
+const doItemLevelHelp = `<><> #itemlvl command
+-- Replaces the level of the inventory item.
+Usage: character|you #rename item newLevel\n`
+
+/**
 * Sets the state to show the character's inventory in next output
 * @function
 * @param {string} [command] (you|character) #inventory
@@ -1769,6 +1842,7 @@ function doLearnSpell(command) {
     text += `${character.name} learned the spell ${toTitleCase(spellName)}.`
   }
 
+  state.show = "none"
   return [text+="\n", true]
 }
 const doLearnSpellHelp = `<><> #learnspell command
@@ -1894,10 +1968,9 @@ function doCastSpell(command) {
   if (difficulty == 0) state.prefix = ""
   
   // Add autoXp to party!
-  if (difficulty > 0 && (score + modifier >= difficulty || score == 20)) {
-    const exp = Math.floor(config.autoXp * clamp(difficulty, 1, 20) / 20)
-    text += config.xpShare ? addXpToAll(exp) : addXpToCharacter(exp)
-  }
+  const hitResult = (difficulty > 0 && (score + modifier >= difficulty || score == 20))
+  text += addAutoExp(character, hitResult, difficulty)
+
   return [`\n${text}\n`, true]
 }
 const doCastSpellHelp = `<><> #cast command
@@ -2015,7 +2088,7 @@ Usage: character|you #explore theme\n`
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////// COMMAND FUNCTIONS - COMABT (DISABLED) //////////////////////////////////////////
+////////////////////////////////////////////////// COMMAND FUNCTIONS - COMABT /////////////////////////////////////////////////
 
 function doEquip(command) {
   // Recalculate the character's equipment bonuses (based on D&D 5e logic)
@@ -2024,7 +2097,7 @@ function doEquip(command) {
   // -- We can't tell what an item is from the invItem details
   // -- Since only the item story card type contains the category
 
-  // NOW, technically in D&D a character would attack with X wepaon
+  // NOW, technically in D&D a character would attack with X weapon
   // BUT, (damage/hitBonus/etc) character values
   // -- I assume the idea is to make the #attack command easier
   // -- If that's the case, then what about a specific #equip command for weapons
@@ -2067,6 +2140,504 @@ function doEquip(command) {
 
   // ----
 }
+
+/**
+* Randomly rolls a random injury from a thematic damage type table to apply to a character/target.
+* @function
+* @param {string} [command] Command Format: {{ #injure (you|character|target) damageType }}
+* @returns {string} Text containing the result of the action, or an error with (state.show = "none")
+**/
+function doInjury(command) {
+  let text = "\n"
+  command = command.replaceAll(/\s+((the))\s+/g, " ")
+  
+  // If damageType is missing, assume the first argument was damageType
+  // Default to current character if target is still null
+  let target = getArgument(command, 0);
+  let damageType = getArgument(command, 1);
+  if (!damageType) {
+    damageType = target;
+    target = null;
+  }
+  target = target || getCharacter().name;
+
+  /* <><> EXAMPLE OF: Damage Type - Story Card Table
+  // (description JSON format inside story card)
+  // See: defaultDamageTable
+  The damage of an injury is how much is reduces the target's health.
+  Damage may use a fixed numeric value or dice formatted value.
+  The Rarity of an injury is how likely it is to occur.
+  */
+
+  // Attempt to fill the damage table with injuries from a thematic damage type first
+  let damageTable = []
+  if (damageType) {
+    let damageTableCards = getStoryCardListByType("damage type - " + damageType, true)[0]
+    damageTable = damageTableCards ? JSON.parse(damageTableCards.description) : [];
+  }
+  // Fallback in case the player provides no damage type, or the provided table is empty
+  // TODO: instead of using default table, assume name of injury to add, allow damage argument
+  if (damageTable.length < 1) {
+    damageTable = defaultDamageTable
+  }
+
+  // NOTE: injury text entry should always logically follow the Textual prefix
+  const isYou = target.toLowerCase() == "you"
+  const hasWord = character.name == "You" ? "have" : "has"
+  text += `${target} ${isYou?"sustain":"sustains"} a `
+
+  // Time to roll the ~Injury!
+  // TODO: let injury = rollInjury(weapon.damageType) // TODO: replace below with this
+  
+  const roll = getRandomFloat(0, 1);
+  const possibleInjuries = damageTable.filter(injury => roll <= injury.rarity);
+  if (possibleInjuries.length > 0) {
+    const randomInjury = possibleInjuries[getRandomInteger(0, possibleInjuries.length - 1)]; // One injury only
+    if (isNaN(randomInjury.damage)) {
+      randomInjury.damage = calculateRoll(formatRoll(randomInjury.damage))
+    } else {
+      randomInjury.damage = parseInt(randomInjury.damage)
+    }
+    text += `${randomInjury.injury} for ${randomInjury.damage} damage!\n`
+    if(hasCharacter(target)) { // If in state.characters (i.e. not a non-character / NPC / narrative entity)
+      const character = getCharacter(target)
+      addInjury(character, randomInjury.injury, randomInjury.damage)
+      text += `${character.name} ${hasWord} ${getHealth(character)}/${getHealthMax(character)} health remaining.\n`
+    }
+  } else {
+    text += "no injury!\n"
+  }
+
+  return [text, true]
+}
+const doInjuryHelp = `<><> #injure command
+-- Randomly rolls a random injury from a thematic damage type table.
+-- (target) is optional; defualts to activate character.
+-- (damageType) is option; defaults a generic injury.
+Usage: #injure (you|character|target) (damageType)\n`
+
+/**
+ * Heals a characters injury
+ * @function
+ * @param {string} [command] Command text containing injury name to heal.
+ * @returns {[string, boolean]} Confirmation or error message and success status.
+ */
+// TODO: Add more healing options like all, worst, amount overflow, amount spread
+function doHealInjury(command) {
+  const character = getCharacter()
+  const injuryName = getArgument(command, 0)
+  const healingAmount = getArgument(command, 1)
+  if (!injuryName || !healingAmount) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+
+  const injuryFound = character.injuries.find((element) => element.injury == injuryName.toLowerCase())
+  if (!injuryFound) {
+    return [`\n[${character.name} has Injury of that nammed ${injuryName}. See #bio]\n`, false]
+  }
+  
+  const possesiveName = getPossessiveName(character.name)
+  let text = `${possesiveName} ${injuryFound.injury} was `
+  const remaingingDmg = healInjury(character, injuryFound.injury, healingAmount)
+  if (remaingingDmg > 0) {
+    text += `healed by ${healingAmount} points [${remaingingDmg} points of damage remaining]`
+  } else {
+    text += `fully healed!`
+  }
+
+  return [text+"\n", true]
+}
+const doHealInjuryHelp = `<><> #heal command
+-- Heals a specified injury on the character, for X amount.
+Usage: character|you #heal injury amount\n`
+
+/**
+* Uses attacker with item to roll hit chance and apply an injury to a target if successful.
+* @function
+* @param {string} [command] Command Format: {{ you|character|attacker #attack you|character|target (with item|damageType) (DC) (at advantage|disadvantage) }}
+* @returns {string} Text containing the result of the action, or an error with (state.show = "none")
+**/
+// TODO: Designed with single player in mind, multiplayers will have no chance to evade
+function doMelee(command) {
+  let text = "\n"
+  state.show = "prefix"
+  let commandName = getCommandName(command);
+  command = command.replaceAll(/\s+((the)|(with)|(a)|(an)|(for)|(and)|(at))\s+/g, " ")
+
+  // ARARGUMENT PARSER - --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+  // you|character|target (with item|damageType) (DC) (at advantage|disadvantage)
+  const types = ["string", "string", "dc", "roll"];
+  const optionals = [false, true, true, true];
+
+  let attackerName = state.characterName; // Assign the active character
+  let [targetName, weaponName, difficulty, rollType] = argumentParser(command, types, optionals);
+
+  if (!targetName || !attackerName) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+
+  // Convert attacker and target to characters
+  let attacker = hasCharacter(attackerName) ? getCharacter(attackerName) : createCharacter(attackerName)
+  let target = hasCharacter(targetName) ? getCharacter(targetName) : createCharacter(targetName)
+
+  // Weapon may be an inventory item, general item, or damage type
+  let weapon = {... defaultItemTemplate}
+  if (weaponName) {
+    // Search for the weapon in inventory, or as general item (in story cards)
+    let invItem = attacker.inventory.find(element => compareWithoutPlural(weaponName, element.itemName))
+    let dmgType = getStoryCardListByType(`damage type - ${weaponName.toLowerCase()}`, false)
+    let genItem = getStoryCardListByType("item - ", false).find(element => {
+      let elementItem = JSON.parse(element.description)
+      return compareWithoutPlural(weaponName, elementItem.itemName)
+    })
+
+    if (invItem) { // Character has item matching weapon
+      weapon = invItem
+    } else if (genItem) { // Item matching weapon exists
+      weapon = genItem
+    } else { // Unknown item or damage type
+      weapon = {... defaultItemTemplate}
+      weapon.itemName = weaponName
+      if (dmgType) weapon.damageType = weaponName
+    }
+  }
+
+  if (difficulty) {
+    if (!isNaN(difficulty)) {
+      difficulty = parseInt(difficulty);
+    } else if (Object.keys(difficultyScale).includes(difficulty.toLowerCase())) {
+      difficulty = difficultyScale[difficulty.toLowerCase()];
+    }
+  } else {
+    difficulty = config.defaultDifficulty
+  }
+
+  // ROLL TO HIT VARIABLES - --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+  let hitMod = calculateHitMod(attacker, weapon.level, commandName)
+
+  let randomInjury = rollInjury(weapon.damageType, weapon.level, hitMod)
+
+  const { die1, die2, score, modifier } = performRoll("1d20", rollType, null, null, null, hitMod)
+  let hitResult = (score+modifier >= difficulty || score == 20) && (score != 1)
+
+  // PRINT TEXT  --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+  if (config.showRolls) // (Prefixes rolling result into the printed output)
+    state.prefix = `\n${printRoll("1d20", rollType, modifier, score, die1, die2, difficulty, attacker, null, null)}\n`
+
+  // Check if the attack as a fail
+  const theirWord = (attacker.name.toLowerCase() == "you") ? "your" : "their"
+  const critText = (score == 20 || score == 1) ? "critically " : ""
+  const resultText = (hitResult ? (critText || "successfully") : critText + "failed to")
+
+  // You (critically|successfully) hit the goblin ++ with your sword, ++ inflicting XYZ injury for X damage.
+  // You critically failed to hit the goblin ++ with your sword.
+
+  text += `${attacker.name} ${resultText} ${commandName} ${target.name}`
+  if (weapon.itemName != defaultItemTemplate.itemName) text += `, with ${theirWord} ${weapon.itemName}`
+  if (hitResult) text += randomInjury?.damage > 0 ? `, inflicting ${randomInjury.injury} for ${randomInjury.damage} damage` : `, but inflicted no injury!`
+  text += "."
+  
+  // Add injury to target if they are in state.characters (i.e. player, or player's party)
+  if (hasCharacter(target.name)) {
+    const hasWord = target.name == "You" ? "have" : "has"
+    addInjury(target, randomInjury.injury, randomInjury.damage)
+    text += `${target.name} ${hasWord} ${getHealth(target)}/${getHealthMax(target)} health remaining.`
+  }
+
+  // Adding of autoXp for attacker!
+  text += addAutoExp(attacker, hitResult, difficulty)
+
+  return [text+"\n", true]
+}
+const doMeleeHelp = `<><> #attack command
+-- Uses attacker with item to roll hit chance and apply an injury to a target if successful.
+-- (DC) is optional; defaults to default difficulty.
+-- (item) is optional; defaults to generic damage type for injury.
+-- (item) may also be a damage type.
+-- (attacker) is optional; defaults to you if none.
+-- (advantage|disadvantage) is optional; defaults to normal advantage.
+Usage: (you|character|attacker) #attack you|character|target with (item|damageType) (DC) (at advantage|disadvantage)\n`
+
+/**
+* Uses attacker with item and ammo to roll hit chance and apply an injury to a target if successful.
+* @function
+* @param {string} [command] Command Format: {{ you|character|attacker #shoot you|character|target with (item|damageType and) ammo (DC) (at advantage|disadvantage) }}
+* @returns {string} Text containing the result of the action, or an error with (state.show = "none")
+**/
+// TODO: Designed with single player in mind, multiplayers will have no chance to evade
+function doRange(command) {
+  let text = "\n"
+  state.show = "prefix"
+  let commandName = getCommandName(command);
+  command = command.replaceAll(/\s+((the)|(with)|(a)|(an)|(for)|(and)|(at))\s+/g, " ")
+
+  // ARARGUMENT PARSER - --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+  // you|character|target with (item|damageType and) ammo (DC) (at advantage|disadvantage)
+  const types = ["string", "string", "string", "dc", "roll"];
+  const optionals = [false, true, false, true, true];
+
+  let attackerName = state.characterName; // Assign the active character
+  let [targetName, weaponName, ammoName, difficulty, rollType] = argumentParser(command, types, optionals);
+
+  if (!targetName || !attackerName) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+
+  // Convert attacker and target to characters
+  let attacker = hasCharacter(attackerName) ? getCharacter(attackerName) : createCharacter(attackerName)
+  let target = hasCharacter(targetName) ? getCharacter(targetName) : createCharacter(targetName)
+
+  // Ammo may be an inventory item, or general item
+  let ammo = {... defaultItemTemplate}
+  if (ammoName) {
+    // Search for the weapon in inventory, or as general item (in story cards)
+    let invItem = attacker.inventory.find(element => compareWithoutPlural(ammoName, element.itemName))
+    let genItem = getStoryCardListByType("item - ", false).find(element => {
+      let elementItem = JSON.parse(element.description)
+      return compareWithoutPlural(ammoName, elementItem.itemName)
+    })
+
+    if (invItem) { // Character has item matching weapon
+      ammo = invItem
+      removeItemFromInventory(attacker, invItem.itemName, 1) // Reduce ammo qty
+    } else if (genItem) { // Item matching weapon exists
+      ammo = genItem
+    }
+  }
+
+  // Weapon may be an inventory item, general item, or damage type
+  let weapon = {... defaultItemTemplate}
+  if (weaponName) {
+    // Search for the weapon in inventory, or as general item (in story cards)
+    let invItem = attacker.inventory.find(element => compareWithoutPlural(weaponName, element.itemName))
+    let dmgType = getStoryCardListByType(`damage type - ${weaponName.toLowerCase()}`, false)
+    let genItem = getStoryCardListByType("item - ", false).find(element => {
+      let elementItem = JSON.parse(element.description)
+      return compareWithoutPlural(weaponName, elementItem.itemName)
+    })
+
+    if (invItem) { // Character has item matching weapon
+      weapon = invItem
+    } else if (genItem) { // Item matching weapon exists
+      weapon = genItem
+    } else { // Unknown item or damage type
+      weapon = {... defaultItemTemplate}
+      weapon.itemName = weaponName
+      if (dmgType) ammo.damageType = weaponName // Ranged attacks use ammo type
+    }
+  }
+
+  if (difficulty) {
+    if (!isNaN(difficulty)) {
+      difficulty = parseInt(difficulty);
+    } else if (Object.keys(difficultyScale).includes(difficulty.toLowerCase())) {
+      difficulty = difficultyScale[difficulty.toLowerCase()];
+    }
+  } else {
+    difficulty = config.defaultDifficulty
+  }
+
+  // ROLL TO HIT VARIABLES - --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+  let weaponMod = ammo ? Math.ceil(weapon.level + ammo.level / 2) : weapon.level
+  let hitMod = calculateHitMod(attacker, weaponMod, commandName)
+
+  let randomInjury = rollInjury(ammo.damageType, weaponMod, hitMod)
+  
+  const { die1, die2, score, modifier } = performRoll("1d20", rollType, null, null, null, hitMod)
+  let hitResult = (score+modifier >= difficulty || score == 20) && (score != 1)
+
+  // PRINT TEXT  --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+  if (config.showRolls) // (Prefixes rolling result into the printed output)
+    state.prefix = `\n${printRoll("1d20", rollType, modifier, score, die1, die2, difficulty, attacker, null, null)}\n`
+
+  // Check if the attack as a fail
+  const theirWord = (attacker.name.toLowerCase() == "you") ? "your" : "their"
+  const critText = (score == 20 || score == 1) ? "critically " : ""
+  const resultText = (hitResult ? (critText || "successfully") : critText + "failed to")
+  const andWeapon = weaponName ? `${weapon.itemName} and ` : ""
+
+  // You (critically|successfully) hit the goblin ++ with your ammo, ++ inflicting XYZ injury for X damage.
+  // You critically failed to hit the goblin ++ with your ammo.
+
+  text += `${attacker.name} ${resultText} ${commandName} ${target.name}`
+  if (ammo.itemName != defaultItemTemplate.itemName) text += `, with ${theirWord} ${andWeapon}${ammo.itemName}`
+  if (hitResult) text += randomInjury?.damage > 0 ? `, inflicting ${randomInjury.injury} for ${randomInjury.damage} damage` : `, but inflicted no injury!`
+  text += "."
+  
+  // Add injury to target if they are in state.characters (i.e. player, or player's party)
+  if (hasCharacter(target.name)) {
+    const hasWord = target.name == "You" ? "have" : "has"
+    addInjury(target, randomInjury.injury, randomInjury.damage)
+    text += `${target.name} ${hasWord} ${getHealth(target)}/${getHealthMax(target)} health remaining.`
+  }
+
+  // Adding of autoXp for attacker!
+  text += addAutoExp(attacker, hitResult, difficulty)
+
+  return [text+"\n", true]
+}
+const doRangeHelp = `<><> #shoot command
+-- Uses attacker with item to roll hit chance and apply an injury to a target if successful.
+-- Ammo item is expended on hit or miss event.
+-- Damage Type of attack is based on ammo (unless specified)
+-- Hit chance uses the average of the weapon level and ammo level.
+
+-- (DC) is optional; defaults to default difficulty.
+-- (item) is optional; defaults to generic damage type for injury.
+-- (item) may also be a damage type.
+-- (attacker) is optional; defaults to you if none.
+-- (advantage|disadvantage) is optional; defaults to normal advantage.
+
+Usage: (you|character|attacker) #shoot you|character|target with (item|damageType and) ammo (DC) (at advantage|disadvantage)\n`
+
+/**
+* Defender uses evasion to check if an attacker with item hits, then applies an injury to defender if failing to avoid.
+* @function
+* @param {string} [command] Command Format: {{ you|character|defender #evade you|character|attacker (with item|damageType) (DC) (at advantage|disadvantage) }}
+* @returns {string} Text containing the result of the action, or an error with (state.show = "none")
+**/
+// TODO: Designed with single player in mind, multiplayers might not work as intended
+function doEvade(command) {
+  let text = "\n"
+  state.show = "prefix"
+  let commandName = getCommandName(command);
+  command = command.replaceAll(/\s+((the)|(with)|(a)|(an)|(for)|(and)|(at))\s+/g, " ")
+
+  // ARARGUMENT PARSER - --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+  // (you|character|attacker) (with item|damageType) (DC) (at advantage|disadvantage)
+  const types = ["string", "string", "dc", "roll"];
+  const optionals = [true, true, true, true];
+
+  let defenderName = state.characterName; // Assign the active character
+  let [attackerName, weaponName, difficultyArg, rollType] = argumentParser(command, types, optionals);
+
+  if (!defenderName) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+
+  // Now we need to determine if only one string was passed (now stored in attackerName)
+  // Then that string could be (you|character|attacker) or (item|damageType) since both are optional
+  if (attackerName != null && weaponName == null && !hasCharacter(attackerName)) {
+    let dmgType = getStoryCardListByType(`damage type - ${attackerName.toLowerCase()}`, false)
+    let genItem = getStoryCardListByType("item - ", false).find(element => {
+      let elementItem = JSON.parse(element.description)
+      return compareWithoutPlural(attackerName, elementItem.itemName)
+    })
+    // If it's a damage type or item, then we move it to weapon name
+    if (dmgType != null || genItem != null) {
+      weaponName = attackerName
+      attackerName = null
+    }
+    // Else it's an unknown attacker, or unknown item
+    // Either way, the injury for failing to evade will use the default
+    // And there will be no additional modifiers
+  }
+
+  // Convert defender and attacker to characters
+  let defender = hasCharacter(defenderName) ? getCharacter(defenderName) : createCharacter(defenderName)
+  let attacker = hasCharacter(attackerName) ? getCharacter(attackerName) : createCharacter(attackerName)
+
+  // Weapon may be an inventory item, general item, or damage type
+  let weapon = {... defaultItemTemplate}
+  if (weaponName) {
+    // Search for the weapon in inventory, or as general item (in story cards)
+    let invItem = attacker.inventory.find(element => compareWithoutPlural(weaponName, element.itemName))
+    let dmgType = getStoryCardListByType(`damage type - ${weaponName.toLowerCase()}`, false)
+    let genItem = getStoryCardListByType("item - ", false).find(element => {
+      let elementItem = JSON.parse(element.description)
+      return compareWithoutPlural(weaponName, elementItem.itemName)
+    })
+
+    if (invItem) { // Character has item matching weapon
+      weapon = invItem
+    } else if (genItem) { // Item matching weapon exists
+      weapon = genItem
+    } else { // Unknown item or damage type
+      weapon = {... defaultItemTemplate}
+      weapon.itemName = weaponName
+      if (dmgType) weapon.damageType = weaponName
+    }
+  }
+
+  const replaceDifficulty = (difficultyArg == null) && (hasCharacter(attacker.name))
+  let difficulty = config.defaultDifficulty
+  if (difficultyArg) {
+    if (!isNaN(difficultyArg)) {
+      difficulty = parseInt(difficultyArg);
+    } else if (Object.keys(difficultyScale).includes(difficultyArg.toLowerCase())) {
+      difficulty = difficultyScale[difficultyArg.toLowerCase()];
+    }
+  }
+
+  // ROLL TO HIT VARIABLES - --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+  let evadeMod = calculateEvadeMod(defender, commandName)
+  let attackerMod = calculateHitMod(attacker, weapon.level)
+
+  let randomInjury = rollInjury(weapon.damageType, weapon.level, attackerMod)
+
+  const attack = performRoll("1d20", null, null, null, null, attackerMod)
+  const evasion = performRoll("1d20", rollType, null, null, null, evadeMod)
+  if (replaceDifficulty) difficulty = attack.score + attack.modifier
+
+  let evadeResult = (evasion.score+evasion.modifier >= difficulty)
+  if (replaceDifficulty) evadeResult = attack.score == 20 ? true : evadeResult // Attack crit trumps normal evasion
+  evadeResult = evasion.score == 20 ? true : evasion.score == 1 ? false : evadeResult // Evasion crit trumps attack crit
+  if (replaceDifficulty) evadeResult = attack.score == 1 ? false : evadeResult // Crit miss is a miss, even if evasion crit fails
+
+  let evadeCrit = evasion.score == 20 || evasion.score == 1
+  if (replaceDifficulty && evasion.score != 20) {
+    if (attack.score == 1) evadeCrit = false
+    else if (attack.score == 20) evadeCrit = true
+  }
+
+  // PRINT TEXT  --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+  if (config.showRolls) { // (Prefixes rolling result into the printed output)
+    state.prefix = attackerName ? `\n${printRoll("1d20", null, attack.modifier, attack.score, attack.die1, attack.die2, null, attacker, null, null)}\n` : ""
+    state.prefix += `\n${printRoll("1d20", rollType, evasion.modifier, evasion.score, evasion.die1, evasion.die2, difficulty, defender, null, null)}\n`
+  }
+
+  // Check if the attack as a fail
+  const critText = (evadeCrit) ? "critically " : ""
+  const resultText = (evadeResult ? (critText || "successfully") : critText + "failed to")
+
+  // You (critically|successfully) evade ++ the goblin ++ 's sword.
+  // You critically failed to evade the goblin ++ 's sword, ++ and sustain XYZ injury for X damage.
+
+  text += `${defender.name} ${resultText} ${commandName}`
+  if (attackerName != null) {
+    text += ` ${attacker.name}`
+    if (weapon.itemName != defaultItemTemplate.itemName) text += `'s ${weapon.itemName}`
+  } else {
+    if (weapon.itemName != defaultItemTemplate.itemName) text += ` the ${weapon.itemName}`
+  }
+  if (!evadeResult) text += randomInjury?.damage > 0 ? `, and sustain a ${randomInjury.injury} for ${randomInjury.damage} damage` : `, but sustain no injury!`
+  text += "."
+  
+  // Add injury to attacker if they are in state.characters (i.e. player, or player's party)
+  if (!evadeResult && hasCharacter(defender.name)) {
+    const hasWord = defender.name == "You" ? "have" : "has"
+    addInjury(defender, randomInjury.injury, randomInjury.damage)
+    text += `${defender.name} ${hasWord} ${getHealth(defender)}/${getHealthMax(defender)} health remaining.`
+  }
+
+  // Adding of autoXp for defender!
+  text += addAutoExp(defender, evadeResult, difficulty)
+
+  return [text+"\n", true]
+}
+const doEvadeHelp = `<><> #evade command
+-- The defender attempts to evade the attack made by an attacker.
+-- Evasion uses evasion skill or dex stat.
+-- If the evasion fails, the defender sustains an injury.
+
+-- (defender) is optional; defaults to you if none.
+-- (attacker) is optional.
+-- (item) is optional; defaults to generic damage type for injury.
+-- (item) may also be a damage type.
+-- (DC) is optional; defaults to default difficulty.
+-- (advantage|disadvantage) is optional; defaults to normal advantage.
+
+Usage: (you|character|defender) #evade (you|character|attacker) (with item|damageType) (DC) (at advantage|disadvantage)\n`
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */

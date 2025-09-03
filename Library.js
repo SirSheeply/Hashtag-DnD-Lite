@@ -1,5 +1,5 @@
 // Based on version "Hashtag DnD v0.7.0" by Raeleus
-const version = "Hashtag DnD v0.7.0 by Raeleus / Lite v0.0.0 Edition by SirSheeply"
+const version = "Hashtag DnD v0.7.0 by Raeleus / Lite v0.1.0 Edition by SirSheeply"
 
 // Your "Library" tab should look like this
 
@@ -19,8 +19,10 @@ const version = "Hashtag DnD v0.7.0 by Raeleus / Lite v0.0.0 Edition by SirSheep
 // CONSTANTS
 const outputMode = "output" // outputMode and inputMode are used across step functions
 const inputMode = "input"   // They are defined here as constants for consistency and maintenance
+const diceRegex = /^(\d+)?d\d+([+-]\d+)?$/i;
 const argumentPattern = /("[^"\\]*(?:\\[\S\s][^"\\]*)*"|'[^'\\]*(?:\\[\S\s][^'\\]*)*'|\/[^\/\\]*(?:\\[\S\s][^\/\\]*)*\/[gimy]*(?=\s|$)|(?:\\\s|\S)+)/g
 const advantageNames = ["normal", "advantage", "disadvantage"]
+const baseHealth = 10
 
 const difficultyScale = {
   "impossible": 30,
@@ -52,7 +54,13 @@ const config = {
   xpShare: false,             // Enables/disables auto xp sharing among party characters
   skillsPerLevel: 1,          // Skill points awarded per levelup event
   levelsPerASI: 4,            // How many levels award an ASI
-  statsPerASI: 2              // Stat points awarded per ASI event
+  statsPerASI: 2,             // Stat points awarded per ASI event
+  healthPerLvl: 6,            // Max Health awarded per levelup event
+
+  strReplacer: "strength",    // Replaces strength for hit and injury calculations.
+  dexReplacer: "dexterity",   // Replaces dexterity for hit and injury calculations.
+  conReplacer: "constitution",// Replaces constitution for health calculations.
+  evasionStat: "dexterity"    // Default stat to be used for evasion, if no skill matches evade command synonyms.
 }
 
 /**
@@ -122,14 +130,23 @@ function validateType(value, expectedValue) {
   -- Description: Use JSON to define item rarity, quantity, and name again.
 */
 
-// Rarirty is used to determine loot rarity, and item worth.
-// Loot rarity examples: 0.0 = 0%, 0.5 = 50%, 1.0 = 100%
 const defaultItemTemplate = {
     itemName: "item",     // [string] Non-plural name of item
-    rarity: 1.0,          // [float] Rarity of the item expressed as a decimal
-    quantity: 1           // Inventory value (or added upon taking)
+    rarity: 1.0,          // [float] Rarity used to determine loot chance, and item worth.
+    quantity: 1,          // [int] How much of the item is present (or Inventory value)
+    damageType: "none",   // [string] Type of damage the item inflicts or resists
+    level: 0              // [int] Power/Quality/Effectiveness level of the item
     // TODO: could store category
 }
+
+const defaultDamageTable = [
+  {"injury": "light injury",    "rarity": 1.0,  "damage":"1d4"},
+  {"injury": "medium injury",   "rarity": 0.5,  "damage":"1d6+2"},
+  {"injury": "deep injury",     "rarity": 0.25, "damage":"1d8+3"},
+  {"injury": "heavy injury",    "rarity": 0.12, "damage":"1d10+4"},
+  {"injury": "critical injury", "rarity": 0.06, "damage":"1d12+5"},
+  {"injury": "mortal injury",   "rarity": 0.01, "damage":"1d20+6"}
+]
 
 // TODO: Create a character template up here
 
@@ -184,6 +201,36 @@ function getRandom(seed) {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////// PATTERN MATCHING & ARGUMENT PARSING /////////////////////////////////////////////
 
+// Helpers for type checks
+const isNumber = (t) => !isNaN(t);
+const isDice = (t) => diceRegex.test(t);
+const isRoll = (t) => advantageNames.some(k => k.toLowerCase() === t.toLowerCase());
+const isDC = (t) => Object.keys(difficultyScale).some(k => k.toLowerCase() === t.toLowerCase());
+const isBoolean = (t) => typeof t === "boolean" || (typeof t === "string" && ["true", "false"].includes(t.toLowerCase()));
+// A number is easy to identify, but impossible to custom type by value.
+// String values could correlate to custom types, but we have to be careful.
+// And Custom types must be unique string formats, or keywords; that don't overlap with general nouns.
+// A string could be a character, item, damage type, or general text, but could never tell 100% which.
+const typeCheckers = [
+  { type: "number", fn: isNumber },
+  { type: "boolean", fn: isBoolean },
+  { type: "dc", fn: isDC },
+  { type: "dice", fn: isDice },
+  { type: "roll", fn: isRoll }
+];
+
+/**
+ * Infers the type of a given variable by running it through a list of type-checking functions.
+ * @param {string} variable - The variable to evaluate. Always provided as a string.
+ * @returns {string} - The inferred type (e.g., "number", "boolean", "dice", "roll", "dc", etc.).
+ */
+function guessType(variable) {
+  for (const { type, fn } of typeCheckers) {
+    if (fn(variable)) return type;
+  }
+  return "string";
+}
+
 /**
 * Returns the command keyword in a command string
 * -- Assumes we have removed the '#' from the command keyword
@@ -198,7 +245,7 @@ function getCommandName(command) {
 
 /**
 * Returns command split into array
-* -- Watch out for passing in commands with a command keyword if you onyl want the arguments
+* -- Watch out for passing in commands with a command keyword if you only want the arguments
 * -- Will treat "quotated" sections as one argument.
 * @param {string} [command] A command string e.g. "1 item" or "take 1 item"
 * @param {boolean} [with_command] returns args with or without first element (command keyword)
@@ -213,6 +260,103 @@ function getArguments(command, with_command=true) {
   })
   if (with_command) return returnValue
   return returnValue.slice(1, returnValue.length)
+}
+
+/**
+ * Parses and validates arguments for a command, matching them against expected types
+ * and optionality, and returns a structured array of arguments.
+ *
+ * This function takes a raw command string, extracts arguments, validates their count,
+ * infers their types, and assigns them to their appropriate positions based on the
+ * provided `types` and `optionals` arrays. Missing optional arguments are returned
+ * as `null`.
+ * 
+ * WARNING: Multiple optionals of the same type between required fields cannot be handled.
+ * WARNING: This assumes that arguments are be passed in the right order, even after optional omissions.
+ *
+ * @param {string} command - The santized command string containing arguments (including the command keyword).
+ * @param {string[]} types - An array of expected argument types, in positional order.
+ * @param {boolean[]} optionals - An array of booleans indicating which arguments are optional (Must be the same length as `types`).
+ * @returns {Array<string|null>} - An array of arguments aligned with `types`. Missing optional arguments are `null`.
+ */
+function argumentParser(command, types, optionals) {
+  if (types.length !== optionals.length)
+    throw new Error("Critical Error: doFunction types not equal to optionals!");
+
+  // Tokenize the command without command keyword
+  const tokens = getArguments(command, false);
+
+  if (tokens.length > types.length)
+    throw new Error("Error: Too many arguments for this command!");
+  if (tokens.length < optionals.filter(opt => !opt).length)
+    throw new Error("Error: Not enough required arguments for this command!");
+
+  // Exact arguments pass, no need to do anything
+  if (tokens.length === types.length) return tokens;
+
+  // Loop through the tokens and try to guess what types they are
+  // We'll try our best to match what we can, making sure that required arguments get priority
+  let guesses = tokens.map(tok => ({ arg: tok, type: guessType(tok), parsed: null }));
+  guesses = matchArguments(guesses, types, optionals);
+
+  // If we have any guesses left over, that means invalid types were provided in the command
+  if (guesses.some(g => g.parsed == null))
+    throw new Error("Error: Invalid arguments provided for this command!");
+
+  // Return the guesses as an array, with null for omitted optionals
+  return types.map((_, i) => guesses.find(g => g.parsed === i)?.arg ?? null);
+}
+
+/**
+ * Match guess tokens to expected argument types in-order, reassigning
+ * earlier optional matches when a required slot is missing.
+ * @param {Array<{arg:string,type:string,parsed:null|number}>} guesses
+ * @param {Array<string>} types
+ * @param {Array<boolean>} optionals  // true = optional, false = required
+ * @returns {Array} mutated guesses (with .parsed set to index or left null)
+ * @throws {Error} if a required argument cannot be satisfied
+ */
+function matchArguments(guesses, types, optionals) {
+  const nTypes = types.length;
+  // assignedGuessAtIndex[i] -> guess index assigned to types[i], or null
+  const assignedGuessAtIndex = new Array(nTypes).fill(null);
+  // Build queues of unused guess indices by guess.type (preserve token order)
+  const unusedByType = {};
+  guesses.forEach((g, gi) => {
+    if (g.parsed == null) {
+      (unusedByType[g.type] = unusedByType[g.type] || []).push(gi);
+    }
+  });
+  for (let i = 0; i < nTypes; i++) {
+    const wantedType = types[i];
+    const queue = unusedByType[wantedType];
+    // Fast path: take first unused guess of the required type
+    if (queue && queue.length > 0) {
+      const guessIndex = queue.shift();
+      guesses[guessIndex].parsed = i;
+      assignedGuessAtIndex[i] = guessIndex;
+      continue;
+    }
+    // No direct match. If this is required, try to reassign an earlier optional
+    if (!optionals[i]) {
+      let reassigned = false;
+      for (let li = i - 1; li >= 0 && !reassigned; li--) {
+        // only consider earlier *optional* slots of the same type
+        if (optionals[li] && types[li] === wantedType && assignedGuessAtIndex[li] != null) {
+          const guessIndex = assignedGuessAtIndex[li];  // index of the guess assigned to li
+          assignedGuessAtIndex[li] = null;              // free the earlier optional
+          assignedGuessAtIndex[i] = guessIndex;         // move the guess to current required index
+          guesses[guessIndex].parsed = i;               // update parsed
+          reassigned = true;
+        }
+      }
+      if (!reassigned) {
+        throw new Error("Error: Not enough required arguments provided for this command!");
+      }
+    }
+    // If this slot is optional and unmatched, we just leave it null for now
+  }
+  return guesses;
 }
 
 /**
@@ -434,15 +578,17 @@ function calculateRoll(rolltext) {
  * @param {object|null} [character=null] Character object containing stats and skills.
  * @param {object|null} [checkSkill=null] Skill object with modifier and linked stat.
  * @param {object|null} [checkAbility=null] Ability object with value.
- * @returns {{ die1: number, die2: number, score: number, modifier: number }}
+ * @param {number|null} [modifier=0] Additional/Initial modifier value.
+ * @param {boolean} [protect=false] If to protect from crits on this roll.
+ * @returns {} die1: number, die2: number, score: number, modifier: number
  */
-function performRoll(dice, rollType, character=null, checkSkill=null, checkAbility=null) {
-  let modifier = 0
+function performRoll(dice, rollType, character=null, checkSkill=null, checkAbility=null, modifier=0, protect=true) {
+  // TODO: Pull any plus or minus values off the dice, and put them in the modifier bucket
   let die1 = calculateRoll(dice)
   let die2 = calculateRoll(dice)
 
   // Critical Fail Protection
-  if (dice == "d20" || dice == "1d20") {
+  if (protect && (dice == "d20" || dice == "1d20")) {
     state.lastFail = state.lastFail ?? 0
     if (state.lastFail <= config.critFailProtect) {
       if (die1 == 1) {
@@ -635,6 +781,7 @@ function handlePrefabChoice(text, mode) {
  * @param {string} [mode] - Either "input" or "output".
  * @returns {{ nextStep: string, newText: string, success: boolean }}
  */
+// TODO: Make sure this handles stat replacers in config
 function handlePresetChoice(text, mode) {
   let newText = " "
   let success = true
@@ -689,6 +836,7 @@ function handleStepClassChoice(text, mode) {
  * @param {string} [mode] - Either "input" or "output".
  * @returns {{ nextStep: string, newText: string, success: boolean }}
  */
+// TODO: Make sure this handles stat replacers in config
 function handleStepStatsChoice(text, mode) {
   let newText = " "
   let nextStep = "statsChoice"
@@ -976,7 +1124,7 @@ function createCharacter(name) {
     stats: [],
     skills: [],
     experience: 0,
-    health: 10,
+    injuries: [],
     skillPoints: 0,
     statPoints: 0
   };
@@ -998,7 +1146,7 @@ function copyCharacter(fromCharacter, toCharacter) {
     toCharacter.stats = [...new Set(fromCharacter.stats)]
     toCharacter.skills = [...new Set(fromCharacter.skills)]
     toCharacter.experience = fromCharacter.experience
-    toCharacter.health = fromCharacter.health
+    toCharacter.injuries = [...new Set(fromCharacter.injuries)]
     toCharacter.skillPoints = fromCharacter.skillPoints
     toCharacter.statPoints = fromCharacter.statPoints
     return toCharacter
@@ -1083,6 +1231,263 @@ function getPossessiveName(name) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/////////////////////////////////////////////////////////////// ///////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////// INJURY / DAMAGE SYSTEM ///////////////////////////////////////////////////
+
+/**
+ * Rolls for an injury based on a given damage type or a default damage table.
+ * - Attempts to fetch a story card injury table matching the provided `damageType`.
+ * - If no valid table is found or it is empty, it falls back to the `defaultDamageTable`.
+ * - It then performs a random roll to select a single injury based on each injury's `rarity` value.
+ * - Calculates its damage (numeric or dice expression), applies any `extraDamage`, and returns the resulting injury.
+ * @function
+ * @param {string} [damageType] - The thematic damage type to search for in story cards (e.g., "fire", "poison").
+ * @param {number} [extraDamage=0] - Additional flat damage to add to the selected injury.
+ * @param {number} [extraChance=0] - Increases or reduces chance to roll to an rarer injury, should be % value (1 = 1%)
+ * @returns {Object|null} Returns an injury object with `injury` and `damage` fields, or `null` if no injury is selected.
+ */
+function rollInjury(damageType, extraDamage=0, extraChance=0) {
+  extraChance = extraChance/100 // Make percentage %
+  // Attempt to fill the damage table with injuries from a thematic damage type first
+  let damageTable = []
+  if (damageType) {
+    let damageTableCards = getStoryCardListByType("damage type - " + damageType, true)[0]
+    damageTable = damageTableCards ? JSON.parse(damageTableCards.description) : [];
+  }
+  // Fallback in case the player provides no damage type, or the provided table is empty
+  if (damageTable.length < 1) {
+    damageTable = defaultDamageTable
+  }
+
+  // Time to roll the ~Injury!
+  let roll = getRandomFloat(0, 1);
+  let bias = 1 - Math.exp(-extraChance / 50); 
+  roll = roll * (1 - bias);
+  const possibleInjuries = damageTable.filter(injury => roll <= injury.rarity);
+  if (possibleInjuries.length > 0) {
+    const randomInjury = possibleInjuries.reduce((best, current) => current.rarity < best.rarity ? current : best);
+    if (isNaN(randomInjury.damage)) {
+      randomInjury.damage = calculateRoll(formatRoll(randomInjury.damage))
+    } else {
+      randomInjury.damage = parseInt(randomInjury.damage)
+    }
+    randomInjury.damage += extraDamage
+    return randomInjury
+  }
+
+  return null
+}
+
+/**
+ * Adds a new injury to a character. If an injury with the same name already exists,
+ * appends a number to make it unique (e.g., "burn", "burn1", "burn2").
+ * @function
+ * @param {Object} character - The character object.
+ * @param {string} injury - The name/description of the injury.
+ * @param {number} damage - The initial damage value for the injury (must be > 0).
+ * @returns {void}
+ */
+function addInjury(character, injury, damage) {
+  if (!character || !injury || damage <= 0) return;
+
+  // Collect existing injury names for this character
+  const existingNames = character.injuries.map(i => i.injury);
+  // Determine unique injury name
+  let uniqueInjury = injury;
+  if (existingNames.includes(uniqueInjury)) {
+    let counter = 1;
+    while (existingNames.includes(`${injury}${counter}`)) {
+      counter++;
+    }
+    uniqueInjury = `${injury} ${counter}`;
+  }
+
+  // Add the injury to the character
+  character.injuries.push({ injury: uniqueInjury, damage:damage });
+}
+
+/**
+ * Removes a specific injury from a character.
+ * @function
+ * @param {Object} character - The character object.
+ * @param {string} injury - The name of the injury to remove.
+ * @returns {void}
+ */
+function removeInjury(character, injury) {
+  if (!character) return;
+  injuryIndex = character.injuries.findIndex(existing => (existing.injury == injury))
+  if (injuryIndex >= 0)
+    character.injuries.splice(injuryIndex, 1)
+}
+
+/**
+ * Updates the damage value of a character's injury.
+ * Removes the injury if damage is 0 or less.
+ * @function
+ * @param {Object} character - The character object.
+ * @param {string} injury - The name of the injury to update.
+ * @param {number} damage - The updated damage value.
+ * @returns {void}
+ */
+function updateInjury(character, injury, damage) {
+  if (!character) return;
+  injuryIndex = character.injuries.findIndex(existing => (existing.injury == injury))
+  if (injuryIndex >= 0) {
+    character.injuries[injuryIndex].injury = injury
+    character.injuries[injuryIndex].damage = damage
+    if (damage <= 0) {
+      removeInjury(character, injury)
+    }
+  }
+}
+
+/**
+ * Heals a specified injury by a given amount.
+ * Removes the injury if damage reaches 0 or less.
+ * @function
+ * @param {Object} character - The character object.
+ * @param {string} injury - The name of the injury to heal.
+ * @param {number} amount - The amount of damage to heal.
+ * @returns {number|undefined} Remaining damage of the injury, or 0 if fully healed.
+ */
+function healInjury(character, injury, amount) {
+  if (!character) return;
+  injuryIndex = character.injuries.findIndex(existing => (existing.injury == injury))
+  if (injuryIndex >= 0) {
+    character.injuries[injuryIndex].damage -= amount
+    if (character.injuries[injuryIndex].damage <= 0) {
+      removeInjury(character, injury)
+      return 0 // 0 no damage remaining
+    }
+  }
+  return character.injuries[injuryIndex].damage // remaining damage
+}
+
+/**
+ * Applies daily injury recovery to all injuries based on Constitution.
+ * Removes fully healed injuries.
+ * @function
+ * @param {Object} character - The character object.
+ * @param {number} [healingFactor=1] - Multiplier for recovery rate (default is 1).
+ * @returns {Array<Object>} List of healed injuries that were removed.
+ */
+function recoverInjuries(character, healingFactor=1) {
+  let modifier = 1
+  const stat = character.stats.find((element) => element.name.toLowerCase() == config.conReplacer)
+  if (stat != null) modifier += getModifier(stat.value)
+  character.injuries.forEach(injury => injury.damage -= modifier*healingFactor)
+  const healed = character.injuries.filter(injury => injury.damage <= 0)
+  character.injuries = character.injuries.filter(injury => injury.damage > 0)
+  return healed
+}
+
+/**
+ * Calculates the recovery time in days for a given damage value.
+ * @function
+ * @param {Object} character - The character object.
+ * @param {number} damage - The amount of injury damage.
+ * @returns {number} Number of days required for full recovery.
+ */
+function recoveryTime(character, damage) {
+  let modifier = 1
+  const stat = character.stats.find((element) => element.name.toLowerCase() == config.conReplacer)
+  if (stat != null) modifier += getModifier(stat.value)
+  return Math.ceil(damage / modifier)
+}
+
+/**
+ * Returns a formatted list of a character's injuries and estimated recovery times.
+ * @function
+ * @param {Object} character - The character object.
+ * @returns {string} A formatted string of injuries or a message stating no injuries.
+ */
+function printInjuries(character) {
+  text = ""
+  if (character.injuries.length > 0) {
+    character.injuries.forEach(function(injury) {
+      const recoverTime = recoveryTime(character, injury.damage)
+      text += `* ${toTitleCase(injury.injury)} [${injury.damage}p - ${recoverTime} recovery days]\n`
+    })
+  } else {
+    const hasWord = character.name.toLowerCase() == "you" ? "have" : "has"
+    text += `${character.name} ${hasWord} no injuries!\n`
+  }
+  return text
+}
+
+/**
+ * Calculates a character's current health by subtracting total injury damage from max health.
+ * @function
+ * @param {Object} character - The character object.
+ * @returns {number} The character's current health.
+ */
+function getHealth(character) {
+  const maxHealth = getHealthMax(character)
+  let injuries = 0
+  character.injuries.forEach(injury => injuries += injury.damage)
+  return maxHealth - injuries
+}
+
+/**
+ * Calculates the maximum health for a character based on Constitution modifier and level.
+ * Base health is 10 + level * (6 + Constitution modifier).
+ * @function
+ * @param {Object} character - The character object.
+ * @param {string} character.name - The character's name.
+ * @param {number} character.experience - The character's current XP.
+ * @param {Array<{name: string, value: number}>} character.stats - The character's stats array.
+ * @returns {number} The calculated maximum health for the character.
+ */
+function getHealthMax(character) {
+  let modifier = 0
+  const stat = character.stats.find((element) => element.name.toLowerCase() == config.conReplacer)
+  if (stat != null) modifier = getModifier(stat.value)
+
+  const level = getLevel(character.experience)
+  return baseHealth + level * (config.healthPerLvl + modifier)
+}
+
+/**
+ * Calculates the hit modifier for an attack roll.
+ * The modifier is based on either a matching skill's modifier (if found),
+ * or the sum of the attacker's Strength and Dexterity modifiers, plus any weapon modifier.
+ *
+ * @function
+ * @param {Object} attacker - The character making the attack. Expected to have `skills` and stats.
+ * @param {number} weaponMod - The modifier from the weapon being used.
+ * @param {string} [skillName=""] - Optional skill name (or partial name) to search for in the attacker's skills.
+ * @returns {number} The total hit modifier for the attack.
+ */
+function calculateHitMod(attacker, weaponMod, skillName="") {
+  let dex = getStatModifier(attacker, config.dexReplacer)
+  let str = getStatModifier(attacker, config.strReplacer)
+  let attackSkill = attacker.skills.find(element => element.name.toLowerCase().includes(skillName))
+  return (attackSkill ? attackSkill.modifier : dex + str) + weaponMod
+}
+
+/**
+ * Calculates the hit modifier for an attack roll.
+ * The modifier is based on either a matching skill's modifier (if found),
+ * or the sum of the attacker's Strength and Dexterity modifiers, plus any weapon modifier.
+ *
+ * @function
+ * @param {Object} attacker - The character making the attack. Expected to have `skills` and stats.
+ * @param {number} weaponMod - The modifier from the weapon being used.
+ * @param {string} [skillName=""] - Optional skill name (or partial name) to search for in the attacker's skills.
+ * @returns {number} The total hit modifier for the attack.
+ */
+function calculateEvadeMod(defender, skillName="") {
+  let evadeSkill = defender.skills.find(element => element.name.toLowerCase().includes(skillName))
+  let dex = getStatModifier(defender, config.evasionStat)
+  return (evadeSkill ? evadeSkill.modifier : dex)
+}
+
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////// LEVELS, STATS, & SKILLS ///////////////////////////////////////////////////
 
@@ -1123,6 +1528,22 @@ function getNextLevelXp(experience) {
 }
 
 /**
+ * Automatically awards experience points (XP) based on a roll result and challenge difficulty.
+ * @function
+ * @param {Object} character - The character object receiving XP. Must have a `name` property.
+ * @param {boolean} rollResult - Indicates whether the action or roll was successful.
+ * @param {number} difficulty - The difficulty rating of the action or challenge (1–20).
+ * @returns {string|*} Returns the result of XP assignment or an empty string if no XP was awarded.
+ */
+function addAutoExp(character, rollResult, difficulty) {
+  if (rollResult && hasCharacter(character.name)) {
+    const exp = Math.floor(config.autoXp * clamp(difficulty, 1, 20) / 20)
+    return (config.xpShare ? addXpToAll(exp) : addXpToCharacter(character, exp))
+  }
+  return ""
+}
+
+/**
 * Adds experience points to all party members and announces level-ups.
 * @function
 * @param {number} experience - The amount of experience points to add to each party member.
@@ -1153,9 +1574,8 @@ function addXpToAll(experience) {
 * @param {number} experience - The amount of experience points to add to the party member.
 * @returns {string} A message summarizing XP gain and any level-up events.
 */
-function addXpToCharacter(experience) {
+function addXpToCharacter(character, experience) {
   if (experience == 0) return ""
-  const character = getCharacter()
   const haveWord = character.name == "You" ? "have" : "has"
 
   const oldLevel = getLevel(character.experience)
@@ -1187,27 +1607,6 @@ function levelupEvent(character, oldLevel, newLevel) {
 }
 
 /**
-* Calculates the maximum health for a character based on Constitution modifier and level.
-* Base health is 10 + level * (6 + Constitution modifier).
-* @function
-* @param {Object} [character] - The character object (defaults to the current player character if null).
-* @param {string} character.name - The character's name.
-* @param {number} character.experience - The character's current XP.
-* @param {Array<{name: string, value: number}>} character.stats - The character's stats array.
-* @returns {number} The calculated maximum health for the character.
-*/
-function getHealthMax(character) {
-  if (character == null) character = getCharacter() // Does this work without a name argument?
-  
-  let modifier = 0
-  const stat = character.stats.find((element) => element.name.toLowerCase() == "constitution")
-  if (stat != null) modifier = getModifier(stat.value)
-
-  const level = getLevel(character.experience)
-  return 10 + level * (6 + modifier)
-}
-
-/**
 * Calculates the ability modifier for a given stat value.
 * Modifier is determined by (statValue - 10) / 2, rounded down.
 * @function
@@ -1215,6 +1614,20 @@ function getHealthMax(character) {
 * @returns {number} The calculated ability modifier.
 */
 function getModifier(statValue) {
+  return Math.floor((statValue - 10) / 2)
+}
+
+/**
+* Calculates the ability modifier for a given stat name and character.
+* Modifier is determined by (statValue - 10) / 2, rounded down.
+* @function
+* @param {object} character - The raw ability score.
+* @param {number} statName - The raw ability score.
+* @returns {number} The calculated ability modifier.
+*/
+function getStatModifier(character, statName) {
+  const stat = character.stats.find(s => s.name.toLowerCase() == statName.toLowerCase())
+  const statValue = stat ? stat.value : 10
   return Math.floor((statValue - 10) / 2)
 }
 
@@ -1735,7 +2148,10 @@ function printInventory(character, dotPointChar=" ") {
   text = ""
   if (character.inventory.length > 0) {
     character.inventory.forEach(item => {
-      text += `${dotPointChar} ${item.quantity}x ${toTitleCase(item.itemName)}\n`
+      const itemQty = item.quantity > 1 ? `${item.quantity}x ` : ""
+      const itemLevel = item.level > 0 ? `+${item.level}` : item.level < 0 ? item.level : ""
+      const itemDamage = item.damageType != defaultItemTemplate.damageType ? ` (${item.damageType})` : ""
+      text += `${dotPointChar} ${itemQty}${toTitleCase(item.itemName)}${itemLevel}${itemDamage}\n`
     });
   } else {
     text += `* Inventory is empty!\n`
@@ -1765,9 +2181,7 @@ function searchInventory(character, itemName) {
 
 /**
  * Generates a formatted list of player notes.
- *
  * Displays all notes stored in `state.notes` with numbering, or a message if no notes exist.
- *
  * @returns {string} A formatted string of all notes, or a message that there are no notes.
  */
 function showNotes() {
@@ -1783,10 +2197,8 @@ function showNotes() {
 
 /**
  * Displays all characters in the player's party.
- *
  * Lists each character's name and class in a formatted block. If no characters exist, 
  * it shows a message indicating the party is empty.
- *
  * @returns {string} A formatted string of all party members or an empty party message.
  */
 function showParty() {
@@ -1804,10 +2216,8 @@ function showParty() {
 
 /**
  * Displays a character's skills with modifiers.
- *
  * Shows each skill, its total modifier, base stat modifier, and proficiency bonus.
  * If the character has no skills, it displays a message instead.
- *
  * @param {Object} character - The character object to display skills for.
  * @returns {string} A formatted string listing all skills and their modifiers.
  */
@@ -1839,9 +2249,7 @@ function showSkills(character) {
 
 /**
  * Displays a character's ability stats.
- *
  * Lists all stats with their values. If the character has no stats, shows a message.
- *
  * @param {Object} character - The character object to display stats for.
  * @returns {string} A formatted string of all stats and values.
  */
@@ -1862,9 +2270,7 @@ function showStats(character) {
 
 /**
  * Displays a character's spells.
- *
  * Lists all spells in the character's spellbook. If there are no spells, shows a message.
- *
  * @param {Object} character - The character object to display spells for.
  * @returns {string} A formatted string of all spells or a message for an empty spellbook.
  */
@@ -1884,9 +2290,7 @@ function showSpells(character) {
 
 /**
  * Displays a character's inventory.
- *
  * Uses `printInventory` to display all items. Always returns a formatted block.
- *
  * @param {Object} character - The character object to display inventory for.
  * @returns {string} A formatted string of inventory items.
  */
@@ -1899,19 +2303,32 @@ function showInventory(character) {
 }
 
 /**
+ * Displays a character's injuries.
+ * @param {Object} character - The character object to display stats for.
+ * @returns {string} A formatted string of all stats and values.
+ */
+function showInjuries(character) {
+  const possessiveName = character == null ? null : getPossessiveName(character.name)
+  let text = `*** ${possessiveName.toUpperCase()} INJURIES ***\n`
+  text += `Health: ${getHealth(character)}/${getHealthMax(character)}\n`
+  text += printInjuries(character)
+  text += "******************\n\n"
+  return text
+}
+
+/**
  * Displays a summary of a character's key information.
- *
- * Shows the character's class, health, level, experience, and unspent points
- * in a formatted "bio" block.
- *
+ * Shows the character's class, health, level, experience, and unspent points in a formatted "bio" block.
  * @param {Object} character - The character object to summarize.
  * @returns {string} A formatted string summarizing the character's stats and progress.
  */
 function showSummary(character) {
   const possessiveName = character == null ? null : getPossessiveName(character.name)
   let text = `*** ${possessiveName.toUpperCase()} BIO ***\n`
-  text += `Class: ${character.className}\n`
-  text += `Health: ${character.health}/${getHealthMax(character)}\n`
+  text += `Class: ${character.className}\n\n`
+
+  text += `Health: ${getHealth(character)}/${getHealthMax(character)}\n`
+  text += printInjuries(character)+"\n"
 
   text += `Level: ${getLevel(character.experience)}\n`
   text += `Experience: ${character.experience}\n`
