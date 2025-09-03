@@ -1,0 +1,43 @@
+{
+    "abilities": [
+        {"name": "Strength", "value": 10},
+        {"name": "Dexterity", "value": 10},
+        {"name": "Agility", "value": 10},
+        {"name": "Vitality", "value": 10},
+        {"name": "Sense", "value": 10},
+        {"name": "Intelligence", "value": 10},
+        {"name": "Charisma", "value": 10}
+    ],
+    "skills": [
+        {"name": "Acrobatics", "stat": "Agility", "modifier": 0},
+        {"name": "Animal Handling", "stat": "Charisma", "modifier": 0},
+        {"name": "Arcana", "stat": "Intelligence", "modifier": 0},
+        {"name": "Athletics", "stat": "Agility", "modifier": 0},
+        {"name": "Deception", "stat": "Charisma", "modifier": 0},
+        {"name": "History", "stat": "Intelligence", "modifier": 0},
+        {"name": "Insight", "stat": "Sense", "modifier": 0},
+        {"name": "Intimidation", "stat": "Charisma", "modifier": 0},
+        {"name": "Investigation", "stat": "Sense", "modifier": 0},
+        {"name": "Medicine", "stat": "Intelligence", "modifier": 0},
+        {"name": "Nature", "stat": "Intelligence", "modifier": 0},
+        {"name": "Perception", "stat": "Sense", "modifier": 0},
+        {"name": "Performance", "stat": "Charisma", "modifier": 0},
+        {"name": "Persuasion", "stat": "Charisma", "modifier": 0},
+        {"name": "Religion", "stat": "Intelligence", "modifier": 0},
+        {"name": "Sleight of Hand", "stat": "Dexterity", "modifier": 0},
+        {"name": "Stealth", "stat": "Agility", "modifier": 0},
+        {"name": "Survival", "stat": "Intelligence", "modifier": 0},
+
+        {"name": "Block", "stat": "Vitality", "modifier": 0},
+        {"name": "Strike", "stat": "Strength", "modifier": 0},
+        {"name": "Parry", "stat": "Dexterity", "modifier": 0},
+        {"name": "Dodge", "stat": "Agility", "modifier": 0}
+    ],
+    "inventory": [
+        {"name": "Hunter License", "quantity": 1},
+        {"name": "Hunter Sword", "quantity": 1},
+        {"name": "Smartphone", "quantity": 1},
+        {"name": "wallet", "quantity": 1}
+    ],
+    "spells": []
+}
