@@ -9,9 +9,13 @@
  */
 const modifier = (text) => {
   // Your other input modifier scripts go here (preferred)
-  text = DNDHash_input(text)
+  let newtext = DNDHash_input(text)
   // Your other input modifier scripts go here (alternative)
-  return {text}
+  if (getStoryCardListByTitle("Configure Auto-Cards").length > 0) {
+    const autoCardText = AutoCards("input", text)
+    if (autoCardText != text) newtext += autoCardText
+  }
+  return {newtext}
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -58,13 +62,15 @@ function commandRegistry(commandName) {
       { handler: doRenameCharacter,  helpText: doRenameCharacterHelp,  synonyms: ["renamecharacter"] },
       { handler: doBio,              helpText: doBioHelp,              synonyms: ["bio", "biography", "summary", "character", "profile"] },
       { handler: doSetClass,         helpText: doSetClassHelp,         synonyms: ["setclass"] },
+      { handler: doSetCasting,       helpText: doSetCastingHelp,       synonyms: ["setcast", "setcasting"] },
       { handler: doShowCharacters,   helpText: doShowCharactersHelp,   synonyms: ["characters", "party", "team"] },
       { handler: doRemoveCharacter,  helpText: doRemoveCharacterHelp,  synonyms: ["removecharacter", "deletecharacter"] },
       
       // <><> Levels & Experience
-      { handler: doSetExperience,    helpText: doSetExperienceHelp,    synonyms: ["setexperience", "setexp", "setxp", "setexperiencepoints"] },
+      { handler: doSetExperience,    helpText: doSetExperienceHelp,    synonyms: ["setexperience", "setexp", "setxp"] },
       { handler: doAddExperience,    helpText: doAddExperienceHelp,    synonyms: ["addexperience", "addexp", "addxp"] },
-      { handler: doLevelUp,          helpText: doLevelUpHelp,          synonyms: ["levelup", "level"] },
+      { handler: doLevelUp,          helpText: doLevelUpHelp,          synonyms: ["levelup", "addlevel"] },
+      { handler: doSetLevel,         helpText: doSetLevelHelp,         synonyms: ["setlevel"] },
       
       // <><> Abilities/Attributes/Stats
       // TODO: Clear up stat vs attribute terminology to use only one of the above
@@ -107,11 +113,11 @@ function commandRegistry(commandName) {
       { handler: doItemLevel,        helpText: doItemLevelHelp,        synonyms: ["itemlevel", "itemlvl"] },
       
       // <><> Spells
-      { handler: doLearnSpell,       helpText: doLearnSpellHelp,       synonyms: ["learnspell", "learnmagic", "learnincantation", "learnritual", "memorizespell", "memorizemagic", "memorizeincantation", "memorizeritual", "learnsspell", "learnsmagic", "learnsincantation", "learnsritual", "memorizesspell", "memorizesmagic", "memorizesincantation", "memorizesritual", "learn"] },
-      { handler: doForgetSpell,      helpText: doForgetSpellHelp,      synonyms: ["forgetspell", "forgetmagic", "forgetincantation", "forgetritual", "forgetsspell", "forgetsmagic", "forgetsincantation", "forgetsritual", "deletespell", "deletemagic", "deleteincantation", "deleteritual", "deletesspell", "deletesmagic", "deletesincantation", "deletesritual", "cancelspell", "cancelmagic", "cancelincantation", "cancelritual", "cancelsspell", "cancelsmagic", "cancelsincantation", "cancelsritual", "removespell", "removemagic", "removeincantation", "removeritual", "removesspell", "removesmagic", "removesincantation", "removesritual", "forget"] },
-      { handler: doCastSpell,        helpText: doCastSpellHelp,        synonyms: ["cast", "activate", "castspell", "castmagic", "castincantation", "castritual", "castsspell", "castsmagic", "castsincantation", "castsritual"] },
-      { handler: doClearSpells,      helpText: doClearSpellsHelp,      synonyms: ["clearspells", "clearmagic", "clearincantations", "clearrituals", "forgetallspells", "forgetallmagic", "forgetallincantation", "forgetallritual"] },
-      { handler: doSpellbook,        helpText: doSpellbookHelp,        synonyms: ["spellbook", "spells", "listspells", "showspells", "spelllist", "spellcatalog", "spellinventory"] },
+      { handler: doLearnSpell,       helpText: doLearnSpellHelp,       synonyms: ["memorise", "memorize", "learn"] },
+      { handler: doForgetSpell,      helpText: doForgetSpellHelp,      synonyms: ["forget", "forgetspell", "forgetmagic", "forgetpower", "removespell", "removepower"] },
+      { handler: doCastSpell,        helpText: doCastSpellHelp,        synonyms: ["cast", "activate"] },
+      { handler: doClearSpells,      helpText: doClearSpellsHelp,      synonyms: ["clearspells", "clearmagic", "clearpowers", "forgetall"] },
+      { handler: doSpellbook,        helpText: doSpellbookHelp,        synonyms: ["spells", "showspells", "spellbook", "powers", "showpowers"] },
       
       // <><> Narrative
       { handler: doEncounter,        helpText: doEncounterHelp,        synonyms: ["encounter", "travel", "traverse", "explore", "depart", "enter"] },
@@ -247,19 +253,7 @@ function init(text) {
   enforceConfig()
   state.characterName = getCharacterName(text)
   if (state.tempCharacter == null) {
-    state.tempCharacter = {
-      name: "template",
-      className: "adventurer",
-      summary: "Template character not meant to be used.",
-      inventory: [],
-      spells: [],
-      stats: [],
-      skills: [],
-      experience: 0,
-      injuries: [],
-      statPoints: 0,
-      skillPoints: 0
-    }
+    state.tempCharacter = createCharacter();
   }
   if (state.characters == null) state.characters = []
   if (state.notes == null) state.notes = []
@@ -773,6 +767,29 @@ const doSetClassHelp = `<><> #setclass command
 Usage: character|you #setclass newClass\n`
 
 /**
+ * Sets the casting ability stat for the current character.
+ * @function
+ * @param {string} [command] Command string containing the stat name.
+ * @returns {[string, boolean]} Result message and success flag.
+ */
+function doSetCasting(command) {
+  var character = getCharacter()
+  var statName = getArgumentRemainder(command, 0)
+  if (statName == null) {
+    return ["\n[Error: Not enough parameters. See #help]\n", false]
+  }
+
+  var possessiveName = getPossessiveName(character.name)
+  character.castingAbility = statName
+
+  state.show = "none"
+  return [`\n[${possessiveName} spellcasting ability is set to "${character.castingAbility}"]\n`, true]
+}
+const doSetCastingHelp = `<><> #setcast command
+-- Sets the casting stat used as spellcasting ability modifier for the active character.
+Usage: character|you #setcast statName\n`
+
+/**
  * Displays the list of characters.
  * @function
  * @param {string} [command] Command string (ignored).
@@ -906,21 +923,43 @@ const doAddExperienceHelp = `<><> #addexp command
 Usage: character|you #addexp exp (party)\n`
 
 /**
- * Levels up a character by granting enough experience to reach the next level.
+ * Levels up by X character by granting enough experience to reach it.
  * @function
- * @param {string} [command] Command string (ignored except for context).
+ * @param {string} [command] Command string.
  * @returns {[string, boolean]} Result message and success flag.
  */
-// TODO: make it so level up takes an argument for number of levels
 function doLevelUp(command) {
   const character = getCharacter()
-  const level = getLevel(character.experience)
-  const experience = getExpForLevel(level) - character.experience
-  return doAddExperience(`${command} ${experience}`)
+  const currentLevel = getLevel(character.experience)
+  const levelUps = getArgument(command, 0) ?? 1
+  if (isNaN(levelUps)) {
+    return ["\n[Error: Invalid parameters. See #help]\n", false]
+  }
+  const newLevel = currentLevel + parseInt(levelUps)
+  let experience = getExpForLevel(newLevel-1) - character.experience
+  return doAddExperience(`addexp ${experience}`)
 }
 const doLevelUpHelp = `<><> #levelup command
--- Advances the active characters level by one.
-Usage: character|you #levelup\n`
+-- Advances the active character by X levels; defaults to 1.
+Usage: character|you #levelup (levels)\n`
+
+/**
+ * Sets the active character to X level; no level up rewards.
+ * @function
+ * @param {string} [command] Command string.
+ * @returns {[string, boolean]} Result message and success flag.
+ */
+function doSetLevel(command) {
+  const newLevel = getArgument(command, 0)
+  if (!newLevel || isNaN(newLevel)) {
+    return ["\n[Error: Invalid parameters. See #help]\n", false]
+  }
+  const experience = getExpForLevel(newLevel-1)
+  return doSetExperience(`setexp ${experience}`)
+}
+const doSetLevelHelp = `<><> #levelup command
+-- Sets the active character to X level; no level up rewards.
+Usage: character|you #setlevel level\n`
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -1891,93 +1930,109 @@ Usage: character|you #forgetspell spell_name\n`
 /**
  * Attempts to cast a known spell, applying difficulty and advantage rules.
  * Performs a d20 roll (with modifiers) and determines success or failure.
- * #cast (advantage|disadvantage) (number or effortless|easy|medium|hard|impossible) (abiliity) spellName
- * 
+ * you|character|caster #cast spellName (at level) (at target) (DC) (advantage|disadvantage)
  * @function
- * @param {string} [command] The command text containing:
- *   - Required name of spell to cast (must have quotes for names with spaces)
- *   - optional advantage/disadvantage
- *   - optional difficulty rating (name or numeric)
- *   - optional ability name for modifier
+ * @param {string} [command] The command text
  * @returns {[string, boolean]} Tuple where:
  *   - string: Narrative result of the casting attempt.
  *   - boolean: true if the command was processed, false if invalid.
  */
+// TODO: Implement full spell effects for casting
 function doCastSpell(command) {
+  const commandName = getCommandName(command);
+  command = command.replaceAll(/\s+((the)|(with)|(a)|(an)|(for)|(and)|(at)|(vs)|(on))\s+/g, " ")
   if (getArguments(command).length <= 1) { // Minimum form of command #cast plus one optional argument (not including spell)
     return ["\n[Error: Not enough parameters. See #help]\n", false]
   }
 
-  // ARGUMENT SREACHING -- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
-  const character = getCharacter()
-  const dice = "d20" // Checks always use a d20
-  let spellIndex = 3
+  // ARARGUMENT PARSER - --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+  // You #cast fireball at level 1 at the goblin vs 10 with advantage
+  // you|character|caster #cast spellName (at level) (at target) (DC) (advantage|disadvantage)
+  const types = ["string", "number", "string", "dc", "roll"];
+  const optionals = [false, true, true, true, true];
+
+  let casterName = state.characterName; // Assign the active character
+  let [spellName, spellLevel, targetName, difficulty, rollType] = argumentParser(command, types, optionals);
+
+  if (!casterName) {
+    return ["\n[Error: No caster parameter. See #help]\n", false]
+  }
+
+  // Convert caster and target to characters
+  let caster = hasCharacter(casterName) ? getCharacter(casterName) : createCharacter(casterName)
+  //let target = hasCharacter(targetName) ? getCharacter(targetName) : createCharacter(targetName)
   
-  // Argument 0: Advantage or Disadvantage
-  const rollType = (searchArgument(command, arrayToOrPattern(advantageNames)) ?? "normal").toLowerCase()
-  if (rollType == null) spellIndex--;
+  // Find spell card if one exists, parse it's description
+  let spellCards = getStoryCardListByTitle(spellName);
+  let spellData = [];
+  if (spellCards.length > 0) {
+    spellData = JSON.parse(spellCards[0].description) || [];
+  }
+  
+  let minimumLevel = (spellData.length > 0) ? spellData.reduce((lowest, current) => current.level < lowest.level ? current : lowest).level : 0;
+  let spellCard = (spellData.length > 0) ? spellData.reduce((lowest, current) => current.level <= spellLevel && current.level > lowest.level ? current : lowest) : null;
 
-  // Argument 1: Difficulty number or word
-  const difficultyPattern = [...new Set(Object.keys(difficultyScale))].concat(["\\d+"]) // Matches difficulty name or a number
-  let difficulty = searchArgument(command, arrayToOrPattern(difficultyPattern))
-  if (difficulty == null) spellIndex--;
-  if (difficulty == null || isNaN(difficulty)) { // Converting between difficulty name & score
-    difficulty = difficultyScale[String(difficulty).toLowerCase()] ?? config.defaultDifficulty
-  } else {
-    difficulty = Number(difficulty)
+  // Does caster have the spell, and are they a high enough level to cast it
+  if(hasCharacter(casterName)) {
+    const casterLevel = getLevel(caster.experience)
+    if (casterLevel < spellLevel && spellLevel != null) {
+      // Caster (lvl 1) cannot cast fireball at level 5.
+      return [`\n[${caster.name} (lvl ${casterLevel}) cannot cast ${spellName} at level ${spellLevel}]\n`, false]
+    }
+
+    const foundSpell = caster.spells.filter(element => element.toLowerCase() == spellName.toLowerCase())
+    if (foundSpell.length < 1) {
+      // Caster cannot cast fireball - not in spellbook.
+      return [`\n[${caster.name} cannot cast ${spellName} - not in spellbook]\n`, false]
+    }
+    
+    if (casterLevel < minimumLevel) {
+      // Caster (lvl 1) cannot cast fireball, minimum level is 5.
+      return [`\n[${caster.name} (lvl ${casterLevel}) cannot cast ${spellName}, minimum level is ${minimumLevel}]\n`, false]
+    }
+    // Else it's an unknown spell and we assume they can
   }
 
-  // Argument 2: Ability text
-  // TODO: default to character/spell casting ability if re-introduced later
-  const abilityPattern = [... new Set(character.stats)]
-  const abilityArg = searchArgument(command, arrayToOrPattern(abilityPattern))
-  const castAbility = character.stats.findIndex(x => x.name.toLowerCase() === abilityArg.toLowerCase())
-  if (castAbility == null) spellIndex--;
-
-  // Argument 3: Narrative spell text
-  const spellsPattern = [... new Set(character.spells)]
-  const spellCast = searchArgument(command, arrayToOrPattern(spellsPattern))
-
-  if (spellCast == null) {
-    const dontWord = character.name == "You" ? "don't" : "doesn't"
-    const tryWord = character.name == "You" ? "try" : "tries"
-
-    state.show = "none" // We don't need AI Dungeon making some awkward comment
-    return [`\n[${character.name} ${tryWord} to cast, but ${character.name} ${dontWord} know that spell.]\n`, true]
-  }
-
-  // TIME TO ROLL THE DICE --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
-  const { die1, die2, score, modifier} = performRoll(dice, rollType, character, null, character.stats[castAbility])
+  // ~TIME TO ROLL~ -- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
+  const spellcastingStat = (hasCharacter(casterName)) ? caster.castingAbility : config.intReplacer
+  const castingMod = getStatModifier(caster, spellcastingStat)
+  const { die1, die2, score, modifier } = performRoll("1d20", rollType, null, null, null, castingMod)
+  
+  let hitResult = (score+modifier >= difficulty || score == 20) && (score != 1)
 
   // PRINTING LOGIC - --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
-
-  const successText = (score + modifier >= difficulty) ? " The spell is successful!" : " The spell misses or fails!"
-  const failText = (score == 1) ? " Critical Failure! The spell misses or fails in a spectacular way." : successText
-  const critText = (score == 20) ? " Critical Success!" : failText
-
-  const modText = (modifier >= 0) ? "+ " + modifier : "- "+Math.abs(modifier)
-  const modifierText = (modifier != 0) ? ` ${modText} = ${score + modifier}` : ""
-  const dieText = rollType == "advantage" || rollType == "disadvantage" ? `${rollType}(${die1},${die2})` : die1
-
-  // Input text
-  let text = `${character.name} cast the spell ${spellCast}${rollType != "normal" ? " with " + rollType : ""}.${critText}`
+  const critText = (score == 1) || (score == 20) ? "critically " : ""
+  const failText = (score == 1) ? "backfires" : (spellCard?.attack ? "misses" : "fails")
+  const resultText = critText + (hitResult ? `succeeds` : failText)
+  
+  const levelText =  (spellLevel || minimumLevel > 1) ? ` at level ${spellLevel ?? minimumLevel}` : ""
+  const flavorText = (spellCard) ? ` ${spellCard.flavor}` : (spellCard?.attack ? " at" : " targeting")
+  const targetText = (targetName) ? ` ${targetName}` : " the target"
+  const spellText = spellCard?.type ?? "action"
+  
+  // EXMAPLE: 'You cast fireball at level 4, blasting twin fireballs at the goblin. The spell misses!'
+  let text = `${caster.name} ${commandName} ${spellName}${levelText}`
+           + ((spellCard || targetName) ? `,${flavorText}${targetText}` : "")
+           + `. The ${spellText} ${resultText}!`
 
   // Output text prefix
-  state.show = "prefix"
-  state.prefix = `\n[Difficulty Class: ${difficulty}. Roll: ${dieText}${modifierText}.${critText}]`
-  if (difficulty == 0) state.prefix = ""
+  if (config.showRolls) { // (Prefixes rolling result into the printed output)
+    state.show = "prefix"
+    state.prefix = `\n${printRoll("1d20", rollType, modifier, score, die1, die2, difficulty, caster, null, null)}\n`
+  }
   
-  // Add autoXp to party!
-  const hitResult = (difficulty > 0 && (score + modifier >= difficulty || score == 20))
-  text += addAutoExp(character, hitResult, difficulty)
+  // Adding of autoXp for attacker!
+  text += addAutoExp(caster, hitResult, difficulty)
 
   return [`\n${text}\n`, true]
 }
 const doCastSpellHelp = `<><> #cast command
 -- Attempts to cast a known spell, applying difficulty and advantage rules.
--- Performs a d20 roll (with modifiers) and determines success or failure.
--- Optional ability name for modifier.
-Usage: character|you #cast (advantage|disadvantage) (difficulty) (abiliity) spellName\n`
+-- Performs a d20 roll (with spellcasting mod) and determines success or failure.
+-- optional level for cast, defaults to lowest level of spell.
+-- Optional target, omitted from result if none.
+-- Optional DC and advantage; defaults to config and normal.
+Usage: you|character|caster #cast spellName (at level) (at target) (DC) (advantage|disadvantage)\n`
 
 /**
  * Clears all known spells from the active character.

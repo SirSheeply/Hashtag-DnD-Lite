@@ -1,4 +1,5 @@
 {
+    "castingAbility": "Intelligence",
     "abilities": [
         {"name": "Strength", "value": 10},
         {"name": "Dexterity", "value": 10},

@@ -1,0 +1,5 @@
+[
+  {"level":2, "flavor":"A small ball of fire ejects at", "attack":true, "type":"spell"},
+  {"level":5, "flavor":"A large fireball hurls at", "attack":true, "type":"spell"},
+  {"level":10, "flavor":"Scorching rays erupt upon", "attack":true, "type":"spell"}
+]

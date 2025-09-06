@@ -9,6 +9,10 @@
 const modifier = (text) => {
   // Your other context modifier scripts go here (preferred)
   // Your other context modifier scripts go here (alternative)
+  if (getStoryCardListByTitle("Configure Auto-Cards").length > 0) {
+    [text, stop] = AutoCards("context", text, stop);
+    return {text, stop};
+  }
   return {text}
 }
 

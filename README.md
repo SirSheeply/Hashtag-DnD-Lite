@@ -31,7 +31,31 @@ If you think you may want the full set of features offered by [The Original Hash
 
 Lite Edition does not have all the features of [The Original Hashtag-DnD by Raeleus](https://github.com/raeleus/Hashtag-DnD); and a lot of commands & features, have been trimmed out in exchange for lighter and more customisable versions..
 
+## INSTALLATION
+#### To install DNDHash lite edition:
+1. Edit any Scenario you own, click edit scripts under details.
+2. Copy library.js, input.js, output.js, and context.js into their respective files.
+3. Click save, it may take a second.
+4. Export your story cards, and add the sample-story-cards.json to the end yours.
+5. Import the combine story cards, and you're good to go.
+
+#### Auto Cards Compatibility
+> DNDHash lite edition has built in compatibility with [Auto Cards by Lewd Leah](https://github.com/LewdLeah/Auto-Cards). To install, copy the [Auto Cards library.js](https://github.com/LewdLeah/Auto-Cards/blob/main/src/library.js) to the end of the lite edition's library.js (As indicated by the comments in the file)
+
 ## Changelog
+Versioning Rules: X.Y.Z
+* X (Release Version): Major milestone releases or rewrites.
+* Y (Major Version): Breaking changes or significant new features.
+* Z (Minor Version): Non-breaking changes, bug fixes, patches, or style updates.
+
+---
+### Version 0.2.0
+#### Enhanced Features
+- Story Card Spells              (Spells can now sourced from story cards, and can be user generated!)
+- Spell Levels                   (Spells have level requirments, and upcasting, see #help cast)
+- Spellcasting Mod               (Reintroduced spellcasting modifier based on stat or skill)
+#### Compatibility
+- Auto Cards Compatibility       (Now compatibile with Auto Cards, just copy the library.js to lite edition!)
 ---
 ### Version 0.1.0
 #### Added Features
@@ -58,21 +82,24 @@ Lite Edition does not have all the features of [The Original Hashtag-DnD by Rael
 - Levelling Rewards              (+3 skill points per level, and +2 stat points every 4 levels; new commands for spending points)
 ---
 ---
-## Upcoming/Planned Features & Ideas
-- Character deaths.
+## Upcoming & Planned
+#### New Features
 - Quest tracking system.
 - Full class+features system.
-- Major cleanup of code (dev).
+- Hunger, Thirst, Sleep, Exhaustion.
+- Effects system for spells (mechanics vs narrative effects).
+#### Update Features
+- Character deaths.
 - Add injury system to casting.
-- Basic spellcasting with levels.
+- Mana for spells based on level.
 - Injury resistance and equipable items.
 - Track health/injuries of non-characters.
-- Apply universal parser to all doFunctions (dev).
-- Implement a party system vs general character directory.
-- Effects system for spells (mechanics vs narrative effects).
-- A check command that uses AI Dungeon to determine DC and Advantage.
-- Hunger, Thirst, Sleep, Exhaustion.
-- Initial Character creation from plot essentials.
-- Custom terminology for stats, skills, and spells.
 - Seperate currency/money from inventory items.
+- Initial Character creation from plot essentials.
+- Implement a party system vs general character directory.
+- A check command that uses AI Dungeon to determine DC and Advantage.
+#### Dev Goals
+- Major cleanup of code.
+- Apply universal parser to all doFunctions.
+#### Stretch
 - Re-add shops, minigames, location, and name gen.

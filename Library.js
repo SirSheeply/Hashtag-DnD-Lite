@@ -1,5 +1,6 @@
 // Based on version "Hashtag DnD v0.7.0" by Raeleus
-const version = "Hashtag DnD v0.7.0 by Raeleus / Lite v0.1.0 Edition by SirSheeply"
+// Compatible with Auto Cards by Lewd Leah
+const version = "Hashtag DnD v0.7.0 by Raeleus / Lite v0.2.0 Edition by SirSheeply"
 
 // Your "Library" tab should look like this
 
@@ -43,7 +44,6 @@ const allSynonyms = ["all", "every", "each", "every one", "everyone"]
 const createSynonyms = ["create", "generate", "start", "begin", "setup", "new"]
 
 // CONFIGURATION
-//TODO: Make stat/skill/spell terminology a config option
 //TODO: Shouldn't this be in the state?
 const config = {
   autoCreateItemCards: false, // Automaticall creates item cards when put into the inventory
@@ -60,7 +60,9 @@ const config = {
   strReplacer: "strength",    // Replaces strength for hit and injury calculations.
   dexReplacer: "dexterity",   // Replaces dexterity for hit and injury calculations.
   conReplacer: "constitution",// Replaces constitution for health calculations.
-  evasionStat: "dexterity"    // Default stat to be used for evasion, if no skill matches evade command synonyms.
+  intReplacer: "intelligence",// Replaces intelligence as default spellcasting mod.
+  evasionStat: "dexterity",   // Default stat to be used for evasion, if no skill matches evade command synonyms.
+  hideHighLvlSpells: false,    // Hides known spells above the character's level when showing their spellbook.
 }
 
 /**
@@ -148,7 +150,19 @@ const defaultDamageTable = [
   {"injury": "mortal injury",   "rarity": 0.01, "damage":"1d20+6"}
 ]
 
-// TODO: Create a character template up here
+const characterTemplate = {
+  name: "template",
+  className: "adventurer",
+  castingAbility: "none",
+  inventory: [],
+  spells: [],
+  stats: [],
+  skills: [],
+  experience: 0,
+  injuries: [],
+  statPoints: 0,
+  skillPoints: 0
+}
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
@@ -689,6 +703,7 @@ const stepHandlers = {
   classChoice: handleStepClassChoice,
   statsChoice: handleStepStatsChoice,
   skillsChoice: handleStepSkillsChoice,
+  castingChoice: handleStepCastingChoice,
   spellsChoice: handleStepSpellsChoice,
   itemsChoice: handleStepItemsChoice,
   finishCreate: handleFinishCreate
@@ -929,6 +944,26 @@ function handleStepSkillsChoice(text, mode) {
       const skill = state.tempCharacter.skills[num - 1];
       if (skill) skill.modifier += config.skillsPerLevel;
     });
+    nextStep = "castingChoice"
+  }
+  return {nextStep:nextStep, newText:newText, success:true}
+}
+
+/**
+ * Handles the casting ability character selection step.
+ * @function
+ * @param {string} [text] - Player input or AI Dungeon output
+ * @param {string} [mode] - Either "input" or "output".
+ * @returns {{ nextStep: string, newText: string, success: boolean }}
+ */
+function handleStepCastingChoice(text, mode) {
+  let newText = " "
+  let nextStep = "castingChoice"
+  if (mode === outputMode) {
+    newText = `What is the character's primary casting stat?\n`
+  }
+  else if (mode === inputMode) {
+    state.tempCharacter.castingAbility = text
     nextStep = "spellsChoice"
   }
   return {nextStep:nextStep, newText:newText, success:true}
@@ -1112,46 +1147,38 @@ function hasCharacter(characterName) {
 /**
  * Creates a blank character.
  * @function
- * @param {string} name - The name of the character to create or reset.
+ * @param {string} name - optional; The name of the character to create or reset.
  * @returns {object} The newly created or reset character object.
  */
-function createCharacter(name) {
-  return {
-    name: name || "Blank",
-    className: "Blank",
-    inventory: [],
-    spells: [],
-    stats: [],
-    skills: [],
-    experience: 0,
-    injuries: [],
-    skillPoints: 0,
-    statPoints: 0
-  };
+function createCharacter(name=null) {
+  const newCharacter = copyCharacter(characterTemplate);
+  newCharacter.name = name ?? newCharacter.name;
+  return newCharacter;
 }
 
 /**
-* Copies attributes, stats, and inventory from one character to another.
-* Removes duplicate entries in inventory, spells, stats, and skills.
-* @function
-* @param {object} fromCharacter - The source character to copy from.
-* @param {object} toCharacter - The target character to copy into.
-* @returns {object|null} The updated target character, or undefined if parameters are invalid.
-*/
-function copyCharacter(fromCharacter, toCharacter) {
-  if (toCharacter != null && fromCharacter != null) {
-    toCharacter.className = fromCharacter.className
-    toCharacter.inventory = [...new Set(fromCharacter.inventory)]
-    toCharacter.spells = [...new Set(fromCharacter.spells)]
-    toCharacter.stats = [...new Set(fromCharacter.stats)]
-    toCharacter.skills = [...new Set(fromCharacter.skills)]
-    toCharacter.experience = fromCharacter.experience
-    toCharacter.injuries = [...new Set(fromCharacter.injuries)]
-    toCharacter.skillPoints = fromCharacter.skillPoints
-    toCharacter.statPoints = fromCharacter.statPoints
-    return toCharacter
-  }
-  return null
+ * Copies attributes, stats, and inventory from one character to another.
+ * Removes duplicate entries in inventory, spells, stats, and skills.
+ * @function
+ * @param {object} source - The character to copy data from.
+ * @param {object} target - The character object to copy data into.
+ * @returns {object|null} The updated target character, or null if parameters are invalid.
+ */
+function copyCharacter(source, target = {}) {
+  if (!source || !target) return null;
+
+  target.className = source.className;
+  target.inventory = [...new Set(source.inventory)];
+  target.castingAbility = source.castingAbility;
+  target.spells = [...new Set(source.spells)];
+  target.stats = [...new Set(source.stats)];
+  target.skills = [...new Set(source.skills)];
+  target.experience = source.experience;
+  target.injuries = [...new Set(source.injuries)];
+  target.skillPoints = source.skillPoints;
+  target.statPoints = source.statPoints;
+
+  return target;
 }
 
 /**
@@ -1625,8 +1652,8 @@ function getModifier(statValue) {
 * @param {number} statName - The raw ability score.
 * @returns {number} The calculated ability modifier.
 */
-function getStatModifier(character, statName) {
-  const stat = character.stats.find(s => s.name.toLowerCase() == statName.toLowerCase())
+function getStatModifier(character, statName=config.intReplacer) {
+  const stat = character.stats.find(s => s.name.toLowerCase() == statName?.toLowerCase())
   const statValue = stat ? stat.value : 10
   return Math.floor((statValue - 10) / 2)
 }
@@ -2277,13 +2304,22 @@ function showStats(character) {
 function showSpells(character) {
   const possessiveName = character == null ? null : getPossessiveName(character.name)
   let text = `*** ${possessiveName.toUpperCase()} SPELLBOOK ***`
+  let spellList = ""
   if (character.spells.length > 0) {
     character.spells.forEach(function(x) {
-      text += "\n* " + toTitleCase(x)
+      let spellCards = getStoryCardListByTitle(x);
+      if (spellCards.length > 0) spellCards = JSON.parse(spellCards[0].description); // JSON array [{},{}]
+      let minimumLevel = (spellCards.length > 0) ? spellCards.reduce((lowest, current) => current.level < lowest.level ? current : lowest).level : 0;
+      if (getLevel(character) >= minimumLevel || minimumLevel == 0 || config.hideHighLvlSpells == false)
+        spellList += "\n* " + toTitleCase(x)
     })
-  } else {
-    text += `\n${possessiveName} spellbook is empty!`
   }
+  if (spellList === "") {
+    text += `\n${possessiveName} spellbook is empty!`
+  } else {
+    text += spellList
+  }
+  text += `\nCasting Ability: ${character.castingAbility}`
   text += "\n******************\n\n"
   return text
 }
@@ -2348,3 +2384,6 @@ function showSummary(character) {
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+// IF USING AUTO CARDS, ADD LIBRARY.JS HERE
+// https://github.com/LewdLeah/Auto-Cards/blob/main/src/library.js

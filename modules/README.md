@@ -12,3 +12,6 @@ Implementation of a debug command for running test cases for the: take, drop, gi
 
 ### Arg Parser.js
 Testing area for the implementation of the universal arg parser introduced in v0.1.0. (May be out of date)
+
+### Cast-Tester.js
+Testing area for the text print out of the doCast command.

@@ -1,3 +1,5 @@
+// Based on version "Hashtag DnD v0.7.0" by Raeleus
+
 // Your "Output" tab should look like this
 // Checkout the Guidebook examples to get an idea of other ways you can use scripting
 // https://help.aidungeon.com/scripting
@@ -7,9 +9,13 @@
  */
 const modifier = (text) => {
   // Your other output modifier scripts go here (preferred)
-  text = DNDHash_output(text)
+  let newtext = DNDHash_output(text)
   // Your other output modifier scripts go here (alternative)
-  return {text}
+  if (getStoryCardListByTitle("Configure Auto-Cards").length > 0) {
+    const autoCardText = AutoCards("output", text)
+    if (autoCardText != text) newtext += autoCardText
+  }
+  return {newtext}
 }
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
